@@ -56,7 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
       let s = res.body.items;
       kubeResources = s.map((service) => {
         return {
-          kind: service.kind,
+          kind: "Service",
           metadata: {
             name: service.metadata.name,
             namespace: service.metadata.namespace,
@@ -69,13 +69,14 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   const updateDiagnostics = (doc: vscode.TextDocument) => {
+    kubeResources.forEach((r) => {
+      console.log(`kind: ${r.kind}, name: ${r.metadata.name}`);
+    });
     const fileText = doc.getText();
 
-    let thisResource = textToK8sResource(fileText);
+    const thisResource = textToK8sResource(fileText);
 
     console.log(`namespace: ${thisResource.metadata.namespace}`);
-
-    const diagnostics: vscode.Diagnostic[] = [];
 
     const diagnosticServices = findServices(
       kubeResources,
@@ -84,42 +85,6 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     diagnosticCollection.set(doc.uri, diagnosticServices);
-  };
-
-  const findServices = (
-    resources: K8sResource[],
-    thisResource: K8sResource,
-    text: string
-  ) => {
-    const diagnostics: vscode.Diagnostic[] = [];
-
-    for (var i = 0; i < kubeResources.length; i++) {
-      const service = kubeResources[i];
-      const serviceName =
-        thisResource.metadata.namespace === service.metadata.namespace
-          ? service.metadata.name
-          : `${service.metadata.name}.${service.metadata.namespace}`;
-      console.log(`service name: ${serviceName}`);
-      let lines = text.split(/\r?\n/);
-      for (var j = 0; j < lines.length; j++) {
-        let line = lines[j];
-        const index = line.indexOf(serviceName);
-        if (index > -1) {
-          diagnostics.push(
-            new vscode.Diagnostic(
-              new vscode.Range(
-                new vscode.Position(j, index),
-                new vscode.Position(j, index + serviceName.length)
-              ),
-              "This service exists in the cluster",
-              vscode.DiagnosticSeverity.Warning
-            )
-          );
-        }
-      }
-    }
-
-    return diagnostics;
   };
 
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -146,6 +111,43 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
+function findServices(
+  resources: K8sResource[],
+  thisResource: K8sResource,
+  text: string
+): vscode.Diagnostic[] {
+  const diagnostics: vscode.Diagnostic[] = [];
+
+  resources
+    .filter((r) => r.kind === "Service")
+    .forEach((service) => {
+      const serviceName =
+        thisResource.metadata.namespace === service.metadata.namespace
+          ? service.metadata.name
+          : `${service.metadata.name}.${service.metadata.namespace}`;
+      console.log(`service name: ${serviceName}`);
+      let lines = text.split(/\r?\n/);
+      for (var j = 0; j < lines.length; j++) {
+        let line = lines[j];
+        const index = line.indexOf(serviceName);
+        if (index > -1) {
+          diagnostics.push(
+            new vscode.Diagnostic(
+              new vscode.Range(
+                new vscode.Position(j, index),
+                new vscode.Position(j, index + serviceName.length)
+              ),
+              "This service exists in the cluster",
+              vscode.DiagnosticSeverity.Warning
+            )
+          );
+        }
+      }
+    });
+
+  return diagnostics;
+}
+
 // get all kubernetes resource names in folder and subfolders
 function getK8sResourceNamesInWorkspace(): K8sResource[] {
   const fs = require("fs");
@@ -158,8 +160,6 @@ function getK8sResourceNamesInWorkspace(): K8sResource[] {
     console.log(`file: ${file}`);
   });
 
-  console.log(files);
-
   const resources: K8sResource[] = [];
 
   files.forEach((file) => {
@@ -170,7 +170,7 @@ function getK8sResourceNamesInWorkspace(): K8sResource[] {
   });
 
   resources.forEach((r) => {
-    console.log(`file: ${r.metadata.name}`);
+    console.log(`resource name: ${r.metadata.name}`);
   });
 
   return resources;
