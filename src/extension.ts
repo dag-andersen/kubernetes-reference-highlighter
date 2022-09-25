@@ -44,7 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
     const res = getK8sResourceNamesInWorkspace();
     kubeResources.push(...res);
     console.log(`resources: ${res}`);
-    console.log(`services names: ${kubeResources.map((s) => s.metadata.name)}`);
+    console.log(`kubeResources names: ${kubeResources.map((s) => s.metadata.name)}`);
   });
 
   // create diagnostic collection
@@ -103,9 +103,9 @@ export function activate(context: vscode.ExtensionContext) {
       thisResource,
       fileText
     );
-    
+
     const diagnosticSecret = findSecret(kubeResources, thisResource, fileText);
-    
+
     const diagnostics = [...diagnosticServices, ...diagnosticSecret];
 
     diagnosticCollection.set(doc.uri, diagnostics);
@@ -188,28 +188,22 @@ function findSecret(
 
   console.log("finding secrets");
 
+  const regex =
+    /valueFrom:\s*secretKeyRef:\s*name:\s*([a-zA-Z]+)\s*key:\s*([a-zA-Z]+)/gm;
+  const matches = text.matchAll(regex);
+
   resources
     .filter((r) => r.kind === "Secret")
-    .forEach((service) => {
-      const secretName =
-        thisResource.metadata.namespace === service.metadata.namespace
-          ? service.metadata.name
-          : `${service.metadata.name}.${service.metadata.namespace}`;
-      console.log(`Secret name: ${secretName}`);
+    .forEach((r) => {
+      console.log(`Secret name: ${r.metadata.name}`);
 
-      // regex find all instances of
-      // valueFrom:
-      //   secretKeyRef:
-      const regex =
-        /valueFrom:\s*secretKeyRef:\s*name:\s*([a-zA-Z]+)\s*key:\s*([a-zA-Z]+)/gm;
-      const matches = text.matchAll(regex);
       for (const match of matches) {
         console.log(match);
         console.log(match.index);
 
         const secretName = match[1];
 
-        if (secretName === service.metadata.name) {
+        if (secretName === r.metadata.name) {
           console.log(`found secret ${secretName}`);
           const start = match.index || 0;
           const end = start + match[0].length;
