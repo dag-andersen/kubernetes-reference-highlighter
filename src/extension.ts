@@ -2,6 +2,15 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 
+// define basic type
+type K8sResource = {
+  kind: string;
+  metadata: {
+    name: string;
+    namespace: string;
+  };
+};
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -10,19 +19,17 @@ export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "k8s-checker" is now active!');
 
   const k8s = require("@kubernetes/client-node");
-
   const kc = new k8s.KubeConfig();
   kc.loadFromDefault();
-
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
   //decalre tuple
-  let services: [string, string][] = [];
+  let services: K8sResource[] = [];
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
-  let disposable = vscode.commands.registerCommand(
+  const helloWorld = vscode.commands.registerCommand(
     "k8s-checker.helloWorld",
     () => {
       // The code you place here will be executed every time your command is executed
@@ -31,29 +38,37 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  context.subscriptions.push(disposable);
-
   // watch for saves to the current file
-  let disposable2 = vscode.workspace.onDidSaveTextDocument((event) => {
-    console.log("file saved");
-
-    k8sApi.listServiceForAllNamespaces().then((res) => {
-      let s = res.body.items;
-      services = s.map((service) => {
-        return [service.metadata.namespace, service.metadata.name];
-      });
-      console.log(services);
-      console.log("service name list updated");
-    });
-
+  const onSave = vscode.workspace.onDidSaveTextDocument((event) => {
+    updateK8sResources();
+    const resources = getK8sResourceNames(vscode.workspace.workspaceFolders[0]);
+    services.push(...resources);
+    console.log(`resources: ${resources}`);
+    console.log(`services: ${services}`);
   });
-  context.subscriptions.push(disposable2);
 
   // create diagnostic collection
   const diagnosticCollection =
     vscode.languages.createDiagnosticCollection("k8s-checker");
 
-  const handle = (doc: vscode.TextDocument) => {
+  const updateK8sResources = () => {
+    k8sApi.listServiceForAllNamespaces().then((res) => {
+      let s = res.body.items;
+      services = s.map((service) => {
+        return {
+          kind: service.kind,
+          metadata: {
+            name: service.metadata.name,
+            namespace: service.metadata.namespace,
+          },
+        };
+      });
+      console.log(services);
+      console.log("service name list updated");
+    });
+  };
+
+  const updateDiagnostics = (doc: vscode.TextDocument) => {
     const fileText = doc.getText();
 
     const YAML = require("yaml");
@@ -68,7 +83,9 @@ export function activate(context: vscode.ExtensionContext) {
     for (var i = 0; i < services.length; i++) {
       const service = services[i];
       const serviceName =
-        namespace === service[0] ? service[1] : `${service[1]}.${service[0]}`;
+        namespace === service.metadata.namespace
+          ? service.metadata.name
+          : `${service.metadata.name}.${service.metadata.namespace}`;
       console.log(`service name: ${serviceName}`);
       let lines = fileText.split(/\r?\n/);
       for (var j = 0; j < lines.length; j++) {
@@ -92,15 +109,32 @@ export function activate(context: vscode.ExtensionContext) {
     diagnosticCollection.set(doc.uri, diagnostics);
   };
 
-  const didSave = vscode.workspace.onDidChangeTextDocument((event) => {
-    handle(event.document);
+  const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
+    updateDiagnostics(event.document);
   });
 
-  context.subscriptions.push(diagnosticCollection, didSave);
+  const hi = vscode.languages.registerInlineValuesProvider("yml", {
+    provideInlineValues(document, range, context, token) {
+      const something = new vscode.InlineValueText(
+        new vscode.Range(new vscode.Position(1, 5), new vscode.Position(1, 10)),
+        "hello world"
+      );
+      console.log("hi");
+      return [something];
+    },
+  });
+
+  context.subscriptions.push(
+    helloWorld,
+    onSave,
+    diagnosticCollection,
+    onChange,
+    hi
+  );
 }
 
 // get all kubernetes resource names in folder and subfolders
-function getK8sResourceNames(folder: vscode.WorkspaceFolder) {
+function getK8sResourceNames(folder: vscode.WorkspaceFolder): K8sResource[] {
   const fs = require("fs");
   const path = require("path");
 
@@ -115,25 +149,45 @@ function getK8sResourceNames(folder: vscode.WorkspaceFolder) {
         filelist.push(path.join(dir, file));
       }
     });
+
+    
     return filelist;
   }
+  
+  files = walkSync(folder.uri.fsPath, files).filter((file: string) => {
+    return file.endsWith(".yml") || file.endsWith(".yaml");
+  });
+  
+  files.forEach((file) => {
+    console.log(`file: ${file}`);
+  });
 
-  files = walkSync(folder.uri.fsPath, files);
+  console.log(files);
 
   const YAML = require("yaml");
 
-  let resourceNames: string[] = [];
+  const resources: K8sResource[] = [];
 
   files.forEach((file) => {
     const fileText = fs.readFileSync(file, "utf8");
     const yml = YAML.parse(fileText);
-    const name = yml.metadata.name;
-    resourceNames.push(name);
+    try {
+      resources.push({
+        kind: yml.kind,
+        metadata: {
+          name: yml.metadata.name,
+          namespace: yml.metadata.namespace,
+        },
+      });
+    } catch (e) { }
   });
-  
-  return resourceNames;
-}
 
+    resources.forEach((r) => {
+      console.log(`file: ${r.metadata.name}`);
+    });
+
+  return resources;
+}
 
 // this method is called when your extension is deactivated
 export function deactivate() {}
