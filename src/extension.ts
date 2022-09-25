@@ -52,20 +52,40 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.createDiagnosticCollection("k8s-checker");
 
   const updateK8sResources = () => {
+    let resources: K8sResource[] = [];
     k8sApi.listServiceForAllNamespaces().then((res) => {
       let s = res.body.items;
-      kubeResources = s.map((service) => {
-        return {
-          kind: "Service",
-          metadata: {
-            name: service.metadata.name,
-            namespace: service.metadata.namespace,
-          },
-        };
-      });
-      console.log(kubeResources);
+      resources.push(
+        ...s.map((service) => {
+          return {
+            kind: "Service",
+            metadata: {
+              name: service.metadata.name,
+              namespace: service.metadata.namespace,
+            },
+          };
+        })
+      );
+      console.log(resources);
       console.log("service name list updated");
     });
+    k8sApi.listSecretForAllNamespaces().then((res) => {
+      let s = res.body.items;
+      resources.push(
+        ...s.map((service) => {
+          return {
+            kind: "Secret",
+            metadata: {
+              name: service.metadata.name,
+              namespace: service.metadata.namespace,
+            },
+          };
+        })
+      );
+      console.log(resources);
+      console.log("secrets with name updated");
+    });
+    kubeResources = resources;
   };
 
   const updateDiagnostics = (doc: vscode.TextDocument) => {
@@ -83,8 +103,12 @@ export function activate(context: vscode.ExtensionContext) {
       thisResource,
       fileText
     );
+    
+    const diagnosticSecret = findSecret(kubeResources, thisResource, fileText);
+    
+    const diagnostics = [...diagnosticServices, ...diagnosticSecret];
 
-    diagnosticCollection.set(doc.uri, diagnosticServices);
+    diagnosticCollection.set(doc.uri, diagnostics);
   };
 
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -126,26 +150,94 @@ function findServices(
           ? service.metadata.name
           : `${service.metadata.name}.${service.metadata.namespace}`;
       console.log(`service name: ${serviceName}`);
-      let lines = text.split(/\r?\n/);
-      for (var j = 0; j < lines.length; j++) {
-        let line = lines[j];
-        const index = line.indexOf(serviceName);
-        if (index > -1) {
-          diagnostics.push(
-            new vscode.Diagnostic(
-              new vscode.Range(
-                new vscode.Position(j, index),
-                new vscode.Position(j, index + serviceName.length)
-              ),
-              "This service exists in the cluster",
-              vscode.DiagnosticSeverity.Warning
-            )
+
+      // regex find all instances of service name
+      const regex = new RegExp(serviceName, "g");
+      const matches = text.match(regex);
+      if (matches) {
+        console.log(`found ${matches.length} matches`);
+        matches.forEach((match) => {
+          const start = text.indexOf(match);
+          const end = start + match.length;
+          console.log(`start: ${start}, end: ${end}`);
+          // get column and line number from index
+          const pos1 = indexToPosition(text, start);
+          const pos2 = indexToPosition(text, end);
+          console.log(`pos1 line: ${pos1.line}, pos1 char: ${pos1.character}`);
+          console.log(`pos2 line: ${pos2.line}, pos2 char: ${pos2.character}`);
+          const range = new vscode.Range(pos1, pos2);
+          const diagnostic = new vscode.Diagnostic(
+            range,
+            `found service ${serviceName}`,
+            vscode.DiagnosticSeverity.Warning
           );
+          diagnostics.push(diagnostic);
+        });
+      }
+    });
+
+  return diagnostics;
+}
+
+function findSecret(
+  resources: K8sResource[],
+  thisResource: K8sResource,
+  text: string
+): vscode.Diagnostic[] {
+  const diagnostics: vscode.Diagnostic[] = [];
+
+  console.log("finding secrets");
+
+  resources
+    .filter((r) => r.kind === "Secret")
+    .forEach((service) => {
+      const secretName =
+        thisResource.metadata.namespace === service.metadata.namespace
+          ? service.metadata.name
+          : `${service.metadata.name}.${service.metadata.namespace}`;
+      console.log(`Secret name: ${secretName}`);
+
+      // regex find all instances of
+      // valueFrom:
+      //   secretKeyRef:
+      const regex =
+        /valueFrom:\s*secretKeyRef:\s*name:\s*([a-zA-Z]+)\s*key:\s*([a-zA-Z]+)/gm;
+      const matches = text.matchAll(regex);
+      for (const match of matches) {
+        console.log(match);
+        console.log(match.index);
+
+        const secretName = match[1];
+
+        if (secretName === service.metadata.name) {
+          console.log(`found secret ${secretName}`);
+          const start = match.index || 0;
+          const end = start + match[0].length;
+          console.log(`start: ${start}, end: ${end}`);
+          // get column and line number from index
+          const pos1 = indexToPosition(text, start);
+          const pos2 = indexToPosition(text, end);
+          console.log(`pos1 line: ${pos1.line}, pos1 char: ${pos1.character}`);
+          console.log(`pos2 line: ${pos2.line}, pos2 char: ${pos2.character}`);
+          const range = new vscode.Range(pos1, pos2);
+          const diagnostic = new vscode.Diagnostic(
+            range,
+            `found secret ${secretName}`,
+            vscode.DiagnosticSeverity.Warning
+          );
+          diagnostics.push(diagnostic);
         }
       }
     });
 
   return diagnostics;
+}
+
+function indexToPosition(text: string, index: number): vscode.Position {
+  const lines = text.substring(0, index).split(/\r?\n/);
+  const line = lines.length - 1;
+  const character = lines[line].length;
+  return new vscode.Position(line, character);
 }
 
 // get all kubernetes resource names in folder and subfolders
