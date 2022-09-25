@@ -24,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
   //decalre tuple
-  let services: K8sResource[] = [];
+  let kubeResources: K8sResource[] = [];
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
@@ -41,10 +41,10 @@ export function activate(context: vscode.ExtensionContext) {
   // watch for saves to the current file
   const onSave = vscode.workspace.onDidSaveTextDocument((event) => {
     updateK8sResources();
-    const resources = getK8sResourceNames(vscode.workspace.workspaceFolders[0]);
-    services.push(...resources);
-    console.log(`resources: ${resources}`);
-    console.log(`services: ${services}`);
+    const res = getK8sResourceNamesInWorkspace();
+    kubeResources.push(...res);
+    console.log(`resources: ${res}`);
+    console.log(`services names: ${kubeResources.map((s) => s.metadata.name)}`);
   });
 
   // create diagnostic collection
@@ -54,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
   const updateK8sResources = () => {
     k8sApi.listServiceForAllNamespaces().then((res) => {
       let s = res.body.items;
-      services = s.map((service) => {
+      kubeResources = s.map((service) => {
         return {
           kind: service.kind,
           metadata: {
@@ -63,7 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
           },
         };
       });
-      console.log(services);
+      console.log(kubeResources);
       console.log("service name list updated");
     });
   };
@@ -71,23 +71,36 @@ export function activate(context: vscode.ExtensionContext) {
   const updateDiagnostics = (doc: vscode.TextDocument) => {
     const fileText = doc.getText();
 
-    const YAML = require("yaml");
+    let thisResource = textToK8sResource(fileText);
 
-    const yml = YAML.parse(fileText);
-    console.log(yml);
-    const namespace = yml.metadata.namespace || "default";
-    console.log(`namespace: ${namespace}`);
+    console.log(`namespace: ${thisResource.metadata.namespace}`);
 
     const diagnostics: vscode.Diagnostic[] = [];
 
-    for (var i = 0; i < services.length; i++) {
-      const service = services[i];
+    const diagnosticServices = findServices(
+      kubeResources,
+      thisResource,
+      fileText
+    );
+
+    diagnosticCollection.set(doc.uri, diagnosticServices);
+  };
+
+  const findServices = (
+    resources: K8sResource[],
+    thisResource: K8sResource,
+    text: string
+  ) => {
+    const diagnostics: vscode.Diagnostic[] = [];
+
+    for (var i = 0; i < kubeResources.length; i++) {
+      const service = kubeResources[i];
       const serviceName =
-        namespace === service.metadata.namespace
+        thisResource.metadata.namespace === service.metadata.namespace
           ? service.metadata.name
           : `${service.metadata.name}.${service.metadata.namespace}`;
       console.log(`service name: ${serviceName}`);
-      let lines = fileText.split(/\r?\n/);
+      let lines = text.split(/\r?\n/);
       for (var j = 0; j < lines.length; j++) {
         let line = lines[j];
         const index = line.indexOf(serviceName);
@@ -106,7 +119,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
 
-    diagnosticCollection.set(doc.uri, diagnostics);
+    return diagnostics;
   };
 
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -134,7 +147,36 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // get all kubernetes resource names in folder and subfolders
-function getK8sResourceNames(folder: vscode.WorkspaceFolder): K8sResource[] {
+function getK8sResourceNamesInWorkspace(): K8sResource[] {
+  const fs = require("fs");
+
+  const files = getAllFileNamesInDirectory(
+    vscode.workspace.workspaceFolders[0].uri.fsPath
+  );
+
+  files.forEach((file) => {
+    console.log(`file: ${file}`);
+  });
+
+  console.log(files);
+
+  const resources: K8sResource[] = [];
+
+  files.forEach((file) => {
+    const fileText = fs.readFileSync(file, "utf8");
+    try {
+      resources.push(textToK8sResource(fileText));
+    } catch (e) {}
+  });
+
+  resources.forEach((r) => {
+    console.log(`file: ${r.metadata.name}`);
+  });
+
+  return resources;
+}
+
+function getAllFileNamesInDirectory(dirPath: string) {
   const fs = require("fs");
   const path = require("path");
 
@@ -150,43 +192,26 @@ function getK8sResourceNames(folder: vscode.WorkspaceFolder): K8sResource[] {
       }
     });
 
-    
     return filelist;
   }
-  
-  files = walkSync(folder.uri.fsPath, files).filter((file: string) => {
+
+  files = walkSync(dirPath, files).filter((file: string) => {
     return file.endsWith(".yml") || file.endsWith(".yaml");
   });
-  
-  files.forEach((file) => {
-    console.log(`file: ${file}`);
-  });
 
-  console.log(files);
+  return files;
+}
 
+function textToK8sResource(text: string): K8sResource {
   const YAML = require("yaml");
-
-  const resources: K8sResource[] = [];
-
-  files.forEach((file) => {
-    const fileText = fs.readFileSync(file, "utf8");
-    const yml = YAML.parse(fileText);
-    try {
-      resources.push({
-        kind: yml.kind,
-        metadata: {
-          name: yml.metadata.name,
-          namespace: yml.metadata.namespace,
-        },
-      });
-    } catch (e) { }
-  });
-
-    resources.forEach((r) => {
-      console.log(`file: ${r.metadata.name}`);
-    });
-
-  return resources;
+  const yml = YAML.parse(text);
+  return {
+    kind: yml.kind,
+    metadata: {
+      name: yml.metadata.name,
+      namespace: yml.metadata.namespace,
+    },
+  };
 }
 
 // this method is called when your extension is deactivated
