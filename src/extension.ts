@@ -2,6 +2,8 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 
+type FromWhere = "workspace" | "cluster";
+
 // define basic type
 type K8sResource = {
   kind: string;
@@ -9,7 +11,9 @@ type K8sResource = {
     name: string;
     namespace: string;
   };
+  where?: FromWhere;
 };
+
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -65,6 +69,7 @@ export function activate(context: vscode.ExtensionContext) {
               name: r.metadata.name,
               namespace: r.metadata.namespace,
             },
+            where: "cluster",
           };
         })
       );
@@ -81,6 +86,7 @@ export function activate(context: vscode.ExtensionContext) {
               name: r.metadata.name,
               namespace: r.metadata.namespace,
             },
+            where: "cluster",
           };
         })
       );
@@ -97,6 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
               name: r.metadata.name,
               namespace: r.metadata.namespace,
             },
+            where: "cluster",
           };
         })
       );
@@ -166,13 +173,13 @@ function findServices(
   resources
     .filter((r) => r.kind === "Service")
     .forEach((r) => {
-      const serviceName =
+      const name =
         thisResource.metadata.namespace === r.metadata.namespace
           ? r.metadata.name
           : `${r.metadata.name}.${r.metadata.namespace}`;
-      console.log(`service name: ${serviceName}`);
+      console.log(`service name: ${name}`);
 
-      const regex = new RegExp(serviceName, "g");
+      const regex = new RegExp(name, "g");
       const matches = text.matchAll(regex);
 
       for (const match of matches) {
@@ -182,16 +189,7 @@ function findServices(
         const end = start + match.length;
         console.log(`start: ${start}, end: ${end}`);
         // get column and line number from index
-        const pos1 = indexToPosition(text, start);
-        const pos2 = indexToPosition(text, end);
-        console.log(`pos1 line: ${pos1.line}, pos1 char: ${pos1.character}`);
-        console.log(`pos2 line: ${pos2.line}, pos2 char: ${pos2.character}`);
-        const range = new vscode.Range(pos1, pos2);
-        const diagnostic = new vscode.Diagnostic(
-          range,
-          `found service ${serviceName}`,
-          vscode.DiagnosticSeverity.Warning
-        );
+        const diagnostic = findGeneric(start, end, text, "Service", name);
         diagnostics.push(diagnostic);
       }
     });
@@ -245,8 +243,7 @@ function findValueFromKeyRef(
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
       .filter((r) => r.metadata.name === name)
       .forEach((r) => {
-        console.log(`found ${r.kind} name: ${r.metadata.name}`);
-
+        console.log(`found ${r.kind} name: ${name}`);
         const shift = match[0].indexOf(name);
         const start = (match.index || 0) + shift;
         const end = start + name.length;
