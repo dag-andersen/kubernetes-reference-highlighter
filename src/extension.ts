@@ -44,7 +44,9 @@ export function activate(context: vscode.ExtensionContext) {
     const res = getK8sResourceNamesInWorkspace();
     kubeResources.push(...res);
     console.log(`resources: ${res}`);
-    console.log(`kubeResources names: ${kubeResources.map((s) => s.metadata.name)}`);
+    console.log(
+      `kubeResources names: ${kubeResources.map((s) => s.metadata.name)}`
+    );
   });
 
   // create diagnostic collection
@@ -144,35 +146,35 @@ function findServices(
 
   resources
     .filter((r) => r.kind === "Service")
-    .forEach((service) => {
+    .forEach((r) => {
       const serviceName =
-        thisResource.metadata.namespace === service.metadata.namespace
-          ? service.metadata.name
-          : `${service.metadata.name}.${service.metadata.namespace}`;
+        thisResource.metadata.namespace === r.metadata.namespace
+          ? r.metadata.name
+          : `${r.metadata.name}.${r.metadata.namespace}`;
       console.log(`service name: ${serviceName}`);
 
       // regex find all instances of service name
       const regex = new RegExp(serviceName, "g");
-      const matches = text.match(regex);
-      if (matches) {
-        console.log(`found ${matches.length} matches`);
-        matches.forEach((match) => {
-          const start = text.indexOf(match);
-          const end = start + match.length;
-          console.log(`start: ${start}, end: ${end}`);
-          // get column and line number from index
-          const pos1 = indexToPosition(text, start);
-          const pos2 = indexToPosition(text, end);
-          console.log(`pos1 line: ${pos1.line}, pos1 char: ${pos1.character}`);
-          console.log(`pos2 line: ${pos2.line}, pos2 char: ${pos2.character}`);
-          const range = new vscode.Range(pos1, pos2);
-          const diagnostic = new vscode.Diagnostic(
-            range,
-            `found service ${serviceName}`,
-            vscode.DiagnosticSeverity.Warning
-          );
-          diagnostics.push(diagnostic);
-        });
+      const matches = text.matchAll(regex);
+
+      for (const match of matches) {
+        console.log(match);
+        console.log(match.index);
+        const start = match.index || 0;
+        const end = start + match.length;
+        console.log(`start: ${start}, end: ${end}`);
+        // get column and line number from index
+        const pos1 = indexToPosition(text, start);
+        const pos2 = indexToPosition(text, end);
+        console.log(`pos1 line: ${pos1.line}, pos1 char: ${pos1.character}`);
+        console.log(`pos2 line: ${pos2.line}, pos2 char: ${pos2.character}`);
+        const range = new vscode.Range(pos1, pos2);
+        const diagnostic = new vscode.Diagnostic(
+          range,
+          `found service ${serviceName}`,
+          vscode.DiagnosticSeverity.Warning
+        );
+        diagnostics.push(diagnostic);
       }
     });
 
@@ -194,6 +196,7 @@ function findSecret(
 
   resources
     .filter((r) => r.kind === "Secret")
+    .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
     .forEach((r) => {
       console.log(`Secret name: ${r.metadata.name}`);
 
@@ -203,10 +206,12 @@ function findSecret(
 
         const secretName = match[1];
 
+        const shift = match[0].indexOf(secretName);
+
         if (secretName === r.metadata.name) {
           console.log(`found secret ${secretName}`);
-          const start = match.index || 0;
-          const end = start + match[0].length;
+          const start = (match.index || 0) + shift;
+          const end = start + secretName.length;
           console.log(`start: ${start}, end: ${end}`);
           // get column and line number from index
           const pos1 = indexToPosition(text, start);
