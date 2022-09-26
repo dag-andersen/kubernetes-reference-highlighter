@@ -58,12 +58,12 @@ export function activate(context: vscode.ExtensionContext) {
     k8sApi.listServiceForAllNamespaces().then((res) => {
       let s = res.body.items;
       resources.push(
-        ...s.map((service) => {
+        ...s.map((r) => {
           return {
             kind: "Service",
             metadata: {
-              name: service.metadata.name,
-              namespace: service.metadata.namespace,
+              name: r.metadata.name,
+              namespace: r.metadata.namespace,
             },
           };
         })
@@ -74,12 +74,12 @@ export function activate(context: vscode.ExtensionContext) {
     k8sApi.listSecretForAllNamespaces().then((res) => {
       let s = res.body.items;
       resources.push(
-        ...s.map((service) => {
+        ...s.map((r) => {
           return {
             kind: "Secret",
             metadata: {
-              name: service.metadata.name,
-              namespace: service.metadata.namespace,
+              name: r.metadata.name,
+              namespace: r.metadata.namespace,
             },
           };
         })
@@ -87,6 +87,22 @@ export function activate(context: vscode.ExtensionContext) {
       console.log(resources);
       console.log("secrets with name updated");
     });
+     k8sApi.listConfigMapForAllNamespaces().then((res) => {
+       let s = res.body.items;
+       resources.push(
+         ...s.map((r) => {
+           return {
+             kind: "ConfigMap",
+             metadata: {
+               name: r.metadata.name,
+               namespace: r.metadata.namespace,
+             },
+           };
+         })
+       );
+       console.log(resources);
+       console.log("ConfigMaps with name updated");
+     });
     kubeResources = resources;
   };
 
@@ -107,8 +123,13 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     const diagnosticSecret = findSecret(kubeResources, thisResource, fileText);
+    const diagnosticConfigMap = findConfigMap(kubeResources, thisResource, fileText);
 
-    const diagnostics = [...diagnosticServices, ...diagnosticSecret];
+    const diagnostics = [
+      ...diagnosticServices,
+      ...diagnosticSecret,
+      ...diagnosticConfigMap,
+    ];
 
     diagnosticCollection.set(doc.uri, diagnostics);
   };
@@ -212,17 +233,51 @@ function findSecret(
           console.log(`found secret ${secretName}`);
           const start = (match.index || 0) + shift;
           const end = start + secretName.length;
-          console.log(`start: ${start}, end: ${end}`);
-          // get column and line number from index
-          const pos1 = indexToPosition(text, start);
-          const pos2 = indexToPosition(text, end);
-          console.log(`pos1 line: ${pos1.line}, pos1 char: ${pos1.character}`);
-          console.log(`pos2 line: ${pos2.line}, pos2 char: ${pos2.character}`);
-          const range = new vscode.Range(pos1, pos2);
-          const diagnostic = new vscode.Diagnostic(
-            range,
-            `found secret ${secretName}`,
-            vscode.DiagnosticSeverity.Warning
+          const diagnostic = findGeneric(start, end, text, "secret", secretName);
+          diagnostics.push(diagnostic);
+        }
+      }
+    });
+
+  return diagnostics;
+}
+
+function findConfigMap(
+  resources: K8sResource[],
+  thisResource: K8sResource,
+  text: string
+): vscode.Diagnostic[] {
+  const diagnostics: vscode.Diagnostic[] = [];
+
+  console.log("finding secrets");
+
+  const regex =
+    /valueFrom:\s*configMapKeyRef:\s*name:\s*([a-zA-Z]+)\s*key:\s*([a-zA-Z]+)/gm;
+  const matches = text.matchAll(regex);
+
+  resources
+    .filter((r) => r.kind === "ConfigMap")
+    .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
+    .forEach((r) => {
+      console.log(`Secret name: ${r.metadata.name}`);
+
+      for (const match of matches) {
+        console.log(match);
+        console.log(match.index);
+
+        const configMap = match[1];
+
+        if (configMap === r.metadata.name) {
+          console.log(`found secret ${configMap}`);
+          const shift = match[0].indexOf(configMap);
+          const start = (match.index || 0) + shift;
+          const end = start + configMap.length;
+          const diagnostic = findGeneric(
+            start,
+            end,
+            text,
+            "configMap",
+            configMap
           );
           diagnostics.push(diagnostic);
         }
@@ -230,6 +285,21 @@ function findSecret(
     });
 
   return diagnostics;
+}
+
+function findGeneric(start: number, end: number, text: string, type: string, name: string) {
+  console.log(`start: ${start}, end: ${end}`);
+  const pos1 = indexToPosition(text, start);
+  const pos2 = indexToPosition(text, end);
+  console.log(`pos1 line: ${pos1.line}, pos1 char: ${pos1.character}`);
+  console.log(`pos2 line: ${pos2.line}, pos2 char: ${pos2.character}`);
+  const range = new vscode.Range(pos1, pos2);
+  const diagnostic = new vscode.Diagnostic(
+    range,
+    `Found ${type}: ${name}`,
+    vscode.DiagnosticSeverity.Warning
+  );
+  return diagnostic;
 }
 
 function indexToPosition(text: string, index: number): vscode.Position {
