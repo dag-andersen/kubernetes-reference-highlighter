@@ -179,6 +179,10 @@ function findServices(
 ): vscode.Diagnostic[] {
   const diagnostics: vscode.Diagnostic[] = [];
 
+  if (thisResource.kind === "Ingress") {
+    return diagnostics;
+  }
+
   resources
     .filter((r) => r.kind === "Service")
     .forEach((r) => {
@@ -220,7 +224,10 @@ function findValueFromKeyRef(
   console.log("finding secrets");
 
   const regex =
-    /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*([a-zA-Z]+):\s*([a-zA-Z-]+)\s*([a-zA-Z]+):\s*([a-zA-Z-]+)/gm;
+    /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))/gm;
+    //valueFrom:\s*([a-zA-Z]+)KeyRef:\s*([a-zA-Z]+):\s*([a-zA-Z-]+)\s*([a-zA-Z]+):\s*([a-zA-Z-]+)/gm;
+    //valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))\s*([a-zA-Z]+):\s*([a-zA-Z-]+)/gm;
+
   const matches = text.matchAll(regex);
 
   for (const match of matches) {
@@ -239,17 +246,8 @@ function findValueFromKeyRef(
         continue;
     }
 
-    let name = "";
-    switch (match[2] + "|" + match[4]) {
-      case "name|key":
-        name = match[3];
-        break;
-      case "key|name":
-        name = match[5];
-        break;
-      default:
-        continue;
-    }
+    let name = match[2] || match[3];
+    console.log(`name: ${name}`);
 
     resources
       .filter((r) => r.kind === refType)
