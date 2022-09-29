@@ -14,7 +14,6 @@ type K8sResource = {
   where?: FromWhere;
 };
 
-
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -129,7 +128,11 @@ export function activate(context: vscode.ExtensionContext) {
       fileText
     );
 
-    const diagnosticValueFrom = findValueFromKeyRef(kubeResources, thisResource, fileText);
+    const diagnosticValueFrom = findValueFromKeyRef(
+      kubeResources,
+      thisResource,
+      fileText
+    );
     const diagnosticIngress = findIngressService(
       kubeResources,
       thisResource,
@@ -192,7 +195,7 @@ function findServices(
         console.log(match);
         console.log(match.index);
         const start = match.index || 0;
-        const end = start + match.length;
+        const end = start + name.length;
         console.log(`start: ${start}, end: ${end}`);
         // get column and line number from index
         const diagnostic = findGeneric(start, end, text, "Service", name);
@@ -209,6 +212,10 @@ function findValueFromKeyRef(
   text: string
 ): vscode.Diagnostic[] {
   const diagnostics: vscode.Diagnostic[] = [];
+
+  if (thisResource.kind !== "Deployment") {
+    return diagnostics;
+  }
 
   console.log("finding secrets");
 
