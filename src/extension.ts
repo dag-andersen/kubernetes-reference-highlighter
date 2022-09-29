@@ -280,15 +280,15 @@ function findIngressService(
   console.log("finding secrets");
 
   const regex =
-    /service:\h*\v\h*(?:name:\h*([a-zA-Z-]+)|port:\h*\v\h*[a-zA-Z]+:\h*(?:\d+|[a-zA-Z]+))\h*\v\h*(?:[a-zA-Z]+:\h*([a-zA-Z-]+)|port:\h*\v\h*[a-zA-Z]+:\h*(?:\d+|[a-zA-Z]+))/gm;
+    /service:\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))/gm;
   const matches = text.matchAll(regex);
 
   for (const match of matches) {
     console.log(match);
     console.log(match.index);
 
-    let refType = "Ingress";
-    let name = match[1];
+    let refType = "Service";
+    let name =  match[1] || match[2];
 
     resources
       .filter((r) => r.kind === refType)
