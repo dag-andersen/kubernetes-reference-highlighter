@@ -129,11 +129,17 @@ export function activate(context: vscode.ExtensionContext) {
       fileText
     );
 
-    const diagnosticSecret = findValueFromKeyRef(kubeResources, thisResource, fileText);
+    const diagnosticValueFrom = findValueFromKeyRef(kubeResources, thisResource, fileText);
+    const diagnosticIngress = findIngressService(
+      kubeResources,
+      thisResource,
+      fileText
+    );
 
     const diagnostics = [
       ...diagnosticServices,
-      ...diagnosticSecret,
+      ...diagnosticValueFrom,
+      ...diagnosticIngress,
     ];
 
     diagnosticCollection.set(doc.uri, diagnostics);
@@ -237,6 +243,47 @@ function findValueFromKeyRef(
       default:
         continue;
     }
+
+    resources
+      .filter((r) => r.kind === refType)
+      .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
+      .filter((r) => r.metadata.name === name)
+      .forEach((r) => {
+        console.log(`found ${r.kind} name: ${name}`);
+        const shift = match[0].indexOf(name);
+        const start = (match.index || 0) + shift;
+        const end = start + name.length;
+        const diagnostic = findGeneric(start, end, text, refType, name);
+        diagnostics.push(diagnostic);
+      });
+  }
+
+  return diagnostics;
+}
+
+function findIngressService(
+  resources: K8sResource[],
+  thisResource: K8sResource,
+  text: string
+): vscode.Diagnostic[] {
+  const diagnostics: vscode.Diagnostic[] = [];
+
+  if (thisResource.kind !== "Ingress") {
+    return diagnostics;
+  }
+
+  console.log("finding secrets");
+
+  const regex =
+    /service:\h*\v\h*(?:name:\h*([a-zA-Z-]+)|port:\h*\v\h*[a-zA-Z]+:\h*(?:\d+|[a-zA-Z]+))\h*\v\h*(?:[a-zA-Z]+:\h*([a-zA-Z-]+)|port:\h*\v\h*[a-zA-Z]+:\h*(?:\d+|[a-zA-Z]+))/gm;
+  const matches = text.matchAll(regex);
+
+  for (const match of matches) {
+    console.log(match);
+    console.log(match.index);
+
+    let refType = "Ingress";
+    let name = match[1];
 
     resources
       .filter((r) => r.kind === refType)
