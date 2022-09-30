@@ -152,6 +152,8 @@ export function activate(context: vscode.ExtensionContext) {
     updateDiagnostics(event.document);
   });
 
+  const onOpen = vscode.workspace.onDidOpenTextDocument(updateDiagnostics);
+
   const hi = vscode.languages.registerInlineValuesProvider("yml", {
     provideInlineValues(document, range, context, token) {
       const something = new vscode.InlineValueText(
@@ -168,6 +170,7 @@ export function activate(context: vscode.ExtensionContext) {
     onSave,
     diagnosticCollection,
     onChange,
+    onOpen,
     hi
   );
 }
@@ -179,7 +182,7 @@ function findServices(
 ): vscode.Diagnostic[] {
   const diagnostics: vscode.Diagnostic[] = [];
 
-  if (thisResource.kind === "Ingress") {
+  if (thisResource.kind === "Ingress" || thisResource.kind === "Service") {
     return diagnostics;
   }
 
