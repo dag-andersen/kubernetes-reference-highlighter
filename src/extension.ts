@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 
 type FromWhere = "workspace" | "cluster";
 
-type highlight = [
+type Highlight = [
   start: number,
   end: number,
   text: string,
@@ -36,35 +36,53 @@ export function activate(context: vscode.ExtensionContext) {
 
   //decalre tuple
   let kubeResources: K8sResource[] = [];
+  let enableWorkSpaceCrawling = false;
+  let enableClusterCrawling = false;
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
   // The commandId parameter must match the command field in package.json
-  const helloWorld = vscode.commands.registerCommand(
-    "k8s-checker.helloWorld",
+  const enableWorkSpaceCrawlingCommand = vscode.commands.registerCommand(
+    "k8s-checker.enableWorkSpaceCrawling",
     () => {
       // The code you place here will be executed every time your command is executed
       // Display a message box to the user
-      vscode.window.showInformationMessage("Hello World from k8s-checker!");
+      enableWorkSpaceCrawling = true;
+      vscode.window.showInformationMessage("enableWorkSpaceCrawling");
+      updateK8sResourceFromWorkspace();
     }
   );
 
-  // watch for saves to the current file
-  const onSave = vscode.workspace.onDidSaveTextDocument((event) => {
-    updateK8sResources();
+  const enableClusterCrawlingCommand = vscode.commands.registerCommand(
+    "k8s-checker.enableClusterCrawling",
+    () => {
+      enableClusterCrawling = true;
+      vscode.window.showInformationMessage("enableClusterCrawling");
+      updateK8sResourceFromWorkspace();
+    }
+  );
+
+  // create diagnostic collection
+  const diagnosticCollection =
+    vscode.languages.createDiagnosticCollection("k8s-checker");
+
+  const updateK8sResourceFromWorkspace = () => {
+    if (!enableWorkSpaceCrawling) {
+      return;
+    }
     const res = getK8sResourceNamesInWorkspace();
     kubeResources.push(...res);
     console.log(`resources: ${res}`);
     console.log(
       `kubeResources names: ${kubeResources.map((s) => s.metadata.name)}`
     );
-  });
+  };
 
-  // create diagnostic collection
-  const diagnosticCollection =
-    vscode.languages.createDiagnosticCollection("k8s-checker");
+  const updateK8sResourcesFromCluster = () => {
+    if (!enableClusterCrawling) {
+      return;
+    }
 
-  const updateK8sResources = () => {
     let resources: K8sResource[] = [];
     k8sApi.listServiceForAllNamespaces().then((res) => {
       let s = res.body.items;
@@ -132,8 +150,10 @@ export function activate(context: vscode.ExtensionContext) {
     }
     lastDocument = fileText;
 
-    const fileTextSplitted = fileText.split("---");
-    
+    const split = "---";
+
+    const fileTextSplitted = fileText.split(split);
+
     let currentIndex = 0;
     const diagnosticsCombined: vscode.Diagnostic[] = [];
 
@@ -175,11 +195,17 @@ export function activate(context: vscode.ExtensionContext) {
 
       diagnosticsCombined.push(...diagnostics);
 
-      currentIndex += yamlFile.length + 3; // 3 for the "---"
+      currentIndex += yamlFile.length + split.length;
     });
 
     diagnosticCollection.set(doc.uri, diagnosticsCombined);
   };
+
+  // watch for saves to the current file
+  const onSave = vscode.workspace.onDidSaveTextDocument((event) => {
+    updateK8sResourcesFromCluster();
+    updateK8sResourceFromWorkspace();
+  });
 
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
     updateDiagnostics(event.document);
@@ -187,24 +213,13 @@ export function activate(context: vscode.ExtensionContext) {
 
   const onOpen = vscode.workspace.onDidOpenTextDocument(updateDiagnostics);
 
-  const hi = vscode.languages.registerInlineValuesProvider("yml", {
-    provideInlineValues(document, range, context, token) {
-      const something = new vscode.InlineValueText(
-        new vscode.Range(new vscode.Position(1, 5), new vscode.Position(1, 10)),
-        "hello world"
-      );
-      console.log("hi");
-      return [something];
-    },
-  });
-
   context.subscriptions.push(
-    helloWorld,
+    enableWorkSpaceCrawlingCommand,
+    enableClusterCrawlingCommand,
     onSave,
     diagnosticCollection,
     onChange,
-    onOpen,
-    hi
+    onOpen
   );
 }
 
@@ -212,8 +227,8 @@ function findServices(
   resources: K8sResource[],
   thisResource: K8sResource,
   text: string
-): highlight[] {
-  const highlights: highlight[] = [];
+): Highlight[] {
+  const highlights: Highlight[] = [];
 
   if (thisResource.kind === "Ingress" || thisResource.kind === "Service") {
     return highlights;
@@ -251,8 +266,8 @@ function findValueFromKeyRef(
   resources: K8sResource[],
   thisResource: K8sResource,
   text: string
-): highlight[] {
-  const highlights: highlight[] = [];
+): Highlight[] {
+  const highlights: Highlight[] = [];
 
   if (thisResource.kind !== "Deployment") {
     return highlights;
@@ -306,8 +321,8 @@ function findIngressService(
   resources: K8sResource[],
   thisResource: K8sResource,
   text: string
-): highlight[] {
-  const highlights: highlight[] = [];
+): Highlight[] {
+  const highlights: Highlight[] = [];
 
   if (thisResource.kind !== "Ingress") {
     return highlights;

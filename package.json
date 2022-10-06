@@ -10,14 +10,19 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:k8s-checker.helloWorld"
+    "onCommand:k8s-checker.enableWorkSpaceCrawling",
+    "onCommand:k8s-checker.enableClusterCrawling"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "k8s-checker.helloWorld",
-        "title": "Hello World"
+        "command": "k8s-checker.enableWorkSpaceCrawling",
+        "title": "enableWorkSpaceCrawling"
+      },
+      {
+        "command": "k8s-checker.enableClusterCrawling",
+        "title": "enableClusterCrawling"
       }
     ],
     "semanticTokenTypes": [
