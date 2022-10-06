@@ -400,10 +400,13 @@ function getK8sResourceNamesInWorkspace(): K8sResource[] {
   const resources: K8sResource[] = [];
 
   files.forEach((file) => {
-    const fileText = fs.readFileSync(file, "utf8");
-    try {
-      resources.push(textToK8sResource(fileText));
-    } catch (e) {}
+    const fileText: string = fs.readFileSync(file, "utf8");
+    const split = fileText.split("---");
+    split.forEach((text) => {
+      try {
+        resources.push(textToK8sResource(text));
+      } catch (e) {}
+    });
   });
 
   resources.forEach((r) => {
@@ -419,17 +422,17 @@ function getAllFileNamesInDirectory(dirPath: string) {
 
   let files: string[] = [];
 
-  function walkSync(dir: string, filelist: string[]) {
+  function walkSync(dir: string, fileList: string[]) {
     const files = fs.readdirSync(dir);
     files.forEach(function (file: string) {
       if (fs.statSync(path.join(dir, file)).isDirectory()) {
-        filelist = walkSync(path.join(dir, file), filelist);
+        fileList = walkSync(path.join(dir, file), fileList);
       } else {
-        filelist.push(path.join(dir, file));
+        fileList.push(path.join(dir, file));
       }
     });
 
-    return filelist;
+    return fileList;
   }
 
   files = walkSync(dirPath, files).filter((file: string) => {
