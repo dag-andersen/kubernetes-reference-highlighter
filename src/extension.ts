@@ -4,6 +4,14 @@ import * as vscode from "vscode";
 
 type FromWhere = "workspace" | "cluster";
 
+type highlight = [
+  start: number,
+  end: number,
+  text: string,
+  type: string,
+  name: string
+];
+
 // define basic type
 type K8sResource = {
   kind: string;
@@ -112,40 +120,65 @@ export function activate(context: vscode.ExtensionContext) {
     kubeResources = resources;
   };
 
+  let lastDocument = "";
+
   const updateDiagnostics = (doc: vscode.TextDocument) => {
     kubeResources.forEach((r) => {
       console.log(`kind: ${r.kind}, name: ${r.metadata.name}`);
     });
     const fileText = doc.getText();
+    if (fileText === lastDocument) {
+      return;
+    }
+    lastDocument = fileText;
 
-    const thisResource = textToK8sResource(fileText);
+    const fileTextSplitted = fileText.split("---");
+    
+    let currentIndex = 0;
+    const diagnosticsCombined: vscode.Diagnostic[] = [];
 
-    console.log(`namespace: ${thisResource.metadata.namespace}`);
+    fileTextSplitted.forEach((yamlFile) => {
+      const thisResource = textToK8sResource(yamlFile);
+      console.log(`namespace: ${thisResource.metadata.namespace}`);
 
-    const diagnosticServices = findServices(
-      kubeResources,
-      thisResource,
-      fileText
-    );
+      const diagnosticServices = findServices(
+        kubeResources,
+        thisResource,
+        yamlFile
+      );
 
-    const diagnosticValueFrom = findValueFromKeyRef(
-      kubeResources,
-      thisResource,
-      fileText
-    );
-    const diagnosticIngress = findIngressService(
-      kubeResources,
-      thisResource,
-      fileText
-    );
+      const diagnosticValueFrom = findValueFromKeyRef(
+        kubeResources,
+        thisResource,
+        yamlFile
+      );
+      const diagnosticIngress = findIngressService(
+        kubeResources,
+        thisResource,
+        yamlFile
+      );
+      const highlights = [
+        ...diagnosticServices,
+        ...diagnosticValueFrom,
+        ...diagnosticIngress,
+      ];
 
-    const diagnostics = [
-      ...diagnosticServices,
-      ...diagnosticValueFrom,
-      ...diagnosticIngress,
-    ];
+      let diagnostics = highlights.map((h) => {
+        return createDiagnostic(
+          h[0] + currentIndex,
+          h[1] + currentIndex,
+          fileText,
+          h[3],
+          h[4]
+        );
+      });
 
-    diagnosticCollection.set(doc.uri, diagnostics);
+      diagnosticsCombined.push(...diagnostics);
+
+      currentIndex += yamlFile.length + 3; // 3 for the "---"
+    });
+
+    diagnosticCollection.set(doc.uri, diagnosticsCombined);
   };
 
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -179,15 +212,17 @@ function findServices(
   resources: K8sResource[],
   thisResource: K8sResource,
   text: string
-): vscode.Diagnostic[] {
-  const diagnostics: vscode.Diagnostic[] = [];
+): highlight[] {
+  const highlights: highlight[] = [];
 
   if (thisResource.kind === "Ingress" || thisResource.kind === "Service") {
-    return diagnostics;
+    return highlights;
   }
 
+  const refType = "Service";
+
   resources
-    .filter((r) => r.kind === "Service")
+    .filter((r) => r.kind === refType)
     .forEach((r) => {
       const name =
         thisResource.metadata.namespace === r.metadata.namespace
@@ -205,23 +240,22 @@ function findServices(
         const end = start + name.length;
         console.log(`start: ${start}, end: ${end}`);
         // get column and line number from index
-        const diagnostic = findGeneric(start, end, text, "Service", name);
-        diagnostics.push(diagnostic);
+        highlights.push([start, end, text, refType, name]);
       }
     });
 
-  return diagnostics;
+  return highlights;
 }
 
 function findValueFromKeyRef(
   resources: K8sResource[],
   thisResource: K8sResource,
   text: string
-): vscode.Diagnostic[] {
-  const diagnostics: vscode.Diagnostic[] = [];
+): highlight[] {
+  const highlights: highlight[] = [];
 
   if (thisResource.kind !== "Deployment") {
-    return diagnostics;
+    return highlights;
   }
 
   console.log("finding secrets");
@@ -261,23 +295,22 @@ function findValueFromKeyRef(
         const shift = match[0].indexOf(name);
         const start = (match.index || 0) + shift;
         const end = start + name.length;
-        const diagnostic = findGeneric(start, end, text, refType, name);
-        diagnostics.push(diagnostic);
+        highlights.push([start, end, text, refType, name]);
       });
   }
 
-  return diagnostics;
+  return highlights;
 }
 
 function findIngressService(
   resources: K8sResource[],
   thisResource: K8sResource,
   text: string
-): vscode.Diagnostic[] {
-  const diagnostics: vscode.Diagnostic[] = [];
+): highlight[] {
+  const highlights: highlight[] = [];
 
   if (thisResource.kind !== "Ingress") {
-    return diagnostics;
+    return highlights;
   }
 
   console.log("finding secrets");
@@ -291,7 +324,7 @@ function findIngressService(
     console.log(match.index);
 
     let refType = "Service";
-    let name =  match[1] || match[2];
+    let name = match[1] || match[2];
 
     resources
       .filter((r) => r.kind === refType)
@@ -302,15 +335,14 @@ function findIngressService(
         const shift = match[0].indexOf(name);
         const start = (match.index || 0) + shift;
         const end = start + name.length;
-        const diagnostic = findGeneric(start, end, text, refType, name);
-        diagnostics.push(diagnostic);
+        highlights.push([start, end, text, refType, name]);
       });
   }
 
-  return diagnostics;
+  return highlights;
 }
 
-function findGeneric(
+function createDiagnostic(
   start: number,
   end: number,
   text: string,
