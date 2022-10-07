@@ -36,7 +36,8 @@ export function activate(context: vscode.ExtensionContext) {
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
   //decalre tuple
-  let kubeResources: K8sResource[] = [];
+  let kubeResourcesCluster: K8sResource[] = [];
+  let kubeResourcesWorkspace: K8sResource[] = [];
   let enableWorkSpaceCrawling = true;
   let enableClusterCrawling = true;
 
@@ -52,6 +53,8 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage("enableWorkSpaceCrawling");
       if (enableWorkSpaceCrawling) {
         updateK8sResourcesFromWorkspace();
+      } else {
+        kubeResourcesWorkspace = [];
       }
     }
   );
@@ -63,6 +66,8 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage("enableClusterCrawling");
       if (enableClusterCrawling) {
         updateK8sResourcesFromCluster();
+      } else {
+        kubeResourcesCluster = [];
       }
     }
   );
@@ -76,10 +81,12 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     const res = getK8sResourceNamesInWorkspace();
-    kubeResources.push(...res);
+    kubeResourcesWorkspace = res;
     console.log(`resources: ${res}`);
     console.log(
-      `kubeResources names: ${kubeResources.map((s) => s.metadata.name)}`
+      `kubeResources names: ${kubeResourcesWorkspace.map(
+        (s) => s.metadata.name
+      )}`
     );
   };
 
@@ -140,14 +147,17 @@ export function activate(context: vscode.ExtensionContext) {
       console.log(resources);
       console.log("ConfigMaps with name updated");
     });
-    kubeResources = resources;
+    kubeResourcesCluster = resources;
   };
 
   let lastDocument = "";
 
   const updateDiagnostics = (doc: vscode.TextDocument) => {
-    kubeResources.forEach((r) => {
-      console.log(`kind: ${r.kind}, name: ${r.metadata.name}`);
+    kubeResourcesCluster.forEach((r) => {
+      console.log(`kind: ${r.kind}, name: ${r.metadata.name}, from cluster`);
+    });
+    kubeResourcesWorkspace.forEach((r) => {
+      console.log(`kind: ${r.kind}, name: ${r.metadata.name}, from workspace`);
     });
     const fileText = doc.getText();
     if (fileText === lastDocument) {
@@ -161,6 +171,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     let currentIndex = 0;
     const diagnosticsCombined: vscode.Diagnostic[] = [];
+
+    const kubeResources = [...kubeResourcesCluster, ...kubeResourcesWorkspace];
 
     fileTextSplitted.forEach((yamlFile) => {
       const thisResource = textToK8sResource(yamlFile);
@@ -288,8 +300,8 @@ function findValueFromKeyRef(
 
   const regex =
     /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))/gm;
-    //valueFrom:\s*([a-zA-Z]+)KeyRef:\s*([a-zA-Z]+):\s*([a-zA-Z-]+)\s*([a-zA-Z]+):\s*([a-zA-Z-]+)/gm;
-    //valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))\s*([a-zA-Z]+):\s*([a-zA-Z-]+)/gm;
+  //valueFrom:\s*([a-zA-Z]+)KeyRef:\s*([a-zA-Z]+):\s*([a-zA-Z-]+)\s*([a-zA-Z]+):\s*([a-zA-Z-]+)/gm;
+  //valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))\s*([a-zA-Z]+):\s*([a-zA-Z-]+)/gm;
 
   const matches = text.matchAll(regex);
 
