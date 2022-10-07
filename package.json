@@ -10,8 +10,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:k8s-checker.enableWorkSpaceCrawling",
-    "onCommand:k8s-checker.enableClusterCrawling"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {

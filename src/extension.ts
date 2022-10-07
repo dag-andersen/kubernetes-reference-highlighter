@@ -37,8 +37,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   //decalre tuple
   let kubeResources: K8sResource[] = [];
-  let enableWorkSpaceCrawling = false;
-  let enableClusterCrawling = false;
+  let enableWorkSpaceCrawling = true;
+  let enableClusterCrawling = true;
 
   // The command has been defined in the package.json file
   // Now provide the implementation of the command with registerCommand
@@ -48,18 +48,22 @@ export function activate(context: vscode.ExtensionContext) {
     () => {
       // The code you place here will be executed every time your command is executed
       // Display a message box to the user
-      enableWorkSpaceCrawling = true;
+      enableWorkSpaceCrawling = !enableWorkSpaceCrawling;
       vscode.window.showInformationMessage("enableWorkSpaceCrawling");
-      updateK8sResourceFromWorkspace();
+      if (enableWorkSpaceCrawling) {
+        updateK8sResourcesFromWorkspace();
+      }
     }
   );
 
   const enableClusterCrawlingCommand = vscode.commands.registerCommand(
     "k8s-checker.enableClusterCrawling",
     () => {
-      enableClusterCrawling = true;
+      enableClusterCrawling = !enableClusterCrawling;
       vscode.window.showInformationMessage("enableClusterCrawling");
-      updateK8sResourceFromWorkspace();
+      if (enableClusterCrawling) {
+        updateK8sResourcesFromCluster();
+      }
     }
   );
 
@@ -67,7 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
   const diagnosticCollection =
     vscode.languages.createDiagnosticCollection("k8s-checker");
 
-  const updateK8sResourceFromWorkspace = () => {
+  const updateK8sResourcesFromWorkspace = () => {
     if (!enableWorkSpaceCrawling) {
       return;
     }
@@ -206,7 +210,7 @@ export function activate(context: vscode.ExtensionContext) {
   // watch for saves to the current file
   const onSave = vscode.workspace.onDidSaveTextDocument((event) => {
     updateK8sResourcesFromCluster();
-    updateK8sResourceFromWorkspace();
+    updateK8sResourcesFromWorkspace();
   });
 
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
@@ -223,6 +227,11 @@ export function activate(context: vscode.ExtensionContext) {
     onChange,
     onOpen
   );
+
+  updateK8sResourcesFromCluster();
+  updateK8sResourcesFromWorkspace();
+
+  console.log("k8s-checker activated");
 }
 
 function findServices(
