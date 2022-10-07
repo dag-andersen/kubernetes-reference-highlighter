@@ -61,6 +61,52 @@ function getAllFileNamesInDirectory(dirPath: string) {
   return files;
 }
 
+function getKustomizationPathsInWorkspace(): string[] {
+  const kustomizationFiles = getAllFileNamesInDirectory(
+    vscode.workspace.workspaceFolders[0].uri.fsPath
+  ).filter((file) => {
+    return file.endsWith("kustomization.yml");
+  });
+
+  kustomizationFiles.forEach((file) => {
+    console.log(`check this legend: ${file}`);
+  });
+
+  return kustomizationFiles;
+}
+
+export function getKustomizeResources(): K8sResource[] {
+  const kustomizationFiles = getKustomizationPathsInWorkspace();
+
+  const resources: K8sResource[] = [];
+
+  kustomizationFiles.forEach((file) => {
+    resources.push(...kustomizeBuild(file));
+  });
+
+  return resources;
+}
+
+function kustomizeBuild(file: string): K8sResource[] {
+  const path = file.substring(0, file.lastIndexOf("/"));
+
+  const execSync = require("child_process").execSync;
+  const output: string = execSync(`kustomize build ${path}`, { encoding: "utf-8" }); // the default is 'buffer'
+
+  const resources: K8sResource[] = [];
+
+  const split = output.split("---");
+  split.forEach((text) => {
+    try {
+      const r = textToK8sResource(text);
+      r.where = "kustomize";
+      resources.push(r);
+    } catch (e) {}
+  });
+
+  return resources;
+}
+
 export function getClusterResources(k8sApi: any): K8sResource[] {
   let resources: K8sResource[] = [];
   k8sApi.listServiceForAllNamespaces().then((res) => {

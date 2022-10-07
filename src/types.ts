@@ -1,4 +1,4 @@
-export type FromWhere = "workspace" | "cluster";
+export type FromWhere = "workspace" | "cluster" | "kustomize";
 
 export type Highlight = [
   start: number,

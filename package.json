@@ -22,6 +22,10 @@
       {
         "command": "k8s-checker.enableClusterCrawling",
         "title": "enableClusterCrawling"
+      },
+      {
+        "command": "k8s-checker.enableKustomizeCrawling",
+        "title": "enableKustomizeCrawling"
       }
     ],
     "semanticTokenTypes": [
