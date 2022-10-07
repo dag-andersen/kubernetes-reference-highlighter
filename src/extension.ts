@@ -9,7 +9,8 @@ type Highlight = [
   end: number,
   text: string,
   type: string,
-  name: string
+  name: string,
+  from?: FromWhere
 ];
 
 // define basic type
@@ -189,7 +190,8 @@ export function activate(context: vscode.ExtensionContext) {
           h[1] + currentIndex,
           fileText,
           h[3],
-          h[4]
+          h[4],
+          h[5]
         );
       });
 
@@ -255,7 +257,7 @@ function findServices(
         const end = start + name.length;
         console.log(`start: ${start}, end: ${end}`);
         // get column and line number from index
-        highlights.push([start, end, text, refType, name]);
+        highlights.push([start, end, text, refType, name, r.where]);
       }
     });
 
@@ -310,7 +312,7 @@ function findValueFromKeyRef(
         const shift = match[0].indexOf(name);
         const start = (match.index || 0) + shift;
         const end = start + name.length;
-        highlights.push([start, end, text, refType, name]);
+        highlights.push([start, end, text, refType, name, r.where]);
       });
   }
 
@@ -350,7 +352,7 @@ function findIngressService(
         const shift = match[0].indexOf(name);
         const start = (match.index || 0) + shift;
         const end = start + name.length;
-        highlights.push([start, end, text, refType, name]);
+        highlights.push([start, end, text, refType, name, r.where]);
       });
   }
 
@@ -362,7 +364,8 @@ function createDiagnostic(
   end: number,
   text: string,
   type: string,
-  name: string
+  name: string,
+  fromWhere?: FromWhere
 ) {
   console.log(`start: ${start}, end: ${end}`);
   const pos1 = indexToPosition(text, start);
@@ -370,9 +373,12 @@ function createDiagnostic(
   console.log(`pos1 line: ${pos1.line}, pos1 char: ${pos1.character}`);
   console.log(`pos2 line: ${pos2.line}, pos2 char: ${pos2.character}`);
   const range = new vscode.Range(pos1, pos2);
+  const message = fromWhere
+    ? `Found ${type}, ${name}, in ${fromWhere}`
+    : `Found ${type}: ${name}`;
   const diagnostic = new vscode.Diagnostic(
     range,
-    `Found ${type}: ${name}`,
+    message,
     vscode.DiagnosticSeverity.Warning
   );
   return diagnostic;
@@ -404,7 +410,9 @@ function getK8sResourceNamesInWorkspace(): K8sResource[] {
     const split = fileText.split("---");
     split.forEach((text) => {
       try {
-        resources.push(textToK8sResource(text));
+        const r = textToK8sResource(text);
+        r.where = "workspace";
+        resources.push(r);
       } catch (e) {}
     });
   });
