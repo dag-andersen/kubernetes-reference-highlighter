@@ -17,15 +17,15 @@
     "commands": [
       {
         "command": "k8s-checker.enableWorkSpaceCrawling",
-        "title": "enableWorkSpaceCrawling"
+        "title": "k8s-checker: WorkSpace Crawling"
       },
       {
         "command": "k8s-checker.enableClusterCrawling",
-        "title": "enableClusterCrawling"
+        "title": "k8s-checker: Cluster Crawling"
       },
       {
         "command": "k8s-checker.enableKustomizeCrawling",
-        "title": "enableKustomizeCrawling"
+        "title": "k8s-checker: Kustomize Crawling"
       }
     ],
     "semanticTokenTypes": [
