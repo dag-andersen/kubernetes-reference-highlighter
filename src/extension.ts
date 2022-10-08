@@ -70,7 +70,9 @@ export function activate(context: vscode.ExtensionContext) {
       () => {
         enableWorkSpaceKustomizeCrawling = !enableWorkSpaceKustomizeCrawling;
         vscode.window.showInformationMessage(
-          `Kustomize Crawling: ${enableWorkSpaceKustomizeCrawling ? "enabled" : "disabled"}`
+          `Kustomize Crawling: ${
+            enableWorkSpaceKustomizeCrawling ? "enabled" : "disabled"
+          }`
         );
         if (enableWorkSpaceKustomizeCrawling) {
           updateK8sResourcesFromCluster();
@@ -142,7 +144,6 @@ export function activate(context: vscode.ExtensionContext) {
         thisResource,
         yamlFile
       );
-
       const diagnosticValueFrom = finders.findValueFromKeyRef(
         kubeResources,
         thisResource,
@@ -160,13 +161,12 @@ export function activate(context: vscode.ExtensionContext) {
       ];
 
       let diagnostics = highlights.map((h) => {
+        const message = generateMessage(h.type, h.name, h.from);
         return createDiagnostic(
-          h[0] + currentIndex,
-          h[1] + currentIndex,
+          h.start + currentIndex,
+          h.end + currentIndex,
           fileText,
-          h[3],
-          h[4],
-          h[5]
+          message
         );
       });
 
@@ -212,9 +212,7 @@ function createDiagnostic(
   start: number,
   end: number,
   text: string,
-  type: string,
-  name: string,
-  fromWhere?: FromWhere
+  message: string
 ) {
   console.log(`start: ${start}, end: ${end}`);
   const pos1 = indexToPosition(text, start);
@@ -222,15 +220,41 @@ function createDiagnostic(
   console.log(`pos1 line: ${pos1.line}, pos1 char: ${pos1.character}`);
   console.log(`pos2 line: ${pos2.line}, pos2 char: ${pos2.character}`);
   const range = new vscode.Range(pos1, pos2);
-  const message = fromWhere
-    ? `Found ${type}, ${name}, in ${fromWhere}`
-    : `Found ${type}: ${name}`;
   const diagnostic = new vscode.Diagnostic(
     range,
     message,
     vscode.DiagnosticSeverity.Warning
   );
   return diagnostic;
+}
+
+function generateMessage(type: string, name: string, fromWhere?: FromWhere) {
+  const p = require("path");
+  let message = "";
+  if (fromWhere) {
+    if (typeof fromWhere === "string") {
+      message = `Found ${type}, ${name}, in ${fromWhere}`;
+    } else {
+      const fromFilePath = fromWhere.path;
+      const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
+        fromFilePath || ""
+      );
+      const activeFilePath = vscode.window.activeTextEditor?.document.fileName;
+      const activeDirPath = p.dirname(activeFilePath || "");
+      const relativePathFromActive = p.relative(
+        activeDirPath || "",
+        fromFilePath
+      );
+      const path =
+        relativeFilePathFromRoot.length < relativePathFromActive.length
+          ? "/" + relativeFilePathFromRoot
+          : relativePathFromActive;
+      message = `Found ${type}, ${name}, in ${fromWhere.place} at ${path}`;
+    }
+  } else {
+    message = `Found ${type}, ${name}`;
+  }
+  return message;
 }
 
 function indexToPosition(text: string, index: number): vscode.Position {

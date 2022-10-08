@@ -22,7 +22,7 @@ export function getK8sResourceNamesInWorkspace(): K8sResource[] {
     split.forEach((text) => {
       try {
         const r = textToK8sResource(text);
-        r.where = "workspace";
+        r.where = { place: "workspace", path: file };
         resources.push(r);
       } catch (e) {}
     });
@@ -91,7 +91,9 @@ function kustomizeBuild(file: string): K8sResource[] {
   const path = file.substring(0, file.lastIndexOf("/"));
 
   const execSync = require("child_process").execSync;
-  const output: string = execSync(`kustomize build ${path}`, { encoding: "utf-8" }); // the default is 'buffer'
+  const output: string = execSync(`kustomize build ${path}`, {
+    encoding: "utf-8",
+  }); // the default is 'buffer'
 
   const resources: K8sResource[] = [];
 
@@ -99,7 +101,7 @@ function kustomizeBuild(file: string): K8sResource[] {
   split.forEach((text) => {
     try {
       const r = textToK8sResource(text);
-      r.where = "kustomize";
+      r.where = { place: "kustomize", path: path };
       resources.push(r);
     } catch (e) {}
   });

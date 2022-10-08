@@ -32,7 +32,14 @@ export function findServices(
         const end = start + name.length;
         console.log(`start: ${start}, end: ${end}`);
         // get column and line number from index
-        highlights.push([start, end, text, refType, name, r.where]);
+        highlights.push({
+          start: start,
+          end: end,
+          text: text,
+          type: refType,
+          name: name,
+          from: r.where,
+        });
       }
     });
 
@@ -87,7 +94,14 @@ export function findValueFromKeyRef(
         const shift = match[0].indexOf(name);
         const start = (match.index || 0) + shift;
         const end = start + name.length;
-        highlights.push([start, end, text, refType, name, r.where]);
+        highlights.push({
+          start: start,
+          end: end,
+          text: text,
+          type: refType,
+          name: name,
+          from: r.where,
+        });
       });
   }
 
@@ -127,7 +141,14 @@ export function findIngressService(
         const shift = match[0].indexOf(name);
         const start = (match.index || 0) + shift;
         const end = start + name.length;
-        highlights.push([start, end, text, refType, name, r.where]);
+        highlights.push({
+          start: start,
+          end: end,
+          text: text,
+          type: refType,
+          name: name,
+          from: r.where,
+        });
       });
   }
 
