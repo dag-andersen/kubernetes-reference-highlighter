@@ -6,9 +6,15 @@ import { textToK8sResource } from "./extension";
 export function getK8sResourceNamesInWorkspace(): K8sResource[] {
   const fs = require("fs");
 
-  const files = getAllFileNamesInDirectory(
-    vscode.workspace.workspaceFolders[0].uri.fsPath ?? ""
-  );
+    const workspaceFolders =
+      vscode.workspace.workspaceFolders &&
+      vscode.workspace.workspaceFolders[0].uri.fsPath;
+
+    if (!workspaceFolders) {
+      return [];
+    }
+
+  const files = getAllFileNamesInDirectory(workspaceFolders);
 
   const resources: K8sResource[] = [];
 
@@ -64,8 +70,16 @@ export function getKustomizeResources(): K8sResource[] {
 }
 
 function getKustomizationPathsInWorkspace(): string[] {
+  const workspaceFolders =
+    vscode.workspace.workspaceFolders &&
+    vscode.workspace.workspaceFolders[0].uri.fsPath;
+
+  if (!workspaceFolders) {
+    return [];
+  }
+
   const kustomizationFiles = getAllFileNamesInDirectory(
-    vscode.workspace.workspaceFolders[0].uri.fsPath
+    workspaceFolders
   ).filter((file) => {
     return file.endsWith("kustomization.yml");
   });
@@ -104,10 +118,10 @@ function kustomizeBuild(file: string): K8sResource[] {
 
 export function getClusterResources(k8sApi: any): K8sResource[] {
   let resources: K8sResource[] = [];
-  k8sApi.listServiceForAllNamespaces().then((res) => {
+  k8sApi.listServiceForAllNamespaces().then((res: any) => {
     let s = res.body.items;
     resources.push(
-      ...s.map((r) => {
+      ...s.map((r: any) => {
         return {
           kind: "Service",
           metadata: {
@@ -120,10 +134,10 @@ export function getClusterResources(k8sApi: any): K8sResource[] {
     );
     console.log("service name list updated");
   });
-  k8sApi.listSecretForAllNamespaces().then((res) => {
+  k8sApi.listSecretForAllNamespaces().then((res: any) => {
     let s = res.body.items;
     resources.push(
-      ...s.map((r) => {
+      ...s.map((r: any) => {
         return {
           kind: "Secret",
           metadata: {
@@ -136,10 +150,10 @@ export function getClusterResources(k8sApi: any): K8sResource[] {
     );
     console.log("secrets with name updated");
   });
-  k8sApi.listConfigMapForAllNamespaces().then((res) => {
+  k8sApi.listConfigMapForAllNamespaces().then((res: any) => {
     let s = res.body.items;
     resources.push(
-      ...s.map((r) => {
+      ...s.map((r: any) => {
         return {
           kind: "ConfigMap",
           metadata: {
