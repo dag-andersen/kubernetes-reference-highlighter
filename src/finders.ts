@@ -22,13 +22,13 @@ export function findServices(
           : `${r.metadata.name}.${r.metadata.namespace}`;
       console.log(`service name: ${name}`);
 
-      const regex = new RegExp(name, "g");
+      const regex = new RegExp(`[^a-zA-Z-]${name}[^a-zA-Z-]`, "g");
       const matches = text.matchAll(regex);
 
       for (const match of matches) {
         console.log(match);
         console.log(match.index);
-        const start = match.index || 0;
+        const start = (match.index || 0) + 1;
         const end = start + name.length;
         console.log(`start: ${start}, end: ${end}`);
         // get column and line number from index
