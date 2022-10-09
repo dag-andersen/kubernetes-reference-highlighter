@@ -20,17 +20,13 @@ export function findServices(
         thisResource.metadata.namespace === r.metadata.namespace
           ? r.metadata.name
           : `${r.metadata.name}.${r.metadata.namespace}`;
-      console.log(`service name: ${name}`);
 
       const regex = new RegExp(`[^a-zA-Z-]${name}[^a-zA-Z-]`, "g");
       const matches = text.matchAll(regex);
 
       for (const match of matches) {
-        console.log(match);
-        console.log(match.index);
         const start = (match.index || 0) + 1;
         const end = start + name.length;
-        console.log(`start: ${start}, end: ${end}`);
         // get column and line number from index
         highlights.push({
           start: start,
@@ -57,8 +53,6 @@ export function findValueFromKeyRef(
     return highlights;
   }
 
-  console.log("finding secrets");
-
   const regex =
     /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))/gm;
   //valueFrom:\s*([a-zA-Z]+)KeyRef:\s*([a-zA-Z]+):\s*([a-zA-Z-]+)\s*([a-zA-Z]+):\s*([a-zA-Z-]+)/gm;
@@ -67,9 +61,6 @@ export function findValueFromKeyRef(
   const matches = text.matchAll(regex);
 
   for (const match of matches) {
-    console.log(match);
-    console.log(match.index);
-
     let refType = "";
     switch (match[1]) {
       case "secret":
@@ -83,14 +74,12 @@ export function findValueFromKeyRef(
     }
 
     let name = match[2] || match[3];
-    console.log(`name: ${name}`);
 
     resources
       .filter((r) => r.kind === refType)
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
       .filter((r) => r.metadata.name === name)
       .forEach((r) => {
-        console.log(`found ${r.kind} name: ${name}`);
         const shift = match[0].indexOf(name);
         const start = (match.index || 0) + shift;
         const end = start + name.length;
@@ -119,16 +108,11 @@ export function findIngressService(
     return highlights;
   }
 
-  console.log("finding secrets");
-
   const regex =
     /service:\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))/gm;
   const matches = text.matchAll(regex);
 
   for (const match of matches) {
-    console.log(match);
-    console.log(match.index);
-
     let refType = "Service";
     let name = match[1] || match[2];
 
@@ -137,7 +121,6 @@ export function findIngressService(
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
       .filter((r) => r.metadata.name === name)
       .forEach((r) => {
-        console.log(`found ${r.kind} name: ${name}`);
         const shift = match[0].indexOf(name);
         const start = (match.index || 0) + shift;
         const end = start + name.length;

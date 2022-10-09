@@ -110,12 +110,11 @@ export function activate(context: vscode.ExtensionContext) {
   let lastDocument = "";
 
   const updateDiagnostics = (doc: vscode.TextDocument) => {
-    kubeResourcesCluster.forEach((r) => {
-      console.log(`kind: ${r.kind}, name: ${r.metadata.name}, from cluster`);
-    });
-    kubeResourcesWorkspace.forEach((r) => {
-      console.log(`kind: ${r.kind}, name: ${r.metadata.name}, from workspace`);
-    });
+    const fileName = doc.fileName;
+    if (!fileName.endsWith(".yaml") && !fileName.endsWith(".yml")) {
+      return;
+    }
+
     const fileText = doc.getText();
     if (fileText === lastDocument) {
       return;
@@ -137,7 +136,6 @@ export function activate(context: vscode.ExtensionContext) {
 
     fileTextSplitted.forEach((yamlFile) => {
       const thisResource = textToK8sResource(yamlFile);
-      console.log(`namespace: ${thisResource.metadata.namespace}`);
 
       const diagnosticServices = finders.findServices(
         kubeResources,
@@ -161,7 +159,7 @@ export function activate(context: vscode.ExtensionContext) {
       ];
 
       let diagnostics = highlights.map((h) => {
-        const message = generateMessage(h.type, h.name, h.from);
+        const message = generateMessage(h.type, h.name, fileName, h.from);
         return createDiagnostic(
           h.start + currentIndex,
           h.end + currentIndex,
@@ -214,21 +212,23 @@ function createDiagnostic(
   text: string,
   message: string
 ) {
-  console.log(`start: ${start}, end: ${end}`);
   const pos1 = indexToPosition(text, start);
   const pos2 = indexToPosition(text, end);
-  console.log(`pos1 line: ${pos1.line}, pos1 char: ${pos1.character}`);
-  console.log(`pos2 line: ${pos2.line}, pos2 char: ${pos2.character}`);
   const range = new vscode.Range(pos1, pos2);
   const diagnostic = new vscode.Diagnostic(
     range,
     message,
-    vscode.DiagnosticSeverity.Warning
+    vscode.DiagnosticSeverity.Information
   );
   return diagnostic;
 }
 
-function generateMessage(type: string, name: string, fromWhere?: FromWhere) {
+function generateMessage(
+  type: string,
+  name: string,
+  activeFilePath: string,
+  fromWhere?: FromWhere
+) {
   const p = require("path");
   let message = "";
   if (fromWhere) {
@@ -239,7 +239,6 @@ function generateMessage(type: string, name: string, fromWhere?: FromWhere) {
       const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
         fromFilePath || ""
       );
-      const activeFilePath = vscode.window.activeTextEditor?.document.fileName;
       const activeDirPath: string = p.dirname(activeFilePath || "");
       const relativePathFromActive: string = p.relative(
         activeDirPath || "",
@@ -249,7 +248,9 @@ function generateMessage(type: string, name: string, fromWhere?: FromWhere) {
       const path =
         relativeFilePathFromRoot.length < relativePathFromActive.length
           ? "/" + relativeFilePathFromRoot
-          : relativePathFromActive.includes("/") ? relativePathFromActive : ("./" + relativePathFromActive);
+          : relativePathFromActive.includes("/")
+          ? relativePathFromActive
+          : "./" + relativePathFromActive;
       message = `Found ${type}, ${name}, in ${fromWhere.place} at ${path}`;
     }
   } else {

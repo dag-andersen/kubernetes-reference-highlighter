@@ -10,10 +10,6 @@ export function getK8sResourceNamesInWorkspace(): K8sResource[] {
     vscode.workspace.workspaceFolders[0].uri.fsPath ?? ""
   );
 
-  files.forEach((file) => {
-    console.log(`file: ${file}`);
-  });
-
   const resources: K8sResource[] = [];
 
   files.forEach((file) => {
@@ -26,10 +22,6 @@ export function getK8sResourceNamesInWorkspace(): K8sResource[] {
         resources.push(r);
       } catch (e) {}
     });
-  });
-
-  resources.forEach((r) => {
-    console.log(`resource name: ${r.metadata.name}`);
   });
 
   return resources;
@@ -80,10 +72,6 @@ function getKustomizationPathsInWorkspace(): string[] {
     return file.endsWith("kustomization.yml");
   });
 
-  kustomizationFiles.forEach((file) => {
-    console.log(`check this legend: ${file}`);
-  });
-
   return kustomizationFiles;
 }
 
@@ -132,7 +120,6 @@ export function getClusterResources(k8sApi: any): K8sResource[] {
         };
       })
     );
-    console.log(resources);
     console.log("service name list updated");
   });
   k8sApi.listSecretForAllNamespaces().then((res) => {
@@ -149,7 +136,6 @@ export function getClusterResources(k8sApi: any): K8sResource[] {
         };
       })
     );
-    console.log(resources);
     console.log("secrets with name updated");
   });
   k8sApi.listConfigMapForAllNamespaces().then((res) => {
@@ -166,7 +152,6 @@ export function getClusterResources(k8sApi: any): K8sResource[] {
         };
       })
     );
-    console.log(resources);
     console.log("ConfigMaps with name updated");
   });
 
