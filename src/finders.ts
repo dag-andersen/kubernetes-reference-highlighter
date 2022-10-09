@@ -5,17 +5,15 @@ export function findServices(
   thisResource: K8sResource,
   text: string
 ): Highlight[] {
-  const highlights: Highlight[] = [];
-
   if (thisResource.kind === "Ingress" || thisResource.kind === "Service") {
-    return highlights;
+    return [];
   }
 
   const refType = "Service";
 
-  resources
+  return resources
     .filter((r) => r.kind === refType)
-    .forEach((r) => {
+    .flatMap((r) => {
       const name =
         thisResource.metadata.namespace === r.metadata.namespace
           ? r.metadata.name
@@ -24,22 +22,19 @@ export function findServices(
       const regex = new RegExp(`[^a-zA-Z-]${name}[^a-zA-Z-]`, "g");
       const matches = text.matchAll(regex);
 
-      for (const match of matches) {
+      return [...matches].map((match) => {
         const start = (match.index || 0) + 1;
         const end = start + name.length;
-        // get column and line number from index
-        highlights.push({
+        return {
           start: start,
           end: end,
           text: text,
           type: refType,
           name: name,
           from: r.where,
-        });
-      }
+        };
+      });
     });
-
-  return highlights;
 }
 
 export function findValueFromKeyRef(
@@ -47,10 +42,8 @@ export function findValueFromKeyRef(
   thisResource: K8sResource,
   text: string
 ): Highlight[] {
-  const highlights: Highlight[] = [];
-
   if (thisResource.kind !== "Deployment") {
-    return highlights;
+    return [];
   }
 
   const regex =
@@ -60,7 +53,7 @@ export function findValueFromKeyRef(
 
   const matches = text.matchAll(regex);
 
-  for (const match of matches) {
+  return [...matches].flatMap((match) => {
     let refType = "";
     switch (match[1]) {
       case "secret":
@@ -70,31 +63,29 @@ export function findValueFromKeyRef(
         refType = "ConfigMap";
         break;
       default:
-        continue;
+        return [];
     }
 
     let name = match[2] || match[3];
 
-    resources
+    return resources
       .filter((r) => r.kind === refType)
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
       .filter((r) => r.metadata.name === name)
-      .forEach((r) => {
+      .map((r) => {
         const shift = match[0].indexOf(name);
         const start = (match.index || 0) + shift;
         const end = start + name.length;
-        highlights.push({
+        return {
           start: start,
           end: end,
           text: text,
           type: refType,
           name: name,
           from: r.where,
-        });
+        };
       });
-  }
-
-  return highlights;
+  });
 }
 
 export function findIngressService(
@@ -102,38 +93,34 @@ export function findIngressService(
   thisResource: K8sResource,
   text: string
 ): Highlight[] {
-  const highlights: Highlight[] = [];
-
   if (thisResource.kind !== "Ingress") {
-    return highlights;
+    return [];
   }
 
   const regex =
     /service:\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))/gm;
   const matches = text.matchAll(regex);
 
-  for (const match of matches) {
+  return [...matches].flatMap((match) => {
     let refType = "Service";
     let name = match[1] || match[2];
 
-    resources
+    return resources
       .filter((r) => r.kind === refType)
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
       .filter((r) => r.metadata.name === name)
-      .forEach((r) => {
+      .map((r) => {
         const shift = match[0].indexOf(name);
         const start = (match.index || 0) + shift;
         const end = start + name.length;
-        highlights.push({
+        return {
           start: start,
           end: end,
           text: text,
           type: refType,
           name: name,
           from: r.where,
-        });
+        };
       });
-  }
-
-  return highlights;
+  });
 }

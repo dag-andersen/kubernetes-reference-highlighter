@@ -56,10 +56,8 @@ function getAllFileNamesInDirectory(dirPath: string) {
 export function getKustomizeResources(): K8sResource[] {
   const kustomizationFiles = getKustomizationPathsInWorkspace();
 
-  const resources: K8sResource[] = [];
-
-  kustomizationFiles.forEach((file) => {
-    resources.push(...kustomizeBuild(file));
+  const resources = kustomizationFiles.flatMap((file) => {
+    return kustomizeBuild(file);
   });
 
   return resources;
@@ -77,7 +75,6 @@ function getKustomizationPathsInWorkspace(): string[] {
 
 function kustomizeBuild(file: string): K8sResource[] {
   const path = file.substring(0, file.lastIndexOf("/"));
-  const resources: K8sResource[] = [];
 
   const execSync = require("child_process").execSync;
   let output: string = "";
@@ -87,12 +84,13 @@ function kustomizeBuild(file: string): K8sResource[] {
       encoding: "utf-8",
     });
   } catch (e) {
-    return resources;
+    return [];
   }
 
   //const relativePathFromRoot = vscode.workspace.asRelativePath(file || "");
 
   const split = output.split("---");
+  const resources: K8sResource[] = [];
   split.forEach((text) => {
     try {
       const r = textToK8sResource(text);
