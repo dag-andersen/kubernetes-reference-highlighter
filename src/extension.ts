@@ -240,15 +240,16 @@ function generateMessage(type: string, name: string, fromWhere?: FromWhere) {
         fromFilePath || ""
       );
       const activeFilePath = vscode.window.activeTextEditor?.document.fileName;
-      const activeDirPath = p.dirname(activeFilePath || "");
-      const relativePathFromActive = p.relative(
+      const activeDirPath: string = p.dirname(activeFilePath || "");
+      const relativePathFromActive: string = p.relative(
         activeDirPath || "",
         fromFilePath
       );
+
       const path =
         relativeFilePathFromRoot.length < relativePathFromActive.length
           ? "/" + relativeFilePathFromRoot
-          : relativePathFromActive;
+          : relativePathFromActive.includes("/") ? relativePathFromActive : ("./" + relativePathFromActive);
       message = `Found ${type}, ${name}, in ${fromWhere.place} at ${path}`;
     }
   } else {

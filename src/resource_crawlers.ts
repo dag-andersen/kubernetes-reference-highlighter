@@ -61,6 +61,18 @@ function getAllFileNamesInDirectory(dirPath: string) {
   return files;
 }
 
+export function getKustomizeResources(): K8sResource[] {
+  const kustomizationFiles = getKustomizationPathsInWorkspace();
+
+  const resources: K8sResource[] = [];
+
+  kustomizationFiles.forEach((file) => {
+    resources.push(...kustomizeBuild(file));
+  });
+
+  return resources;
+}
+
 function getKustomizationPathsInWorkspace(): string[] {
   const kustomizationFiles = getAllFileNamesInDirectory(
     vscode.workspace.workspaceFolders[0].uri.fsPath
@@ -75,27 +87,20 @@ function getKustomizationPathsInWorkspace(): string[] {
   return kustomizationFiles;
 }
 
-export function getKustomizeResources(): K8sResource[] {
-  const kustomizationFiles = getKustomizationPathsInWorkspace();
-
-  const resources: K8sResource[] = [];
-
-  kustomizationFiles.forEach((file) => {
-    resources.push(...kustomizeBuild(file));
-  });
-
-  return resources;
-}
-
 function kustomizeBuild(file: string): K8sResource[] {
   const path = file.substring(0, file.lastIndexOf("/"));
+  const resources: K8sResource[] = [];
 
   const execSync = require("child_process").execSync;
-  const output: string = execSync(`kustomize build ${path}`, {
-    encoding: "utf-8",
-  }); // the default is 'buffer'
+  let output: string = "";
 
-  const resources: K8sResource[] = [];
+  try {
+    output = execSync(`kustomize build ${path}`, {
+      encoding: "utf-8",
+    });
+  } catch (e) {
+    return resources;
+  }
 
   //const relativePathFromRoot = vscode.workspace.asRelativePath(file || "");
 
