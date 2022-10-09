@@ -97,6 +97,8 @@ function kustomizeBuild(file: string): K8sResource[] {
 
   const resources: K8sResource[] = [];
 
+  //const relativePathFromRoot = vscode.workspace.asRelativePath(file || "");
+
   const split = output.split("---");
   split.forEach((text) => {
     try {

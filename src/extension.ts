@@ -39,7 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
       // Display a message box to the user
       enableWorkSpaceCrawling = !enableWorkSpaceCrawling;
       vscode.window.showInformationMessage(
-        `WorkSpaceCrawling: ${enableWorkSpaceCrawling ? "enabled" : "disabled"}`
+        `WorkSpaceCrawling: ${enableWorkSpaceCrawling ? "Enabled" : "Disabled"}`
       );
       if (enableWorkSpaceCrawling) {
         updateK8sResourcesFromWorkspace();
@@ -54,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
     () => {
       enableClusterCrawling = !enableClusterCrawling;
       vscode.window.showInformationMessage(
-        `Cluster Crawling: ${enableClusterCrawling ? "enabled" : "disabled"}`
+        `Cluster Crawling: ${enableClusterCrawling ? "Enabled" : "Disabled"}`
       );
       if (enableClusterCrawling) {
         updateK8sResourcesFromCluster();
@@ -71,7 +71,7 @@ export function activate(context: vscode.ExtensionContext) {
         enableWorkSpaceKustomizeCrawling = !enableWorkSpaceKustomizeCrawling;
         vscode.window.showInformationMessage(
           `Kustomize Crawling: ${
-            enableWorkSpaceKustomizeCrawling ? "enabled" : "disabled"
+            enableWorkSpaceKustomizeCrawling ? "Enabled" : "Disabled"
           }`
         );
         if (enableWorkSpaceKustomizeCrawling) {
