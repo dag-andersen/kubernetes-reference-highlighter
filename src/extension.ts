@@ -55,29 +55,28 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  const enableWorkSpaceKustomizeCrawlingCommand =
-    vscode.commands.registerCommand(
-      "k8s-checker.enableKustomizeCrawling",
-      () => {
-        if (!crawlers.isKustomizeInstalled()) {
-          vscode.window.showErrorMessage(
-            "Kustomize is not installed. Please install it first."
-          );
-          return;
-        }
-        enableWorkSpaceKustomizeCrawling = !enableWorkSpaceKustomizeCrawling;
-        vscode.window.showInformationMessage(
-          `Kustomize Crawling: ${
-            enableWorkSpaceKustomizeCrawling ? "Enabled" : "Disabled"
-          }`
+  const enableKustomizeCrawlingCommand = vscode.commands.registerCommand(
+    "k8s-checker.enableKustomizeCrawling",
+    () => {
+      if (!crawlers.isKustomizeInstalled()) {
+        vscode.window.showErrorMessage(
+          "Kustomize is not installed. Please install it first."
         );
-        if (enableWorkSpaceKustomizeCrawling) {
-          updateK8sResourcesFromCluster();
-        } else {
-          kubeResourcesKustomize = [];
-        }
+        return;
       }
-    );
+      enableWorkSpaceKustomizeCrawling = !enableWorkSpaceKustomizeCrawling;
+      vscode.window.showInformationMessage(
+        `Kustomize Crawling: ${
+          enableWorkSpaceKustomizeCrawling ? "Enabled" : "Disabled"
+        }`
+      );
+      if (enableWorkSpaceKustomizeCrawling) {
+        updateK8sResourcesFromKustomize();
+      } else {
+        kubeResourcesKustomize = [];
+      }
+    }
+  );
 
   const updateK8sResourcesFromWorkspace = () => {
     if (!enableWorkSpaceCrawling) {
@@ -140,6 +139,8 @@ export function activate(context: vscode.ExtensionContext) {
         return [];
       }
 
+      firstTimeK8sObjectFound(); // first time finding a k8s object
+
       const diagnosticServices = finders.findServices(
         kubeResources,
         thisResource,
@@ -178,32 +179,50 @@ export function activate(context: vscode.ExtensionContext) {
     diagnosticCollection.set(doc.uri, diagnosticsCombined);
   };
 
-  // watch for saves to the current file
-  const onSave = vscode.workspace.onDidSaveTextDocument((event) => {
+  const onSave = vscode.workspace.onDidSaveTextDocument((doc) => {
+    if (!foundFirstK8sObject) {
+      return;
+    }
+
+    const fileText = doc.getText();
+    if (fileText === lastDocument) {
+      return;
+    }
+    lastDocument = fileText;
+
     updateK8sResourcesFromCluster();
     updateK8sResourcesFromWorkspace();
     updateK8sResourcesFromKustomize();
   });
 
-  const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
-    updateDiagnostics(event.document);
-  });
-
   const onOpen = vscode.workspace.onDidOpenTextDocument(updateDiagnostics);
+  const onChange = vscode.workspace.onDidChangeTextDocument((event) =>
+    updateDiagnostics(event.document)
+  );
 
   context.subscriptions.push(
-    enableWorkSpaceCrawlingCommand,
     enableClusterCrawlingCommand,
-    enableWorkSpaceKustomizeCrawlingCommand,
+    enableWorkSpaceCrawlingCommand,
+    enableKustomizeCrawlingCommand,
     diagnosticCollection,
     onSave,
     onChange,
     onOpen
   );
 
-  updateK8sResourcesFromCluster();
-  updateK8sResourcesFromWorkspace();
-  updateK8sResourcesFromKustomize();
+  let foundFirstK8sObject = false;
+  const firstTimeK8sObjectFound = () => {
+    if (foundFirstK8sObject) {
+      return;
+    }
+    vscode.window.showInformationMessage(
+      "k8s-checker found a k8s object in your workspace. It will now start to crawl your cluster for more objects."
+    );
+    foundFirstK8sObject = true;
+    updateK8sResourcesFromCluster();
+    updateK8sResourcesFromWorkspace();
+    updateK8sResourcesFromKustomize();
+  };
 
   console.log("k8s-checker activated");
 }
