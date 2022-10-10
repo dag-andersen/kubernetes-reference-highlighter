@@ -6,31 +6,28 @@ import { textToK8sResource } from "./extension";
 export function getK8sResourceNamesInWorkspace(): K8sResource[] {
   const fs = require("fs");
 
-    const workspaceFolders =
-      vscode.workspace.workspaceFolders &&
-      vscode.workspace.workspaceFolders[0].uri.fsPath;
+  const workspaceFolders =
+    vscode.workspace.workspaceFolders &&
+    vscode.workspace.workspaceFolders[0].uri.fsPath;
 
-    if (!workspaceFolders) {
-      return [];
-    }
+  if (!workspaceFolders) {
+    return [];
+  }
 
   const files = getAllFileNamesInDirectory(workspaceFolders);
 
-  const resources: K8sResource[] = [];
-
-  files.forEach((file) => {
+  return files.flatMap((file) => {
     const fileText: string = fs.readFileSync(file, "utf8");
     const split = fileText.split("---");
-    split.forEach((text) => {
+    return split.flatMap((text) => {
       try {
         const r = textToK8sResource(text);
         r.where = { place: "workspace", path: file };
-        resources.push(r);
+        return r;
       } catch (e) {}
+      return [];
     });
   });
-
-  return resources;
 }
 
 function getAllFileNamesInDirectory(dirPath: string) {
@@ -41,7 +38,7 @@ function getAllFileNamesInDirectory(dirPath: string) {
 
   function walkSync(dir: string, fileList: string[]) {
     const files = fs.readdirSync(dir);
-    files.forEach(function (file: string) {
+    files.forEach((file: string) => {
       if (fs.statSync(path.join(dir, file)).isDirectory()) {
         fileList = walkSync(path.join(dir, file), fileList);
       } else {
@@ -62,9 +59,7 @@ function getAllFileNamesInDirectory(dirPath: string) {
 export function getKustomizeResources(): K8sResource[] {
   const kustomizationFiles = getKustomizationPathsInWorkspace();
 
-  const resources = kustomizationFiles.flatMap((file) => {
-    return kustomizeBuild(file);
-  });
+  const resources = kustomizationFiles.flatMap(kustomizeBuild);
 
   return resources;
 }
@@ -101,26 +96,22 @@ function kustomizeBuild(file: string): K8sResource[] {
     return [];
   }
 
-  //const relativePathFromRoot = vscode.workspace.asRelativePath(file || "");
-
   const split = output.split("---");
-  const resources: K8sResource[] = [];
-  split.forEach((text) => {
+  return split.flatMap((text) => {
     try {
       const r = textToK8sResource(text);
       r.where = { place: "kustomize", path: path };
-      resources.push(r);
+      return r;
     } catch (e) {}
+    return [];
   });
-
-  return resources;
 }
 
 // check if kustomize is installed
 export function isKustomizeInstalled(): boolean {
   const execSync = require("child_process").execSync;
   let output: string = "";
-  
+
   try {
     output = execSync(`kustomize version`, {
       encoding: "utf-8",
