@@ -116,6 +116,22 @@ function kustomizeBuild(file: string): K8sResource[] {
   return resources;
 }
 
+// check if kustomize is installed
+export function isKustomizeInstalled(): boolean {
+  const execSync = require("child_process").execSync;
+  let output: string = "";
+  
+  try {
+    output = execSync(`kustomize version`, {
+      encoding: "utf-8",
+    });
+  } catch (e) {
+    return false;
+  }
+
+  return true;
+}
+
 export function getClusterResources(k8sApi: any): K8sResource[] {
   let resources: K8sResource[] = [];
   k8sApi.listServiceForAllNamespaces().then((res: any) => {

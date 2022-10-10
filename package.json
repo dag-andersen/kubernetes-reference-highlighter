@@ -10,7 +10,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "workspaceContains:**/*.yaml",
+    "workspaceContains:**/*.yml"
   ],
   "main": "./out/extension.js",
   "contributes": {
