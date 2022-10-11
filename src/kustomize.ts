@@ -1,10 +1,6 @@
-import { K8sResource } from "./types";
+import { Highlight, K8sResource } from "./types";
 import * as vscode from "vscode";
-import {
-  textToK8sResource,
-  diagnosticCollection,
-  createDiagnostic,
-} from "./extension";
+import { textToK8sResource, createDiagnostic } from "./extension";
 import { getAllFileNamesInDirectory } from "./extension";
 
 export function getKustomizeResources(): K8sResource[] {
@@ -72,4 +68,52 @@ export function isKustomizeInstalled(): boolean {
   }
 
   return true;
+}
+
+export function verifyKustomizeBuild(
+  thisResource: K8sResource,
+  text: string,
+  fullText: string,
+  filePath: string,
+  shift: number
+): vscode.Diagnostic[] {
+  if (thisResource.kind !== "Kustomization") {
+    return [];
+  }
+
+  const refType = "Kustomization";
+
+  const regex = /kind: (Kustomization)/gm;
+  const matches = text.matchAll(regex);
+
+  return [...matches].flatMap((match) => {
+    const start = (match.index || 0) + shift + match[0].indexOf(refType);
+    const end = start + refType.length;
+
+    const path = filePath.substring(0, filePath.lastIndexOf("/"));
+
+    const execSync = require("child_process").execSync;
+    let output: string = "";
+
+    const success = (() => {
+      try {
+        output = execSync(`kustomize build ${path}`, {
+          encoding: "utf-8",
+        });
+        return true;
+      } catch (e) {
+        return false;
+      }
+    })();
+
+    return createDiagnostic(
+      start,
+      end,
+      fullText,
+      success ? "✅ Kustomize build succeeded" : "❌ Kustomize build failed",
+      success
+        ? vscode.DiagnosticSeverity.Information
+        : vscode.DiagnosticSeverity.Error
+    );
+  });
 }

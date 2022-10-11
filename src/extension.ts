@@ -131,42 +131,42 @@ export function activate(context: vscode.ExtensionContext) {
       ...kubeResourcesKustomize,
     ];
 
-    const diagnosticsCombined = fileTextSplitted.flatMap((yamlFile) => {
+    const diagnosticsCombined = fileTextSplitted.flatMap((textSplit) => {
       let thisResource: K8sResource;
 
       try {
-        thisResource = textToK8sResource(yamlFile);
+        thisResource = textToK8sResource(textSplit);
       } catch (e) {
-        currentIndex += yamlFile.length + split.length;
+        currentIndex += textSplit.length + split.length;
         return [];
       }
 
       if (!thisResource.kind) {
-        currentIndex += yamlFile.length + split.length;
+        currentIndex += textSplit.length + split.length;
         return [];
       }
 
       firstTimeK8sObjectFound(); // first time finding a k8s object
 
-      const diagnosticServices = finders.findServices(
+      const serviceHighlights = finders.findServices(
         kubeResources,
         thisResource,
-        yamlFile
+        textSplit
       );
-      const diagnosticValueFrom = finders.findValueFromKeyRef(
+      const valueFromHighlights = finders.findValueFromKeyRef(
         kubeResources,
         thisResource,
-        yamlFile
+        textSplit
       );
-      const diagnosticIngress = finders.findIngressService(
+      const ingressHighlights = finders.findIngressService(
         kubeResources,
         thisResource,
-        yamlFile
+        textSplit
       );
       const highlights = [
-        ...diagnosticServices,
-        ...diagnosticValueFrom,
-        ...diagnosticIngress,
+        ...serviceHighlights,
+        ...valueFromHighlights,
+        ...ingressHighlights,
       ];
 
       let diagnostics = highlights.map((h) => {
@@ -179,7 +179,22 @@ export function activate(context: vscode.ExtensionContext) {
         );
       });
 
-      currentIndex += yamlFile.length + split.length;
+      if (
+        enableKustomizeCrawlingCommand &&
+        (fileName.endsWith("kustomization.yaml") || fileName.endsWith("kustomization.yml"))
+      ) {
+        diagnostics.push(
+          ...kustomize.verifyKustomizeBuild(
+            thisResource,
+            textSplit,
+            fileText,
+            fileName,
+            currentIndex
+          )
+        );
+      }
+
+      currentIndex += textSplit.length + split.length;
       return diagnostics;
     });
 
@@ -264,16 +279,13 @@ export function createDiagnostic(
   start: number,
   end: number,
   text: string,
-  message: string
+  message: string,
+  level: vscode.DiagnosticSeverity = vscode.DiagnosticSeverity.Information
 ): vscode.Diagnostic {
   const pos1 = indexToPosition(text, start);
   const pos2 = indexToPosition(text, end);
   const range = new vscode.Range(pos1, pos2);
-  const diagnostic = new vscode.Diagnostic(
-    range,
-    message,
-    vscode.DiagnosticSeverity.Information
-  );
+  const diagnostic = new vscode.Diagnostic(range, message, level);
   return diagnostic;
 }
 
@@ -325,8 +337,8 @@ export function textToK8sResource(text: string): K8sResource {
   return {
     kind: yml.kind,
     metadata: {
-      name: yml.metadata.name,
-      namespace: yml.metadata.namespace,
+      name: yml.metadata?.name,
+      namespace: yml.metadata?.namespace,
     },
   };
 }
