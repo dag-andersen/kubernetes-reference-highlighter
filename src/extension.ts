@@ -1,7 +1,9 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import * as crawlers from "./resource_crawlers";
+import * as workspace from "./workspace";
+import * as cluster from "./cluster";
+import * as kustomize from "./kustomize";
 import * as finders from "./finders";
 
 import { FromWhere, K8sResource } from "./types";
@@ -22,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
   let kubeResourcesWorkspace: K8sResource[] = [];
   let kubeResourcesKustomize: K8sResource[] = [];
   let enableWorkSpaceCrawling = true;
-  let enableWorkSpaceKustomizeCrawling = crawlers.isKustomizeInstalled();
+  let enableWorkSpaceKustomizeCrawling = kustomize.isKustomizeInstalled();
   let enableClusterCrawling = true;
 
   const enableWorkSpaceCrawlingCommand = vscode.commands.registerCommand(
@@ -58,7 +60,7 @@ export function activate(context: vscode.ExtensionContext) {
   const enableKustomizeCrawlingCommand = vscode.commands.registerCommand(
     "k8s-checker.enableKustomizeCrawling",
     () => {
-      if (!crawlers.isKustomizeInstalled()) {
+      if (!kustomize.isKustomizeInstalled()) {
         vscode.window.showErrorMessage(
           "Kustomize is not installed. Please install it first."
         );
@@ -82,21 +84,21 @@ export function activate(context: vscode.ExtensionContext) {
     if (!enableWorkSpaceCrawling) {
       return;
     }
-    kubeResourcesWorkspace = crawlers.getK8sResourceNamesInWorkspace();
+    kubeResourcesWorkspace = workspace.getK8sResourceNamesInWorkspace();
   };
 
   const updateK8sResourcesFromCluster = () => {
     if (!enableClusterCrawling) {
       return;
     }
-    kubeResourcesCluster = crawlers.getClusterResources(k8sApi);
+    kubeResourcesCluster = cluster.getClusterResources(k8sApi);
   };
 
   const updateK8sResourcesFromKustomize = () => {
     if (!enableWorkSpaceKustomizeCrawling) {
       return;
     }
-    kubeResourcesKustomize = crawlers.getKustomizeResources();
+    kubeResourcesKustomize = kustomize.getKustomizeResources();
   };
 
   // create diagnostic collection
@@ -135,6 +137,11 @@ export function activate(context: vscode.ExtensionContext) {
       try {
         thisResource = textToK8sResource(yamlFile);
       } catch (e) {
+        currentIndex += yamlFile.length + split.length;
+        return [];
+      }
+
+      if (!thisResource.kind) {
         currentIndex += yamlFile.length + split.length;
         return [];
       }
@@ -227,12 +234,38 @@ export function activate(context: vscode.ExtensionContext) {
   console.log("k8s-checker activated");
 }
 
-function createDiagnostic(
+export function getAllFileNamesInDirectory(dirPath: string) {
+  const fs = require("fs");
+  const path = require("path");
+
+  let files: string[] = [];
+
+  function walkSync(dir: string, fileList: string[]) {
+    const files = fs.readdirSync(dir);
+    files.forEach((file: string) => {
+      if (fs.statSync(path.join(dir, file)).isDirectory()) {
+        fileList = walkSync(path.join(dir, file), fileList);
+      } else {
+        fileList.push(path.join(dir, file));
+      }
+    });
+
+    return fileList;
+  }
+
+  files = walkSync(dirPath, files).filter((file: string) => {
+    return file.endsWith(".yml") || file.endsWith(".yaml");
+  });
+
+  return files;
+}
+
+export function createDiagnostic(
   start: number,
   end: number,
   text: string,
   message: string
-) {
+): vscode.Diagnostic {
   const pos1 = indexToPosition(text, start);
   const pos2 = indexToPosition(text, end);
   const range = new vscode.Range(pos1, pos2);
