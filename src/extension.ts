@@ -206,6 +206,10 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
+    if (!doc.fileName.endsWith(".yaml") && !doc.fileName.endsWith(".yml")) {
+      return;
+    }
+
     const fileText = doc.getText();
     if (fileText === lastDocument) {
       return;
@@ -238,7 +242,7 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     vscode.window.showInformationMessage(
-      "Kubernetes Reference Highlighter found a k8s object in your workspace. It will now start to crawl your cluster for more objects."
+      "Kubernetes Reference Highlighter starting!"
     );
     foundFirstK8sObject = true;
     updateK8sResourcesFromCluster();
