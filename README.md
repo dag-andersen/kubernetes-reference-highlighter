@@ -1,6 +1,4 @@
-# k8s-checker README
-
-![](docs/icon.svg)
+# Kubernetes Reference Highlighter README
 
 ## Features
 

@@ -1,6 +1,6 @@
 {
-  "name": "k8s-checker",
-  "displayName": "k8s-checker",
+  "name": "kubernetes-reference-highlighter",
+  "displayName": "Kubernetes Reference Highlighter",
   "description": "",
   "version": "0.0.2",
   "engines": {
@@ -17,16 +17,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "k8s-checker.enableWorkSpaceCrawling",
-        "title": "k8s-checker: Toggle WorkSpace Crawling"
+        "command": "kubernetes-reference-highlighter.enableWorkSpaceCrawling",
+        "title": "Kubernetes Reference Highlighter: Toggle WorkSpace Crawling"
       },
       {
-        "command": "k8s-checker.enableClusterCrawling",
-        "title": "k8s-checker: Toggle Cluster Crawling"
+        "command": "kubernetes-reference-highlighter.enableClusterCrawling",
+        "title": "Kubernetes Reference Highlighter: Toggle Cluster Crawling"
       },
       {
-        "command": "k8s-checker.enableKustomizeCrawling",
-        "title": "k8s-checker: Toggle Kustomize Crawling"
+        "command": "kubernetes-reference-highlighter.enableKustomizeCrawling",
+        "title": "Kubernetes Reference Highlighter: Toggle Kustomize Crawling"
       }
     ],
     "semanticTokenTypes": [

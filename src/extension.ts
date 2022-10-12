@@ -13,7 +13,7 @@ import { FromWhere, K8sResource } from "./types";
 export function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
-  console.log('Congratulations, your extension "k8s-checker" is now active!');
+  console.log('Congratulations, your extension "Kubernetes Reference Highlighter" is now active!');
 
   const k8s = require("@kubernetes/client-node");
   const kc = new k8s.KubeConfig();
@@ -28,11 +28,11 @@ export function activate(context: vscode.ExtensionContext) {
   let enableClusterCrawling = true;
 
   const enableWorkSpaceCrawlingCommand = vscode.commands.registerCommand(
-    "k8s-checker.enableWorkSpaceCrawling",
+    "kubernetes-reference-highlighter.enableWorkSpaceCrawling",
     () => {
       enableWorkSpaceCrawling = !enableWorkSpaceCrawling;
       vscode.window.showInformationMessage(
-        `WorkSpaceCrawling: ${enableWorkSpaceCrawling ? "Enabled" : "Disabled"}`
+        `WorkSpace Crawling: ${enableWorkSpaceCrawling ? "Enabled" : "Disabled"}`
       );
       if (enableWorkSpaceCrawling) {
         updateK8sResourcesFromWorkspace();
@@ -43,7 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const enableClusterCrawlingCommand = vscode.commands.registerCommand(
-    "k8s-checker.enableClusterCrawling",
+    "kubernetes-reference-highlighter.enableClusterCrawling",
     () => {
       enableClusterCrawling = !enableClusterCrawling;
       vscode.window.showInformationMessage(
@@ -58,7 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const enableKustomizeCrawlingCommand = vscode.commands.registerCommand(
-    "k8s-checker.enableKustomizeCrawling",
+    "kubernetes-reference-highlighter.enableKustomizeCrawling",
     () => {
       if (!kustomize.isKustomizeInstalled()) {
         vscode.window.showErrorMessage(
@@ -103,7 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // create diagnostic collection
   const diagnosticCollection =
-    vscode.languages.createDiagnosticCollection("k8s-checker");
+    vscode.languages.createDiagnosticCollection("kubernetes-reference-highlighter");
 
   let lastDocument = "";
 
@@ -238,7 +238,7 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     vscode.window.showInformationMessage(
-      "k8s-checker found a k8s object in your workspace. It will now start to crawl your cluster for more objects."
+      "Kubernetes Reference Highlighter found a k8s object in your workspace. It will now start to crawl your cluster for more objects."
     );
     foundFirstK8sObject = true;
     updateK8sResourcesFromCluster();
@@ -246,7 +246,7 @@ export function activate(context: vscode.ExtensionContext) {
     updateK8sResourcesFromKustomize();
   };
 
-  console.log("k8s-checker activated");
+  console.log("Kubernetes Reference Highlighter activated");
 }
 
 export function getAllFileNamesInDirectory(dirPath: string) {
