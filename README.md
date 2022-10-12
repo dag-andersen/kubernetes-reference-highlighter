@@ -1,20 +1,75 @@
-# Kubernetes Reference Highlighter README
+# Kubernetes Reference Highlighter
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### Reference Highlighting  
 
-For example if there is an image subfolder under your extension project workspace:
+Each time you save a YAML-file the extension will update its internal list of kubernetes objects.
 
-\!\[feature X\]\(images/feature-x.png\)
+All resources are namespace-sensitive. A resource will not be highlighted if the resource exists in another namespace.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+Currently it only support Scanning of `Services`, `Deployments`, `Secrets`, and `ConfigMaps`. More resources will be added at a later point. 
 
-## Requirements
+#### Cluster Scanning
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+The extension calls the kubernetes api of you current kube-config and collects all the object-names of the objects you have access to.
+
+<p float="left">
+  <img src="/readme-images/highlight-cluster-service.png" width="800" />
+</p>
+
+
+#### Workspace Scanning
+
+The extension will collect all the Kubernetes object's names in the manifest files found in the open VSCode workspace.  
+
+<p float="left">
+  <img src="/readme-images/highlight-workspace-service.png" width="600" />
+</p>
+
+#### Kustomize Scanning
+
+The extension will run `kustomize build` on all `kustomization`-files in the open workspace and collect all the Kubernetes object names found in the generated kustomize-output.
+
+<p float="left">
+  <img src="/readme-images/highlight-kustomize-service.png" width="900" />
+</p>
+
+### Kustomize Build
+
+<p float="left">
+  <img src="/readme-images/kustomize-success.png" width="400" />
+  <img src="/readme-images/kustomize-fail.png" width="388" /> 
+</p>
+
+The extension will highlight tell you if the kustomize file builds or not.
+
+## Notes
+
+- To enable the integration with *kustomize* make sure you have [kustomize installed](https://kustomize.io/) and it is in your PATH.
+- I suggest you install the extension `Error Lens` to easily view the info provided by this extension. 
+
+## Release Notes
+
+### v0.0.2
+
+- Added Kustomize Build Status
+
+### v0.0.1
+
+- Added Cluster Scanning
+- Added Workspace Scanning
+- Added Kustomize Scanning
+
+## Known Issues
+
+No known issues yet. 
+
+Please open an issue on GitHub if you experience any issues or have ideas for future features
 
 ## Extension Settings
+
+> This section is not done yet. 
 
 Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
 
@@ -24,17 +79,6 @@ This extension contributes the following settings:
 
 * `myExtension.enable`: Enable/disable this extension.
 * `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-No known issues yet. 
-
-## Release Notes
-
-### 0.0.1
-
-Test build
-
 ---
 
 ## Following extension guidelines
@@ -43,17 +87,3 @@ Ensure that you've read through the extensions guidelines and follow the best pr
 
 * [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
 
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
