@@ -23,18 +23,18 @@ export function activate(context: vscode.ExtensionContext) {
   let kubeResourcesCluster: K8sResource[] = [];
   let kubeResourcesWorkspace: K8sResource[] = [];
   let kubeResourcesKustomize: K8sResource[] = [];
-  let enableWorkSpaceCrawling = true;
-  let enableWorkSpaceKustomizeCrawling = kustomize.isKustomizeInstalled();
-  let enableClusterCrawling = true;
+  let enableWorkSpaceScanning = true;
+  let enableWorkSpaceKustomizeScanning = kustomize.isKustomizeInstalled();
+  let enableClusterScanning = true;
 
-  const enableWorkSpaceCrawlingCommand = vscode.commands.registerCommand(
-    "kubernetes-reference-highlighter.enableWorkSpaceCrawling",
+  const enableWorkSpaceScanningCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.enableWorkSpaceScanning",
     () => {
-      enableWorkSpaceCrawling = !enableWorkSpaceCrawling;
+      enableWorkSpaceScanning = !enableWorkSpaceScanning;
       vscode.window.showInformationMessage(
-        `WorkSpace Crawling: ${enableWorkSpaceCrawling ? "Enabled" : "Disabled"}`
+        `WorkSpace Scanning: ${enableWorkSpaceScanning ? "Enabled" : "Disabled"}`
       );
-      if (enableWorkSpaceCrawling) {
+      if (enableWorkSpaceScanning) {
         updateK8sResourcesFromWorkspace();
       } else {
         kubeResourcesWorkspace = [];
@@ -42,14 +42,14 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  const enableClusterCrawlingCommand = vscode.commands.registerCommand(
-    "kubernetes-reference-highlighter.enableClusterCrawling",
+  const enableClusterScanningCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.enableClusterScanning",
     () => {
-      enableClusterCrawling = !enableClusterCrawling;
+      enableClusterScanning = !enableClusterScanning;
       vscode.window.showInformationMessage(
-        `Cluster Crawling: ${enableClusterCrawling ? "Enabled" : "Disabled"}`
+        `Cluster Scanning: ${enableClusterScanning ? "Enabled" : "Disabled"}`
       );
-      if (enableClusterCrawling) {
+      if (enableClusterScanning) {
         updateK8sResourcesFromCluster();
       } else {
         kubeResourcesCluster = [];
@@ -57,8 +57,8 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  const enableKustomizeCrawlingCommand = vscode.commands.registerCommand(
-    "kubernetes-reference-highlighter.enableKustomizeCrawling",
+  const enableKustomizeScanningCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.enableKustomizeScanning",
     () => {
       if (!kustomize.isKustomizeInstalled()) {
         vscode.window.showErrorMessage(
@@ -66,13 +66,13 @@ export function activate(context: vscode.ExtensionContext) {
         );
         return;
       }
-      enableWorkSpaceKustomizeCrawling = !enableWorkSpaceKustomizeCrawling;
+      enableWorkSpaceKustomizeScanning = !enableWorkSpaceKustomizeScanning;
       vscode.window.showInformationMessage(
-        `Kustomize Crawling: ${
-          enableWorkSpaceKustomizeCrawling ? "Enabled" : "Disabled"
+        `Kustomize Scanning: ${
+          enableWorkSpaceKustomizeScanning ? "Enabled" : "Disabled"
         }`
       );
-      if (enableWorkSpaceKustomizeCrawling) {
+      if (enableWorkSpaceKustomizeScanning) {
         updateK8sResourcesFromKustomize();
       } else {
         kubeResourcesKustomize = [];
@@ -81,21 +81,21 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const updateK8sResourcesFromWorkspace = () => {
-    if (!enableWorkSpaceCrawling) {
+    if (!enableWorkSpaceScanning) {
       return;
     }
     kubeResourcesWorkspace = workspace.getK8sResourceNamesInWorkspace();
   };
 
   const updateK8sResourcesFromCluster = () => {
-    if (!enableClusterCrawling) {
+    if (!enableClusterScanning) {
       return;
     }
     kubeResourcesCluster = cluster.getClusterResources(k8sApi);
   };
 
   const updateK8sResourcesFromKustomize = () => {
-    if (!enableWorkSpaceKustomizeCrawling) {
+    if (!enableWorkSpaceKustomizeScanning) {
       return;
     }
     kubeResourcesKustomize = kustomize.getKustomizeResources();
@@ -180,7 +180,7 @@ export function activate(context: vscode.ExtensionContext) {
       });
 
       if (
-        enableKustomizeCrawlingCommand &&
+        enableKustomizeScanningCommand &&
         (fileName.endsWith("kustomization.yaml") || fileName.endsWith("kustomization.yml"))
       ) {
         diagnostics.push(
@@ -223,9 +223,9 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    enableClusterCrawlingCommand,
-    enableWorkSpaceCrawlingCommand,
-    enableKustomizeCrawlingCommand,
+    enableClusterScanningCommand,
+    enableWorkSpaceScanningCommand,
+    enableKustomizeScanningCommand,
     diagnosticCollection,
     onSave,
     onChange,

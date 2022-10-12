@@ -17,16 +17,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "kubernetes-reference-highlighter.enableWorkSpaceCrawling",
-        "title": "Kubernetes Reference Highlighter: Toggle WorkSpace Crawling"
+        "command": "kubernetes-reference-highlighter.enableWorkSpaceScanning",
+        "title": "Kubernetes Reference Highlighter: Toggle WorkSpace Scanning"
       },
       {
-        "command": "kubernetes-reference-highlighter.enableClusterCrawling",
-        "title": "Kubernetes Reference Highlighter: Toggle Cluster Crawling"
+        "command": "kubernetes-reference-highlighter.enableClusterScanning",
+        "title": "Kubernetes Reference Highlighter: Toggle Cluster Scanning"
       },
       {
-        "command": "kubernetes-reference-highlighter.enableKustomizeCrawling",
-        "title": "Kubernetes Reference Highlighter: Toggle Kustomize Crawling"
+        "command": "kubernetes-reference-highlighter.enableKustomizeScanning",
+        "title": "Kubernetes Reference Highlighter: Toggle Kustomize Scanning"
       }
     ],
     "semanticTokenTypes": [
