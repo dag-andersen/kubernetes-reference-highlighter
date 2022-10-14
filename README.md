@@ -1,4 +1,4 @@
-# Kubernetes Reference Highlighter
+# <img src="/readme-images/icon.png" width="70" /> Kubernetes Reference Highlighter
 
 ## Features
 
