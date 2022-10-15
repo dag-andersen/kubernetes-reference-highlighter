@@ -57,11 +57,20 @@ I will refer to the tool `Kubernetes Reference Highlighter` with KRH
 - Describe and analyze existing tools for validating Kubernetes manifests
 - Design/implement/evaluate a tool for validating Kubernetes manifests to reduce the number of errors/issues -->
 
+---
+
+
 # 5. Related tools | Existing tools
 
 In this section i will list related tools that aim to help the developer create correct/valid YAML.
+
 - **JetBrains IntelliJ IDEA Kubernetes Plugin** [[link](https://plugins.jetbrains.com/plugin/10485-kubernetes)]: The full version IntelliJ that includes support for plugins is a paid product and therefore is not accessible publicly. JetBrains' only takes local files into account when highlighting references. The plugin does not check your current cluster or build anything with kustomize like KRH. But JetBrains' plugin comes with extra functionality that lets the user jump between files by clicking the highlighted references (something that KRH does not).
 - **KubeLinter** [[docs](https://docs.kubelinter.io/#/)] [[GitHub](https://github.com/stackrox/kube-linter)]: This is a open source Command Line Tool that validates your kubernetes manifests. KubeLinter is feature-rich tool that informs and warns of all sorts of issue that may be their code. The full list of features can be found [[Here](https://docs.kubelinter.io/#/generated/checks)]. KubeLinter is ideal to integrate in testing-pipelines where it can function as an initial step for everything YAML before it goes into production. KubeLinter can validate Helm Charts, but can not validate Kustomize templates. The tool only check the local files it is provided, so it does not know what already exists in a cluster.
+<!-- "KubeLinter is also highly configurable. Users can easily create their own custom rules and enable and disable rules depending on the policies required for specific namespaces. Adding custom rules in Kubelinter requires minimal work. It can be integrated easily into your CI/CD tool, such as GitHub Action, Jenkins, or Travis CI, for automated checking and error identification of application configurations."[[soruce](https://kubevious.io/blog/post/top-kubernetes-yaml-validation-tools#kubelinter)] -->
+- **kube-score** [[GitHub](https://github.com/zegl/kube-score)] [[Validation Checks](https://github.com/zegl/kube-score/blob/master/README_CHECKS.md)]: kube-score is a tool that performs static code analysis of your Kubernetes object definitions. Even though there is over 30 different checks the value are quite limited. The tool seems to only validate at all the kubernetes object definition individually, and not as a whole (with e.g. reference checking). Furthermore, just like *KubeLinter* it is a Command Line tool and therefore can be integrated as part of a testing-pipeline, and does not provide any live feedback when coding in an IDE.
+- **Kubevious** [[docs](https://kubevious.io/docs/built-in-validators/)] [[GitHub](https://github.com/kubevious/kubevious)] . This tool comes with 44 built in Kubernetes Resource validations checks. The checks include cross-file checks that e.g validate if a `service` points to two deployments at the same time and that sort of misconfiguration. Kubevious has a powerful toolset just like KubeLinter, but this tools has a UI and needs to be run in a cluster or as a stand alone program. It can only run its checks on resources already deployed to kubernetes, and therefore does not do any live validation for the developer while coding. This tools is mainly for finding and debugging issues after it has already been deployed.
+- **Conftest** [[GitHub](https://github.com/open-policy-agent/conftest)], **Copper** [[GitHub](https://github.com/cloud66-oss/copper)], and **Config-lint** [[GitHub](https://github.com/stelligent/config-lint)] are all similar tools that try to validate Kubernetes Manifests/YAML, but none of them come with built-in checks, so the user have to make their own "rules" that the YAML will be validated against. All these tools are Command Line tools, so they do not provide any live feedback but only validation when command run. These tools accellerate when you want to build you own custom checks (maybe on you own Custom Resource Definition (CRDs)).
+
 
 # 6. Prototype | Implementation
 
@@ -116,6 +125,8 @@ KubeLinter detects "dangling references", so it inform the user that a reference
 Each time you save a YAML-file in VS Code the extension will update its internal list of kubernetes objects.
 
 Each of these scanning techniques can be disabled through the CommandLine or through settings. 
+
+---
 
 # 7. Evaluation
 
