@@ -1,5 +1,19 @@
 import { K8sResource } from "./types";
 
+export function getKubeClient() {
+  try {
+    const k8s = require("@kubernetes/client-node");
+    const kc = new k8s.KubeConfig();
+    kc.loadFromDefault();
+    const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+    return k8sApi;
+  }
+  catch (err) {
+    console.log(err);
+  }
+  return undefined;
+}
+
 export function getClusterResources(k8sApi: any): K8sResource[] {
   let resources: K8sResource[] = [];
   k8sApi.listServiceForAllNamespaces().then((res: any) => {

@@ -13,26 +13,27 @@ import { FromWhere, K8sResource } from "./types";
 export function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
-  console.log('Congratulations, your extension "Kubernetes Reference Highlighter" is now active!');
+  console.log(
+    'Congratulations, your extension "Kubernetes Reference Highlighter" is now active!'
+  );
 
-  const k8s = require("@kubernetes/client-node");
-  const kc = new k8s.KubeConfig();
-  kc.loadFromDefault();
-  const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+  let k8sApi = cluster.getKubeClient();
 
   let kubeResourcesCluster: K8sResource[] = [];
   let kubeResourcesWorkspace: K8sResource[] = [];
   let kubeResourcesKustomize: K8sResource[] = [];
   let enableWorkSpaceScanning = true;
   let enableWorkSpaceKustomizeScanning = kustomize.isKustomizeInstalled();
-  let enableClusterScanning = true;
+  let enableClusterScanning = k8sApi !== undefined;
 
   const enableWorkSpaceScanningCommand = vscode.commands.registerCommand(
     "kubernetes-reference-highlighter.enableWorkSpaceScanning",
     () => {
       enableWorkSpaceScanning = !enableWorkSpaceScanning;
       vscode.window.showInformationMessage(
-        `WorkSpace Scanning: ${enableWorkSpaceScanning ? "Enabled" : "Disabled"}`
+        `WorkSpace Scanning: ${
+          enableWorkSpaceScanning ? "Enabled" : "Disabled"
+        }`
       );
       if (enableWorkSpaceScanning) {
         updateK8sResourcesFromWorkspace();
@@ -45,14 +46,20 @@ export function activate(context: vscode.ExtensionContext) {
   const enableClusterScanningCommand = vscode.commands.registerCommand(
     "kubernetes-reference-highlighter.enableClusterScanning",
     () => {
-      enableClusterScanning = !enableClusterScanning;
-      vscode.window.showInformationMessage(
-        `Cluster Scanning: ${enableClusterScanning ? "Enabled" : "Disabled"}`
-      );
       if (enableClusterScanning) {
-        updateK8sResourcesFromCluster();
-      } else {
+        // disable
+        enableClusterScanning = false;
+        vscode.window.showInformationMessage(`Cluster Scanning: Disabled`);
         kubeResourcesCluster = [];
+      } else {
+        if (k8sApi) {
+          // enable
+          enableClusterScanning = true;
+          vscode.window.showInformationMessage(`Cluster Scanning: Enabled`);
+          updateK8sResourcesFromCluster();
+        } else {
+          vscode.window.showErrorMessage(`Cluster Scanning: Not available`);
+        }
       }
     }
   );
@@ -102,8 +109,9 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   // create diagnostic collection
-  const diagnosticCollection =
-    vscode.languages.createDiagnosticCollection("kubernetes-reference-highlighter");
+  const diagnosticCollection = vscode.languages.createDiagnosticCollection(
+    "kubernetes-reference-highlighter"
+  );
 
   let lastDocument = "";
 
@@ -181,7 +189,8 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (
         enableKustomizeScanningCommand &&
-        (fileName.endsWith("kustomization.yaml") || fileName.endsWith("kustomization.yml"))
+        (fileName.endsWith("kustomization.yaml") ||
+          fileName.endsWith("kustomization.yml"))
       ) {
         diagnostics.push(
           ...kustomize.verifyKustomizeBuild(
