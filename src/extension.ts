@@ -113,7 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
     "kubernetes-reference-highlighter"
   );
 
-  let lastDocument = "";
+  let lastDocumentChanged = "";
 
   const updateDiagnostics = (doc: vscode.TextDocument) => {
     const fileName = doc.fileName;
@@ -122,10 +122,10 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const fileText = doc.getText();
-    if (fileText === lastDocument) {
+    if (fileText === lastDocumentChanged) {
       return;
     }
-    lastDocument = fileText;
+    lastDocumentChanged = fileText;
 
     const split = "---";
 
@@ -210,6 +210,8 @@ export function activate(context: vscode.ExtensionContext) {
     diagnosticCollection.set(doc.uri, diagnosticsCombined);
   };
 
+    let lastDocumentSaved = "";
+
   const onSave = vscode.workspace.onDidSaveTextDocument((doc) => {
     if (!foundFirstK8sObject) {
       return;
@@ -220,10 +222,10 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const fileText = doc.getText();
-    if (fileText === lastDocument) {
+    if (fileText === lastDocumentSaved) {
       return;
     }
-    lastDocument = fileText;
+    lastDocumentSaved = fileText;
 
     updateK8sResourcesFromCluster();
     updateK8sResourcesFromWorkspace();

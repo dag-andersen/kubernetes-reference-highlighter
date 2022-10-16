@@ -42,8 +42,17 @@ export function findValueFromKeyRef(
   thisResource: K8sResource,
   text: string
 ): Highlight[] {
-  if (thisResource.kind !== "Deployment") {
-    return [];
+
+  switch (thisResource.kind) {
+    case "Deployment":
+    case "Pod":
+    case "StatefulSet":
+    case "DaemonSet":
+    case "Job":
+    case "CronJob":
+      break;
+    default:
+      return [];
   }
 
   const regex =

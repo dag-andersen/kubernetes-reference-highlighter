@@ -8,14 +8,14 @@ Each time you save a YAML-file the extension will update its internal list of ku
 
 All resources are namespace-sensitive. A resource will not be highlighted if the resource exists in another namespace.
 
-Currently it only support Scanning of `Services`, `Deployments`, `Secrets`, and `ConfigMaps`. More resources will be added at a later point. 
+Currently it only support Scanning of `Services`, `Pods`, `Deployments`, `StatefulSets` `Jobs`, `CronJobs`, `Secrets`, and `ConfigMaps`. More resources will be added at a later point. 
 
 #### Cluster Scanning
 
 The extension calls the kubernetes api of you current kube-config and collects all the object-names of the objects you have access to.
 
 <p float="left">
-  <img src="/readme-images/highlight-cluster-service.png" width="800" />
+  <img src="/readme-images/ingress-cluster-service.png" width="700" />
 </p>
 
 
@@ -24,7 +24,7 @@ The extension calls the kubernetes api of you current kube-config and collects a
 The extension will collect all the Kubernetes object's names in the manifest files found in the open VSCode workspace.  
 
 <p float="left">
-  <img src="/readme-images/highlight-workspace-service.png" width="600" />
+  <img src="/readme-images/pod-workspace-secret.png" width="620" />
 </p>
 
 #### Kustomize Scanning
@@ -32,7 +32,7 @@ The extension will collect all the Kubernetes object's names in the manifest fil
 The extension will run `kustomize build` on all `kustomization`-files in the open workspace and collect all the Kubernetes object names found in the generated kustomize-output.
 
 <p float="left">
-  <img src="/readme-images/highlight-kustomize-service.png" width="900" />
+  <img src="/readme-images/job-kustomize-serivice.png" width="900" />
 </p>
 
 ### Kustomize Build
@@ -47,7 +47,7 @@ The extension will highlight tell you if the kustomize file builds or not.
 ## Notes
 
 - To enable the integration with *kustomize* make sure you have [kustomize installed](https://kustomize.io/) and it is in your PATH.
-- I suggest you install the extension `Error Lens` to easily view the info provided by this extension. 
+- I suggest you install the extension [_Error Lens_](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens) to easily view the info provided by this extension. 
 
 ## Release Notes
 
