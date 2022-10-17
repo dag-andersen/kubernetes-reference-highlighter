@@ -4,7 +4,7 @@
 
 ### Reference Highlighting  
 
-Each time you save a YAML-file the extension will update its internal list of kubernetes objects.
+Each time you save a YAML-file, the extension will update its internal list of Kubernetes objects.
 
 All resources are namespace-sensitive. A resource will not be highlighted if the resource exists in another namespace.
 
@@ -46,7 +46,7 @@ The extension will highlight tell you if the kustomize file builds or not.
 
 ## Notes
 
-- To enable the integration with *kustomize* make sure you have [kustomize installed](https://kustomize.io/) and it is in your PATH.
+- To enable the integration with *kustomize* make sure you have [kustomize installed](https://kustomize.io/), and it is in your PATH.
 - I suggest you install the extension [_Error Lens_](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens) to easily view the info provided by this extension. 
 
 ## Release Notes
