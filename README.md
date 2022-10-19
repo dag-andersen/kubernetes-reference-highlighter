@@ -1,4 +1,4 @@
-# <img src="/readme-images/icon.png" width="70" /> Kubernetes Reference Highlighter
+# <img src="/images/icon.png" width="70" /> Kubernetes Reference Highlighter
 
 ## Features
 
@@ -8,14 +8,14 @@ Each time you save a YAML-file, the extension will update its internal list of K
 
 All resources are namespace-sensitive. A resource will not be highlighted if the resource exists in another namespace.
 
-Currently it only support Scanning of `Services`, `Pods`, `Deployments`, `StatefulSets` `Jobs`, `CronJobs`, `Secrets`, and `ConfigMaps`. More resources will be added at a later point. 
+Currently, it only supports scanning of `Services`, `Pods`, `Deployments`, `StatefulSets`, `Jobs`, `CronJobs`, `Secrets`, and `ConfigMaps`. More resources will be added at a later point. 
 
 #### Cluster Scanning
 
-The extension calls the kubernetes api of you current kube-config and collects all the object-names of the objects you have access to.
+The extension calls the Kubernetes API of your current kube-config and collects all the object-names of the objects you have access to.
 
 <p float="left">
-  <img src="/readme-images/ingress-cluster-service.png" width="700" />
+  <img src="/images/ingress-cluster-service.png" width="700" />
 </p>
 
 
@@ -24,7 +24,7 @@ The extension calls the kubernetes api of you current kube-config and collects a
 The extension will collect all the Kubernetes object's names in the manifest files found in the open VSCode workspace.  
 
 <p float="left">
-  <img src="/readme-images/pod-workspace-secret.png" width="620" />
+  <img src="/images/pod-workspace-secret.png" width="620" />
 </p>
 
 #### Kustomize Scanning
@@ -32,14 +32,14 @@ The extension will collect all the Kubernetes object's names in the manifest fil
 The extension will run `kustomize build` on all `kustomization`-files in the open workspace and collect all the Kubernetes object names found in the generated kustomize-output.
 
 <p float="left">
-  <img src="/readme-images/job-kustomize-serivice.png" width="900" />
+  <img src="/images/job-kustomize-serivice.png" width="900" />
 </p>
 
 ### Kustomize Build
 
 <p float="left">
-  <img src="/readme-images/kustomize-success.png" width="400" />
-  <img src="/readme-images/kustomize-fail.png" width="388" /> 
+  <img src="/images/kustomize-success.png" width="300" />
+  <img src="/images/kustomize-fail.png" width="290" /> 
 </p>
 
 The extension will highlight tell you if the kustomize file builds or not.
@@ -66,24 +66,3 @@ The extension will highlight tell you if the kustomize file builds or not.
 No known issues yet. 
 
 Please open an issue on GitHub if you experience any issues or have ideas for future features
-
-## Extension Settings
-
-> This section is not done yet. 
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
