@@ -230,6 +230,7 @@ export function activate(context: vscode.ExtensionContext) {
     updateK8sResourcesFromCluster();
     updateK8sResourcesFromWorkspace();
     updateK8sResourcesFromKustomize();
+    updateDiagnostics(doc);
   });
 
   const onOpen = vscode.workspace.onDidOpenTextDocument(updateDiagnostics);

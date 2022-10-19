@@ -2,7 +2,7 @@
   "name": "kubernetes-reference-highlighter",
   "displayName": "Kubernetes Reference Highlighter",
   "description": "",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -13,6 +13,10 @@
     "workspaceContains:**/*.yaml",
     "workspaceContains:**/*.yml"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dag-andersen/kubernetes-reference-highlighter"
+  },
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
