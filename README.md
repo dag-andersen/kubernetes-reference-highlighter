@@ -42,7 +42,7 @@ The extension will run `kustomize build` on all `kustomization`-files in the ope
   <img src="/images/kustomize-fail.png" width="290" /> 
 </p>
 
-The extension will highlight tell you if the kustomize file builds or not.
+The extension will tell you if the kustomize-file builds or not.
 
 ## Notes
 
@@ -65,4 +65,4 @@ The extension will highlight tell you if the kustomize file builds or not.
 
 No known issues yet. 
 
-Please open an issue on GitHub if you experience any issues or have ideas for future features
+Please open an issue on GitHub if you experience any issues or have ideas for future features.
