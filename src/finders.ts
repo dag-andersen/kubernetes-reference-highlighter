@@ -19,7 +19,7 @@ export function findServices(
           ? r.metadata.name
           : `${r.metadata.name}.${r.metadata.namespace}`;
 
-      const regex = new RegExp(`".*[^a-zA-Z-]${name}[^a-zA-Z-].*"`, "g");
+      const regex = new RegExp(`(?:"|".*[^a-zA-Z-])${name}(?:"|[^a-zA-Z-].*")`, "g");
       const matches = text.matchAll(regex);
 
       return [...matches].map((match) => {

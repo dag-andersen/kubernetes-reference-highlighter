@@ -152,11 +152,11 @@ The fact that the extension highlights which kustomize-files builds or doesn't b
 
 
 - Years of professional experience
-- Years of processional experience with kubernetes
+- Years of professional experience with Kubernetes
 - Would you recommend this extension to others?
-- Over the last month did it help your daily work?
-- How many bugs did it help you catch
-- Percentage estimate how often it proves false positives (the extension highlighting wrong references)
+- Over the last month, did it help your daily work?
+- How many bugs/issues did it help you catch
+- Percentage estimate of how often it proves false positives (the extension highlighting wrong references)
 - Percentage estimate of how often it provides false negatives (not highlighting a reference that is actually there)
 - What type of scanning do you find most useful? (Cluster, plaintext, Kustomize)
 
