@@ -151,6 +151,7 @@ The fact that the extension highlights which kustomize-files build or do not bui
 
 # 8. Evaluation
 
+> not updated.
 
 - Years of professional experience
 - Years of professional experience with Kubernetes
@@ -172,6 +173,6 @@ This paper has
 open source
 Handles templating
 Live feedback
-danling references
+dangling references
 
 # 10. References
