@@ -1,10 +1,10 @@
 # <img src="/images/icon.png" width="70" /> Kubernetes Reference Highlighter
 
+This extension highlights references your `YAML`-files.
+
 ## Features
 
 ### Reference Highlighting  
-
-Each time you save a YAML-file, the extension will update its internal list of Kubernetes objects.
 
 All resources are namespace-sensitive. A resource will not be highlighted if the resource exists in another namespace.
 
