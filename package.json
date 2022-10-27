@@ -3,7 +3,7 @@
   "displayName": "Kubernetes Reference Highlighter",
   "publisher": "dag-andersen",
   "description": "",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -36,19 +36,23 @@
         "title": "Kubernetes Reference Highlighter: Toggle Kustomize Scanning"
       }
     ],
-    "semanticTokenTypes": [
-      {
-        "id": "templateType",
-        "superType": "type",
-        "description": "A template type."
+    "configuration": {
+      "title": "kubernetes-reference-highlighter",
+      "properties": {
+        "kubernetes-reference-highlighter.surveyDate": {
+          "type": "number",
+          "scope": "resource",
+          "default": 0,
+          "description": "Next day of the year a survey will be shown"
+        },
+        "kubernetes-reference-highlighter.skipCount": {
+          "type": "number",
+          "scope": "resource",
+          "default": 0,
+          "description": "Number Of times survey skipped"
+        }
       }
-    ],
-    "semanticTokenModifiers": [
-      {
-        "id": "native",
-        "description": "Annotates a symbol that is implemented natively"
-      }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run esbuild-base -- --minify",

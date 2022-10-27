@@ -210,7 +210,7 @@ export function activate(context: vscode.ExtensionContext) {
     diagnosticCollection.set(doc.uri, diagnosticsCombined);
   };
 
-    let lastDocumentSaved = "";
+  let lastDocumentSaved = "";
 
   const onSave = vscode.workspace.onDidSaveTextDocument((doc) => {
     if (!foundFirstK8sObject) {
@@ -257,12 +257,68 @@ export function activate(context: vscode.ExtensionContext) {
       "Kubernetes Reference Highlighter starting!"
     );
     foundFirstK8sObject = true;
+
     updateK8sResourcesFromCluster();
     updateK8sResourcesFromWorkspace();
     updateK8sResourcesFromKustomize();
+
+    checkSurveyMessage();
   };
 
   console.log("Kubernetes Reference Highlighter activated");
+}
+
+function checkSurveyMessage() {
+  const config = vscode.workspace.getConfiguration(
+    "kubernetes-reference-highlighter"
+  );
+  const surveyDate = config.get<number>("surveyDate");
+  const skipCount = config.get<number>("skipCount") || 0;
+
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now.getTime() - start.getTime();
+  const oneDay = 1000 * 60 * 60 * 24;
+  const today = Math.floor(diff / oneDay);
+
+  const nextSurvey = (days: number) =>
+    config.update("surveyDate", today + days, true);
+  const stopAsking = () => config.update("surveyDate", -1, true);
+  const incrementSkip = () => config.update("skipCount", skipCount + 1, true);
+
+  if (surveyDate === undefined || surveyDate === 0) {
+    // if surveyDate is undefined, it means the user has just installed the extension
+    nextSurvey(15);
+  // } else if (surveyDate < 0) {
+  //   // if surveyDate is negative, it means the user has already rated the extension
+  //   return;
+  // } else {
+  //   if (today - surveyDate > -100) {
+  //     // should be 0. 100 is for testing.
+  //     // show message with button to open github page
+  //     vscode.window
+  //       .showInformationMessage(
+  //         "We hope you enjoy Kubernetes Reference Highlighter! This extension is a research project, and we would love to hear your thoughts!",
+  //         "Open Survey",
+  //         skipCount < 2 ? "Later" : "Don't show again"
+  //       )
+  //       .then((selection) => {
+  //         if (selection === "Open Survey") {
+  //           vscode.env.openExternal(
+  //             vscode.Uri.parse(
+  //               "https://marketplace.visualstudio.com/items?itemName=dag-andersen.kubernetes-reference-highlighter"
+  //             )
+  //           );
+  //           stopAsking();
+  //         } else if (selection === "Don't show again") {
+  //           stopAsking();
+  //         } else if (selection === "Later") {
+  //           incrementSkip();
+  //           nextSurvey(5);
+  //         }
+  //       });
+  //   }
+  }
 }
 
 export function getAllFileNamesInDirectory(dirPath: string) {
