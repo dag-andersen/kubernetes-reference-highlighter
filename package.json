@@ -34,6 +34,10 @@
       {
         "command": "kubernetes-reference-highlighter.enableKustomizeScanning",
         "title": "Kubernetes Reference Highlighter: Toggle Kustomize Scanning"
+      },
+      {
+        "command": "kubernetes-reference-highlighter.openSurvey",
+        "title": "Kubernetes Reference Highlighter: Open Survey"
       }
     ],
     "configuration": {

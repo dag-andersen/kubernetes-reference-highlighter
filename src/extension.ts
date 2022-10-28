@@ -89,6 +89,13 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  const openSurveyCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.openSurvey",
+    () => {
+      openSurvey();
+    }
+  );
+
   const updateK8sResourcesFromWorkspace = () => {
     if (!enableWorkSpaceScanning) {
       return;
@@ -244,6 +251,7 @@ export function activate(context: vscode.ExtensionContext) {
     enableClusterScanningCommand,
     enableWorkSpaceScanningCommand,
     enableKustomizeScanningCommand,
+    openSurveyCommand,
     diagnosticCollection,
     onSave,
     onChange,
@@ -304,11 +312,7 @@ function checkSurveyMessage() {
           )
           .then((selection) => {
             if (selection === "Open Survey") {
-              vscode.env.openExternal(
-                vscode.Uri.parse(
-                  surveyLink
-                )
-              );
+              openSurvey();
               stopAsking();
             } else if (selection === "Don't show again") {
               stopAsking();
@@ -319,6 +323,14 @@ function checkSurveyMessage() {
           });
       }
   }
+}
+
+function openSurvey() {
+  vscode.env.openExternal(
+    vscode.Uri.parse(
+      surveyLink
+    )
+  );
 }
 
 export function getAllFileNamesInDirectory(dirPath: string) {
