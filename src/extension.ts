@@ -8,6 +8,8 @@ import * as finders from "./finders";
 
 import { FromWhere, K8sResource } from "./types";
 
+const surveyLink = "https://forms.gle/69zG1L4ZcSHFeSwd7";
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -289,35 +291,33 @@ function checkSurveyMessage() {
   if (surveyDate === undefined || surveyDate === 0) {
     // if surveyDate is undefined, it means the user has just installed the extension
     nextSurvey(15);
-  // } else if (surveyDate < 0) {
-  //   // if surveyDate is negative, it means the user has already rated the extension
-  //   return;
-  // } else {
-  //   if (today - surveyDate > -100) {
-  //     // should be 0. 100 is for testing.
-  //     // show message with button to open github page
-  //     vscode.window
-  //       .showInformationMessage(
-  //         "We hope you enjoy Kubernetes Reference Highlighter! This extension is a research project, and we would love to hear your thoughts!",
-  //         "Open Survey",
-  //         skipCount < 2 ? "Later" : "Don't show again"
-  //       )
-  //       .then((selection) => {
-  //         if (selection === "Open Survey") {
-  //           vscode.env.openExternal(
-  //             vscode.Uri.parse(
-  //               "https://marketplace.visualstudio.com/items?itemName=dag-andersen.kubernetes-reference-highlighter"
-  //             )
-  //           );
-  //           stopAsking();
-  //         } else if (selection === "Don't show again") {
-  //           stopAsking();
-  //         } else if (selection === "Later") {
-  //           incrementSkip();
-  //           nextSurvey(5);
-  //         }
-  //       });
-  //   }
+    } else if (surveyDate < 0) {
+      // if surveyDate is negative, it means the user has already rated the extension
+      return;
+    } else {
+      if (today - surveyDate > 0) {
+        vscode.window
+          .showInformationMessage(
+            "We hope you enjoy Kubernetes Reference Highlighter! This extension is a research project, and we would love to hear your thoughts!",
+            "Open Survey",
+            skipCount < 2 ? "Later" : "Don't show again"
+          )
+          .then((selection) => {
+            if (selection === "Open Survey") {
+              vscode.env.openExternal(
+                vscode.Uri.parse(
+                  surveyLink
+                )
+              );
+              stopAsking();
+            } else if (selection === "Don't show again") {
+              stopAsking();
+            } else if (selection === "Later") {
+              incrementSkip();
+              nextSurvey(5);
+            }
+          });
+      }
   }
 }
 
