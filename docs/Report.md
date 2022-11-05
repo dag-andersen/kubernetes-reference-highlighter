@@ -2,15 +2,15 @@
 
 # 1. Abstract
 
----
-
-- The tool can be found here: https://github.com/dag-andersen/kubernetes-reference-highlighter
-- and downloaded here: https://github.com/dag-andersen/kubernetes-reference-highlighter/releases
-- or downloaded from the VS Code Marketplace. 
+Linters and static code analysis in some domains has proven to help developers catching bugs and speeding up their development. Kubernetes is growing in popularity, but the tooling for validating configuration files is limited. By design Kubernetes will accept Kubernetes-manifests with broken references because there is no order to the creation of objects, so a missing resources may exist in a short while. Furthermore, you typically only have a subset of the full infrastructure configuration on your local machine, so many of the code references and objects will naturally be broken, and the tools will often give incorrect/inadequate valuation. The tools that exist only looks at plain local YAML-files. This paper presents a prototype of an Visual Studio Code Extension published to the VS Code Marketplace. The tool highlight references in YAML-files based on plain local files, objects that exists in running clusters, and objects generated generated output by _Kustomize_. The extension is tested on X people for a month. A small survey is conducted based on their response and feedback. The main response was that reference-highlighting is useful and can prevent errors in curtain situations. The tools is not perfect and does not find all references it is still useful. It proves that even simple highlighting can limit bugs and thus increase productivity. Further research and development is needed to ...
 
 ---
-# 2. CCS CONCEPTS
-- Human-centered computing → Open source software; Software Engineering Tooling → Code Validation
+
+Forklarer kubernetes rigtig godt: https://web.archive.org/web/20220608212956id_/https://dl.acm.org/doi/pdf/10.1145/3539606
+
+- The source code can be found on [Github](https://github.com/dag-andersen/kubernetes-reference-highlighter) and it can installed from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=dag-andersen.kubernetes-reference-highlighter).
+
+---
 
 # 3. Keywords
 - Open Source Software, IDE Extension, Code Linting, Static code analysis, Code Validation, Kubernetes
@@ -151,28 +151,41 @@ The fact that the extension highlights which kustomize-files build or do not bui
 
 # 8. Evaluation
 
-> not updated.
 
-- Years of professional experience
-- Years of professional experience with Kubernetes
-- Would you recommend this extension to others?
-- Over the last month, did it help your daily work?
-- How many bugs/issues did it help you catch
-- Percentage estimate of how often it proves false positives (the extension highlighting wrong references)
-- Percentage estimate of how often it provides false negatives (not highlighting a reference that is actually there)
-- What type of scanning do you find most useful? (Cluster, plaintext, Kustomize)
+The proper way of implementing a linter is to use some kind of abstraction syntax tree and pass tokens, but with the limited amount of time for this project Regex-matching acceptable is proof of concept. Using Regex has the risk of producing false positives or false negatives. If there is an edge-case my regex does not catch then a reference will not be found and produce a false negative (not highlighting something that should be highlighted).
 
-## 8.1. Results
+To evaluate if this VS Code extension reference highlighting can limit the amount of bugs/issues when working with Kubernetes, I have asked developers through slack-channels, Reddit, and other social medias/groups to try using the tool in their daily work for an month. Since the tool is publicly available in the VS Code Marketplace it is possible that people have also found it by chance. The participants was asked to fill in a survey. The survey was conducted in Google Forms and was available from the extension's marketplace-page.
 
-## 8.2. Limitations
+When the extension have been installed for 15 days a message will ask the user if they would like to fill out a survey. If they click "open" the survey will open in their browser. If they click "later" they will be asked again in 5 days. After the user have opened the survey or click "later" 3 times the message will not longer popup. 
+
+**The questions and answers from the survey is listed here:**
+| Question \ participant                                                                                          | person1 | person2 | person3 | person4 | person5 | person6 |
+| --------------------------------------------------------------------------------------------------------------- | ------- | ------- | ------- | ------- | ------- | ------- |
+| Years of professional experience                                                                                | 0       | 0       | 0       | 0       | 0       | 0       |
+| Years of professional experience with Kubernetes                                                                | 0       | 0       | 0       | 0       | 0       | 0       |
+| role/job position                                                                                               | 0       | 0       | 0       | 0       | 0       | 0       |
+| How likely are you to recommend this to others working with Kubernetes? (1-5)                                   | 0       | 0       | 0       | 0       | 0       | 0       |
+| Over the last month, did the extension help your daily work?                                                               | 0       | 0       | 0       | 0       | 0       | 0       |
+| How many bugs did it help you catch                                                                             | 0       | 0       | 0       | 0       | 0       | 0       |
+| How often does the extension give false positives (highlighting a wrong reference)        | 0       | 0       | 0       | 0       | 0       | 0       |
+| Percentage estimate of how often it gives false negatives (not highlighting a reference that is actually there) | 0       | 0       | 0       | 0       | 0       | 0       |
+| What type of scanning do you find most useful? (Cluster, plaintext/workspace, Kustomize)                        | 0       | 0       | 0       | 0       | 0       | 0       |
 
 # 9. Conclusion
 
-This paper has 
+Based on the fact X out of X persons reported they experienced the bug help them catch a least 1 bug and no participant straight up said it had a negative impact on their productivity i would consider this extension an success. This paper shows that even with simple extension based on Regex it is possible to give developers valuable live validation of kubernetes object definition to catch bugs and increase productivity. 
+Further research and development is needed to evaluate if an even better extension (with more complicated YAML parsing) would help developer catch even more bugs. 
 
-open source
-Handles templating
-Live feedback
-dangling references
+<!-- example
+We investigated in this paper the benefits and the constraints of using linters for performance purposes in Android apps. We con- ducted a qualitative study based on interviews with experienced Android developers. Our results provide motivations for developers to use linters for performance and share with them how to make this usage the most beneficial. Our findings highlight also the cur- rent challenges of using linters for performance. These challenges open up new research perspectives and show new needs for tool makers.
+-->
+
+<!-- example
+We have presented LAGOON – an open source, reusable tool for analyzing OSS communities. The key highlights include various ingestion modules, data layering, entity fusion, a UI, and predictions on the health of OSS communities. The future of LAGOON comprises adding more ingestion modules and increasing the power of the platform to predict threats to OSS communities. The authors are happy to accept pull requests and extensions to LAGOON, and hope that the broader community can benefit from using it.
+-->
+
+<!-- example
+This paper introduces TD Classifier, a TD identification tool that builds upon the collective knowledge acquired by three leadingTD tools and relies on open-source tools to automatically identify high-TD classes for any arbitrary Java project by pointing to its git repository. We demonstrate the tool’s usefulness by a case study using the Apache Commons IO project. Our evaluation shows thatTD Classifier is expected to facilitate TD management activities and enable further future experimentation through its use in an academic or industrial setting.TD Classifier will continue to evolve to meet the challenges posed by its use in both academia and practice. We plan to evaluate the tool and report additional qualitative analysis through a large-scale case study in an industrial setting. We also plan to improve the tool’s performance and scalability, as well as to extend it in other programming languages (e.g., C/C++, python, JavaScript, etc.), by incorporating additional analysis tools into the analysis pipeline.
+-->
 
 # 10. References
