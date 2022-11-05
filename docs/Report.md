@@ -19,30 +19,28 @@ Forklarer kubernetes rigtig godt: https://web.archive.org/web/20220608212956id_/
 
 <!-- Intro -->
 
-Container Orchestration and Kubernetes are continuously getting more popular during the last couple of years.
-Around 25-30% of professional developers use Kubernetes (25.45% [[StackOverflow Survey 2022](https://survey.stackoverflow.co/2022/#section-most-popular-technologies-other-tools)], 30% [[SlashData’s Developer Economics survey](https://developer-economics.cdn.prismic.io/developer-economics/527f60d6-d199-4db8-bd31-6dde43719033_The+State+of+Cloud+Native+Development+March+2022.pdf)], and around one-fourth of the remaining wants to work with Kubernetes in the future [[StackOverflow Survey 2022](https://survey.stackoverflow.co/2022/#most-loved-dreaded-and-wanted-tools-tech-want)]. So we can expect that more and more developers will be deploying and configuring infrastructure on Kubernetes through YAML.
+**Background**
+Container Orchestration and Kubernetes are continuously getting more popular during the last couple of years. Around 25-30% of professional developers use Kubernetes (25.45% [[StackOverflow Survey 2022](https://survey.stackoverflow.co/2022/#section-most-popular-technologies-other-tools)], 30% [[SlashData’s Developer Economics survey](https://developer-economics.cdn.prismic.io/developer-economics/527f60d6-d199-4db8-bd31-6dde43719033_The+State+of+Cloud+Native+Development+March+2022.pdf)], and around one-fourth of the remaining wants to work with Kubernetes in the future [[StackOverflow Survey 2022](https://survey.stackoverflow.co/2022/#most-loved-dreaded-and-wanted-tools-tech-want)]. So we can expect that more and more developers will be deploying and configuring infrastructure on Kubernetes through YAML.
 
-However, Kubernetes is known for being remarkably complex, and hence the learning curve can be quite steep. In a survey done by StackOverflow it is shown that 74,75% of the developers who use Kubernetes "loves it" and the remaining 25,25% "dreads it" [[source](https://survey.stackoverflow.co/2022/#section-most-popular-technologies-other-tools)]. Why the ~25% dread Kubernetes is not specified in the survey, but anything that would lower that percentage is worth striving for. 
+However, Kubernetes is known for being remarkably complex, and hence the learning curve can be quite steep. In a survey done by StackOverflow it is shown that 74,75% of the developers who use Kubernetes "loves it" and the remaining 25,25% "dreads it" [[source](https://survey.stackoverflow.co/2022/#section-most-popular-technologies-other-tools)]. Why the ~25% of the participants _dread_ Kubernetes is not specified in the survey, but anything that would lower that percentage is worth striving for. 
 
 <!-- 96% of organizations in 2021 are either using or evaluating Kubernetes [[source](https://www.cncf.io/wp-content/uploads/2022/02/CNCF-AR_FINAL-edits-15.2.21.pdf)].  -->
 <!-- A survey conducted by New Relic reports that 88% of IT decision-makers are exploring Kubernetes and Containers [[source](https://newrelic.com/sites/default/files/2021-09/New_Relic_Report%20_2021_Observability_Forecast_Sept.pdf)]. -->
-<!-- 9/10 of those who use Kubernetes are profesionals. [[source](https://developer-economics.cdn.prismic.io/developer-economics/527f60d6-d199-4db8-bd31-6dde43719033_The+State+of+Cloud+Native+Development+March+2022.pdf)] -->
+<!-- 9/10 of those who use Kubernetes are professionals. [[source](https://developer-economics.cdn.prismic.io/developer-economics/527f60d6-d199-4db8-bd31-6dde43719033_The+State+of+Cloud+Native+Development+March+2022.pdf)] -->
 
 The ecosystems around Kubernetes are constantly evolving, and it can be difficult to keep up with the newest tools and features. When building workloads aimed at running on Kubernetes, most configuration is done in YAML and revolves around Kubernetes Object Definitions. This means we, as a community, need to ensure that we have the proper tooling for validating this infrastructure. Both to speed up the development process but also to reduce the number of errors that goes into production. The sooner the bug is found in the software process, the cheaper it is to correct [[source](https://deepsource.io/blog/exponential-cost-of-fixing-bugs/)].
 
-
-# 5. Problem 
-
+**Problem**
 It is very easy to make mistakes when deploying to Kubernetes. There are strict rules of what fields you can add in your Kubernetes Object Definition, but there are no checks that the values provided are valid (besides the fact that it needs to be the correct type) - e.g., your _Pod_ can request environment variables from a secret that does not exist, or your `service` can point to Pods that do not exist. 
 
 <!-- Terraform an kubernetes -->
-Terraform does static "compile" time checks, so you will be notified about your broken references beforehand. By design, Kubernetes does not do that and can not do that. Kubernetes objects are not expected to be created at the same time or in a given order, so we can not talk about a "compile" time. Kubernetes is managed with Control Planes, and there is no order to when which resource is created/scheduled. In Kubernetes, your references will often not exist on creation time but will only be created at a later point. This explains why there is no static validation by default when creating Kubernetes resources. 
+Terraform does static validation checks, so you will be informed about your broken references before you apply your code. By design, Kubernetes does not do that and can not do that. Kubernetes objects are not expected to be created at the same time or in a given order, so we can not talk about a "compile" time. Kubernetes is managed with Control Planes, and there is no order to when which resource is created/scheduled. In Kubernetes, your references will often not exist on creation time but will only be created at a later point. This explains why there is no static validation by default when creating Kubernetes resources. 
 
 <!-- Yaml -->
 Kubernetes object definitions are written in YAML. YAML is a data serialization language that only knows the concepts of primitive data types like arrays, strings, numbers, etc., and therefore does not know the concept of references. All references declared in your Kubernetes objects definition is written as a string, with no type checking or validation. This means there is no built-in reference validation in YAML.
 
 <!-- Linters -->
-Since most IDEs, Plugins, or Tools do not verify any of the magic strings, it can be quite cumbersome to debug the code. It typically involves manually reading the magic string repeatably until you discover that there is a typo or each of your resources exists in two different namespaces and, therefore, can't communicate. No public and free IDE feature or extension exist that checks this.
+Since most IDEs, plugins, or tools do not verify any of the magic strings in you YAML-files, it can be quite cumbersome to debug the code. It typically involves a human manually reading through all magic string until you discover that there is a typo or each of your resources exists in two different namespaces and, therefore, can't communicate. No public and free IDE feature or extension exist that checks this.
 
 <!-- extended problem: kustomize -->
 Furthermore, developers often use tools like _Helm_ and _Kustomize_ to template their YAML-files. This is done so multiple configurations can inherit/share common code across different configurations. This means that references that are hardcoded in the files may not exist in any of the plain files but may only be generated on `runtime` when one of the templating tools is used. This makes it much harder to give valuable information to the developer because Kubernetes objects' names are dynamically generated by the tool. I have not found any extension that tries to tackle this challenge, so currently, developers don't get any assistance validating their YAML-files live while coding when using templating tools like _Helm_ and _Kustomize_. 
@@ -65,10 +63,10 @@ Ten developers are given a task to debug a system. Half of them will do it with 
 
 ---
 
-
 # 6. Related tools | Existing tools
 
 In this section, existing tools are listed that aim to help the developer create correct/valid Kubernetes Object Definitions and tackle some of the challenges explained in the introduction-section.
+The tools are collected by reading blogposts online and reading "alternative tools" on Github.  
 
 - **JetBrains IntelliJ IDEA Kubernetes Plugin** [[link](https://plugins.jetbrains.com/plugin/10485-kubernetes)]: The full version IntelliJ that includes support for plugins is a paid product and is therefore not publicly accessible. JetBrains' plugin only takes local files into account when highlighting references. The plugin does not check your current cluster or build anything with kustomize like KRH. But JetBrains' plugin comes with extra functionality that lets the user jump between files by clicking the highlighted references (something that KRH does not).
 - **KubeLinter** [[docs](https://docs.kubelinter.io/#/)] [[GitHub](https://github.com/stackrox/kube-linter)]: This is a open source Command Line Tool that validates your Kubernetes manifests. KubeLinter is a feature-rich tool that informs and warns of all sorts of issues that may be their code. The full list of features can be found [[Here](https://docs.kubelinter.io/#/generated/checks)]. KubeLinter is ideal to integrate into testing-pipelines where it can function as an initial step for everything YAML before it goes into production. KubeLinter can validate Helm Charts but can not validate Kustomize templates. The tool only checks the local files it is provided, so it does not know what already exists in a cluster. <!-- "KubeLinter is also highly configurable. Users can easily create their own custom rules and enable and disable rules depending on the policies required for specific namespaces. Adding custom rules in Kubelinter requires minimal work. It can be integrated easily into your CI/CD tool, such as GitHub Action, Jenkins, or Travis CI, for automated checking and error identification of application configurations."[[soruce](https://kubevious.io/blog/post/top-kubernetes-yaml-validation-tools#kubelinter)] -->
@@ -76,7 +74,7 @@ In this section, existing tools are listed that aim to help the developer create
 - **Kubevious** [[docs](https://kubevious.io/docs/built-in-validators/)] [[GitHub](https://github.com/kubevious/kubevious)]: This tool comes with 44 built-in Kubernetes Resource validation checks. The checks include cross-file checks that, e.g., validate if a `service` points to two deployments at the same time and that kind of misconfiguration. Kubevious has a powerful toolset just like KubeLinter, but this tool has a UI and needs to be run in a cluster or as a stand-alone program. It can only run its checks on resources already deployed to Kubernetes and therefore does not do any live validation for the developer while coding. This tool is mainly for finding and debugging issues after it has already been deployed.
 - **Conftest** [[GitHub](https://github.com/open-policy-agent/conftest)], **Copper** [[GitHub](https://github.com/cloud66-oss/copper)], and **Config-lint** [[GitHub](https://github.com/stelligent/config-lint)] are all similar tools that try to validate Kubernetes Manifests/YAML, but none of them come with built-in checks, so the users have to make their own "rules" that the YAML will be validated against. All these tools are Command Line tools, so they do not provide any live feedback but only validation when the command is run. These tools accelerate when you want to build your own custom checks (maybe on your own Custom Resource Definition (CRDs)).
 
-What is shared across all the tools listed above is that none of them manage to do reference checking across multiple files in a continuous manner that both takes local files, templating tools, and actual running clusters into account and is free to use at the same time.
+What is shared across all the tools listed above is that none of them manage to do reference checking across multiple files in a continuous manner that both takes local files, templating tools, and actual running clusters into account and at the same time is free to use.
 
 # 7. Prototype | Implementation
 
@@ -146,6 +144,8 @@ Kustomize is extra challenging to handle because it is built on the idea of ["ba
 The fact that the extension highlights which kustomize-files build or do not build can be very useful in debugging a long chain of kustomize layers. 
 
 <img src="/image-ignore/icon_kustomize-tree-2.png" width="330" />
+
+> Figure X: Visualization of how the extension shows where overlays fail in a chain of overlays. The bases are at the bottom levels, while each layer above the bases are overlays. 
 
 ---
 
