@@ -172,7 +172,7 @@ The tool is able to read plain YAML-files in the workspace, read generated outpu
   If _Kustomize_ is not installed on the computer and part of the default shells PATH, it will notify the user.
 
 Each time you save a YAML-file in VS Code, the extension will update its internal list of Kubernetes objects.
-Each of these scanning techniques can be disabled through the CommandLine <!-- wrong name --> or through settings. 
+Each of these scanning techniques can be disabled through the Command Palette or through settings. 
 
 <!-- Kustomize is extra difficult -->
 Kustomize is extra challenging to handle because it is built on the idea of ["bases"](https://kubectl.docs.kubernetes.io/references/kustomize/glossary/#base) and ["overlays"](https://kubectl.docs.kubernetes.io/references/kustomize/glossary/#overlay). Overlays use a base-configuration and add/delete/modify/override the existing configuration. Multiple overlays can use the same base, and a base has no knowledge of the overlays that refer to it. Overlays can be chained to infinity, which means that when the extension builds a kustomization, it doesn't know if this is the final configuration or if one or more overlays override it in a different folder. Traversing the dependency tree of overlays depending on each other is beyond the scope of this Paper. Instead, the tool will inform the user of references it finds in all the kustomization layers, and then it is up to the developer to check which layer he/she meant to refer to.
