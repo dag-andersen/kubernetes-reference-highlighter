@@ -3,6 +3,9 @@ import * as vscode from "vscode";
 import { textToK8sResource, createDiagnostic } from "./extension";
 import { getAllFileNamesInDirectory } from "./extension";
 
+const kustomizeIsInstalled = isKustomizeInstalled();
+const kustomizeCommand = kustomizeIsInstalled ? "kustomize build" : "kubectl kustomize";
+
 export function getKustomizeResources(): K8sResource[] {
   const kustomizationFiles = getKustomizationPathsInWorkspace();
 
@@ -36,7 +39,7 @@ function kustomizeBuild(file: string): K8sResource[] {
   let output: string = "";
 
   try {
-    output = execSync(`kustomize build ${path}`, {
+    output = execSync(`${kustomizeCommand} ${path}`, {
       encoding: "utf-8",
     });
   } catch (e) {
@@ -55,7 +58,7 @@ function kustomizeBuild(file: string): K8sResource[] {
 }
 
 // check if kustomize is installed
-export function isKustomizeInstalled(): boolean {
+function isKustomizeInstalled(): boolean {
   const execSync = require("child_process").execSync;
   let output: string = "";
 
@@ -97,7 +100,7 @@ export function verifyKustomizeBuild(
 
     const success = (() => {
       try {
-        output = execSync(`kustomize build ${path}`, {
+        output = execSync(`${kustomizeCommand} ${path}`, {
           encoding: "utf-8",
         });
         return true;

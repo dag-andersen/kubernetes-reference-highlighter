@@ -2,6 +2,11 @@
 
 This extension highlights references your `YAML`-files.
 
+## Notes
+
+- I suggest you install the extension [_Error Lens_](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens) to easily view the info provided by this extension. 
+- If you have [kustomize](https://kustomize.io/) installed as a stand-alone binary in your PATH the extension will use `kustomize build` instead of `kubectl kustomize`.
+
 ## Features
 
 ### Reference Highlighting  
@@ -44,11 +49,6 @@ The extension will run `kustomize build` on all `kustomization`-files in the ope
 
 The extension will tell you if the kustomize-file builds or not.
 
-## Notes
-
-- To enable the integration with *kustomize* make sure you have [kustomize installed](https://kustomize.io/), and it is in your PATH.
-- I suggest you install the extension [_Error Lens_](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens) to easily view the info provided by this extension. 
-
 ## Release Notes
 
 ### v0.0.2
@@ -61,8 +61,10 @@ The extension will tell you if the kustomize-file builds or not.
 - Added Workspace Scanning
 - Added Kustomize Scanning
 
-## Known Issues
-
-No known issues yet. 
+## Issues
 
 Please open an issue on GitHub if you experience any issues or have ideas for future features.
+
+## Survey
+
+This extension is part of a research project at [ITU](https://en.itu.dk/). I would greatly appreciate it if you would fill out [this survey](https://forms.gle/H1QwtYwdz8GTvLfV7) after a few weeks of using the extension :pray: 

@@ -8,7 +8,7 @@ import * as finders from "./finders";
 
 import { FromWhere, K8sResource } from "./types";
 
-const surveyLink = "https://forms.gle/69zG1L4ZcSHFeSwd7";
+const surveyLink = "https://forms.gle/H1QwtYwdz8GTvLfV7";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -25,25 +25,8 @@ export function activate(context: vscode.ExtensionContext) {
   let kubeResourcesWorkspace: K8sResource[] = [];
   let kubeResourcesKustomize: K8sResource[] = [];
   let enableWorkSpaceScanning = true;
-  let enableWorkSpaceKustomizeScanning = kustomize.isKustomizeInstalled();
+  let enableWorkSpaceKustomizeScanning = true;
   let enableClusterScanning = k8sApi !== undefined;
-
-  const enableWorkSpaceScanningCommand = vscode.commands.registerCommand(
-    "kubernetes-reference-highlighter.enableWorkSpaceScanning",
-    () => {
-      enableWorkSpaceScanning = !enableWorkSpaceScanning;
-      vscode.window.showInformationMessage(
-        `WorkSpace Scanning: ${
-          enableWorkSpaceScanning ? "Enabled" : "Disabled"
-        }`
-      );
-      if (enableWorkSpaceScanning) {
-        updateK8sResourcesFromWorkspace();
-      } else {
-        kubeResourcesWorkspace = [];
-      }
-    }
-  );
 
   const enableClusterScanningCommand = vscode.commands.registerCommand(
     "kubernetes-reference-highlighter.enableClusterScanning",
@@ -66,15 +49,26 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  const enableWorkSpaceScanningCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.enableWorkSpaceScanning",
+    () => {
+      enableWorkSpaceScanning = !enableWorkSpaceScanning;
+      vscode.window.showInformationMessage(
+        `WorkSpace Scanning: ${
+          enableWorkSpaceScanning ? "Enabled" : "Disabled"
+        }`
+      );
+      if (enableWorkSpaceScanning) {
+        updateK8sResourcesFromWorkspace();
+      } else {
+        kubeResourcesWorkspace = [];
+      }
+    }
+  );
+
   const enableKustomizeScanningCommand = vscode.commands.registerCommand(
     "kubernetes-reference-highlighter.enableKustomizeScanning",
     () => {
-      if (!kustomize.isKustomizeInstalled()) {
-        vscode.window.showErrorMessage(
-          "Kustomize is not installed. Please install it first."
-        );
-        return;
-      }
       enableWorkSpaceKustomizeScanning = !enableWorkSpaceKustomizeScanning;
       vscode.window.showInformationMessage(
         `Kustomize Scanning: ${
@@ -299,38 +293,34 @@ function checkSurveyMessage() {
   if (surveyDate === undefined || surveyDate === 0) {
     // if surveyDate is undefined, it means the user has just installed the extension
     nextSurvey(15);
-    } else if (surveyDate < 0) {
-      // if surveyDate is negative, it means the user has already rated the extension
-      return;
-    } else {
-      if (today - surveyDate > 0) {
-        vscode.window
-          .showInformationMessage(
-            "We hope you enjoy Kubernetes Reference Highlighter! This extension is a research project, and we would love to hear your thoughts!",
-            "Open Survey",
-            skipCount < 2 ? "Later" : "Don't show again"
-          )
-          .then((selection) => {
-            if (selection === "Open Survey") {
-              openSurvey();
-              stopAsking();
-            } else if (selection === "Don't show again") {
-              stopAsking();
-            } else if (selection === "Later") {
-              incrementSkip();
-              nextSurvey(5);
-            }
-          });
-      }
+  } else if (surveyDate < 0) {
+    // if surveyDate is negative, it means the user has already rated the extension
+    return;
+  } else {
+    if (today - surveyDate > 0) {
+      vscode.window
+        .showInformationMessage(
+          "We hope you enjoy Kubernetes Reference Highlighter! This extension is a research project, and we would love to hear your thoughts!",
+          "Open Survey",
+          skipCount < 2 ? "Later" : "Don't show again"
+        )
+        .then((selection) => {
+          if (selection === "Open Survey") {
+            openSurvey();
+            stopAsking();
+          } else if (selection === "Don't show again") {
+            stopAsking();
+          } else if (selection === "Later") {
+            incrementSkip();
+            nextSurvey(5);
+          }
+        });
+    }
   }
 }
 
 function openSurvey() {
-  vscode.env.openExternal(
-    vscode.Uri.parse(
-      surveyLink
-    )
-  );
+  vscode.env.openExternal(vscode.Uri.parse(surveyLink));
 }
 
 export function getAllFileNamesInDirectory(dirPath: string) {
