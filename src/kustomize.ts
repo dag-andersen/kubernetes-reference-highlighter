@@ -1,4 +1,4 @@
-import { Highlight, K8sResource } from "./types";
+import { K8sResource } from "./types";
 import * as vscode from "vscode";
 import { textToK8sResource, createDiagnostic } from "./extension";
 import { getAllFileNamesInDirectory } from "./extension";
@@ -26,7 +26,7 @@ function getKustomizationPathsInWorkspace(): string[] {
   const kustomizationFiles = getAllFileNamesInDirectory(
     workspaceFolders
   ).filter((file) => {
-    return file.endsWith("kustomization.yml");
+    return file.endsWith("kustomization.yml") || file.endsWith("kustomization.yaml");
   });
 
   return kustomizationFiles;
