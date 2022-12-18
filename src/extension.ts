@@ -356,11 +356,8 @@ export function createDiagnostic(
   message: string,
   level: vscode.DiagnosticSeverity = vscode.DiagnosticSeverity.Information
 ): vscode.Diagnostic {
-  const pos1 = indexToPosition(text, start);
-  const pos2 = indexToPosition(text, end);
-  const range = new vscode.Range(pos1, pos2);
-  const diagnostic = new vscode.Diagnostic(range, message, level);
-  return diagnostic;
+  const range = toRange(text, start, end);
+  return new vscode.Diagnostic(range, message, level);
 }
 
 function generateMessage(
@@ -398,11 +395,27 @@ function generateMessage(
   return message;
 }
 
-function indexToPosition(text: string, index: number): vscode.Position {
-  const lines = text.substring(0, index).split(/\r?\n/);
-  const line = lines.length - 1;
-  const character = lines[line].length;
-  return new vscode.Position(line, character);
+function toRange(text: string, start: number, end: number): vscode.Range {
+  const diff = end - start;
+  const lines = text.substring(0, end).split(/\r?\n/);
+  const endLine = lines.length - 1;
+  const endCharacter = lines[endLine].length;
+
+  let currentCharacter = diff;
+  let currentLine = endLine;
+  while (currentCharacter > 0 && currentLine >= 0) {
+    if (lines[currentLine].length < currentCharacter) {
+      currentCharacter -= lines[currentLine].length + 1;
+      currentLine--;
+    } else {
+      break;
+    }
+  }
+
+  const startLine = currentLine;
+  const startCharacter = lines[startLine].length - currentCharacter;
+
+  return new vscode.Range(startLine, startCharacter, endLine, endCharacter);
 }
 
 export function textToK8sResource(text: string): K8sResource {
