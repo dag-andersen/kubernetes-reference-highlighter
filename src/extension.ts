@@ -8,8 +8,6 @@ import * as finders from "./finders";
 
 import { FromWhere, K8sResource } from "./types";
 
-const surveyLink = "https://forms.gle/H1QwtYwdz8GTvLfV7";
-
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -25,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
   let kubeResourcesWorkspace: K8sResource[] = [];
   let kubeResourcesKustomize: K8sResource[] = [];
   let enableWorkSpaceScanning = true;
-  let enableWorkSpaceKustomizeScanning = true;
+  let enableKustomizeScanning = true;
   let enableClusterScanning = k8sApi !== undefined;
 
   const enableClusterScanningCommand = vscode.commands.registerCommand(
@@ -69,24 +67,17 @@ export function activate(context: vscode.ExtensionContext) {
   const enableKustomizeScanningCommand = vscode.commands.registerCommand(
     "kubernetes-reference-highlighter.enableKustomizeScanning",
     () => {
-      enableWorkSpaceKustomizeScanning = !enableWorkSpaceKustomizeScanning;
+      enableKustomizeScanning = !enableKustomizeScanning;
       vscode.window.showInformationMessage(
         `Kustomize Scanning: ${
-          enableWorkSpaceKustomizeScanning ? "Enabled" : "Disabled"
+          enableKustomizeScanning ? "Enabled" : "Disabled"
         }`
       );
-      if (enableWorkSpaceKustomizeScanning) {
+      if (enableKustomizeScanning) {
         updateK8sResourcesFromKustomize();
       } else {
         kubeResourcesKustomize = [];
       }
-    }
-  );
-
-  const openSurveyCommand = vscode.commands.registerCommand(
-    "kubernetes-reference-highlighter.openSurvey",
-    () => {
-      openSurvey();
     }
   );
 
@@ -105,7 +96,7 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   const updateK8sResourcesFromKustomize = () => {
-    if (!enableWorkSpaceKustomizeScanning) {
+    if (!enableKustomizeScanning) {
       return;
     }
     kubeResourcesKustomize = kustomize.getKustomizeResources();
@@ -137,9 +128,9 @@ export function activate(context: vscode.ExtensionContext) {
     let currentIndex = 0;
 
     const kubeResources = [
+      ...kubeResourcesKustomize,
       ...kubeResourcesCluster,
       ...kubeResourcesWorkspace,
-      ...kubeResourcesKustomize,
     ];
 
     const diagnosticsCombined = fileTextSplitted.flatMap((textSplit) => {
@@ -191,7 +182,7 @@ export function activate(context: vscode.ExtensionContext) {
       });
 
       if (
-        enableKustomizeScanningCommand &&
+        enableKustomizeScanning &&
         (fileName.endsWith("kustomization.yaml") ||
           fileName.endsWith("kustomization.yml"))
       ) {
@@ -245,7 +236,6 @@ export function activate(context: vscode.ExtensionContext) {
     enableClusterScanningCommand,
     enableWorkSpaceScanningCommand,
     enableKustomizeScanningCommand,
-    openSurveyCommand,
     diagnosticCollection,
     onSave,
     onChange,
@@ -266,61 +256,9 @@ export function activate(context: vscode.ExtensionContext) {
     updateK8sResourcesFromWorkspace();
     updateK8sResourcesFromKustomize();
 
-    checkSurveyMessage();
   };
 
   console.log("Kubernetes Reference Highlighter activated");
-}
-
-function checkSurveyMessage() {
-  const config = vscode.workspace.getConfiguration(
-    "kubernetes-reference-highlighter"
-  );
-  const surveyDate = config.get<number>("surveyDate");
-  const skipCount = config.get<number>("skipCount") || 0;
-
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 0);
-  const diff = now.getTime() - start.getTime();
-  const oneDay = 1000 * 60 * 60 * 24;
-  const today = Math.floor(diff / oneDay);
-
-  const nextSurvey = (days: number) =>
-    config.update("surveyDate", today + days, true);
-  const stopAsking = () => config.update("surveyDate", -1, true);
-  const incrementSkip = () => config.update("skipCount", skipCount + 1, true);
-
-  if (surveyDate === undefined || surveyDate === 0) {
-    // if surveyDate is undefined, it means the user has just installed the extension
-    nextSurvey(15);
-  } else if (surveyDate < 0) {
-    // if surveyDate is negative, it means the user has already rated the extension
-    return;
-  } else {
-    if (today - surveyDate > 0) {
-      vscode.window
-        .showInformationMessage(
-          "We hope you enjoy Kubernetes Reference Highlighter! This extension is a research project, and we would love to hear your thoughts!",
-          "Open Survey",
-          skipCount < 2 ? "Later" : "Don't show again"
-        )
-        .then((selection) => {
-          if (selection === "Open Survey") {
-            openSurvey();
-            stopAsking();
-          } else if (selection === "Don't show again") {
-            stopAsking();
-          } else if (selection === "Later") {
-            incrementSkip();
-            nextSurvey(5);
-          }
-        });
-    }
-  }
-}
-
-function openSurvey() {
-  vscode.env.openExternal(vscode.Uri.parse(surveyLink));
 }
 
 export function getAllFileNamesInDirectory(dirPath: string) {

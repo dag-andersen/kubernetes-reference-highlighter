@@ -49,18 +49,6 @@ The extension will run `kustomize build` on all `kustomization`-files in the ope
 
 The extension will tell you if the kustomize-file builds or not.
 
-## Release Notes
-
-### v0.0.2
-
-- Added Kustomize Build Status
-
-### v0.0.1
-
-- Added Cluster Scanning
-- Added Workspace Scanning
-- Added Kustomize Scanning
-
 ## Issues
 
 Please open an issue on GitHub if you experience any issues or have ideas for future features.
