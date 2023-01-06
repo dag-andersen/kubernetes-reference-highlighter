@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 import * as workspace from "./workspace";
 import * as cluster from "./cluster";
 import * as kustomize from "./kustomize";
+import * as helm from "./helm";
 import * as finders from "./finders";
 
 import { FromWhere, K8sResource } from "./types";
@@ -22,8 +23,11 @@ export function activate(context: vscode.ExtensionContext) {
   let kubeResourcesCluster: K8sResource[] = [];
   let kubeResourcesWorkspace: K8sResource[] = [];
   let kubeResourcesKustomize: K8sResource[] = [];
+  let kubeResourcesHelm: K8sResource[] = [];
+
   let enableWorkSpaceScanning = true;
   let enableKustomizeScanning = true;
+  let enableHelmScanning = helm.isHelmInstalled();
   let enableClusterScanning = k8sApi !== undefined;
 
   const enableClusterScanningCommand = vscode.commands.registerCommand(
@@ -81,6 +85,27 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  const enableHelmScanningCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.enableHelmScanning",
+    () => {
+      if (!helm.isHelmInstalled) {
+        vscode.window.showErrorMessage(
+          "Helm is not installed. Please install it first."
+        );
+        return;
+      }
+      enableHelmScanning = !enableHelmScanning;
+      vscode.window.showInformationMessage(
+        `Kustomize Scanning: ${enableHelmScanning ? "Enabled" : "Disabled"}`
+      );
+      if (enableHelmScanning) {
+        updateK8sResourcesFromHelm();
+      } else {
+        kubeResourcesHelm = [];
+      }
+    }
+  );
+
   const updateK8sResourcesFromWorkspace = () => {
     if (!enableWorkSpaceScanning) {
       return;
@@ -100,6 +125,13 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     kubeResourcesKustomize = kustomize.getKustomizeResources();
+  };
+
+  const updateK8sResourcesFromHelm = () => {
+    if (!enableHelmScanning) {
+      return;
+    }
+    kubeResourcesHelm = helm.getHelmResources();
   };
 
   // create diagnostic collection
@@ -128,6 +160,7 @@ export function activate(context: vscode.ExtensionContext) {
     let currentIndex = 0;
 
     const kubeResources = [
+      ...kubeResourcesHelm,
       ...kubeResourcesKustomize,
       ...kubeResourcesCluster,
       ...kubeResourcesWorkspace,
@@ -139,11 +172,6 @@ export function activate(context: vscode.ExtensionContext) {
       try {
         thisResource = textToK8sResource(textSplit);
       } catch (e) {
-        currentIndex += textSplit.length + split.length;
-        return [];
-      }
-
-      if (!thisResource.kind) {
         currentIndex += textSplit.length + split.length;
         return [];
       }
@@ -197,6 +225,18 @@ export function activate(context: vscode.ExtensionContext) {
         );
       }
 
+      if (enableHelmScanning && fileName.endsWith("Chart.yaml")) {
+        diagnostics.push(
+          ...helm.verifyHelmBuild(
+            thisResource,
+            textSplit,
+            fileText,
+            fileName,
+            currentIndex
+          )
+        );
+      }
+
       currentIndex += textSplit.length + split.length;
       return diagnostics;
     });
@@ -224,6 +264,7 @@ export function activate(context: vscode.ExtensionContext) {
     updateK8sResourcesFromCluster();
     updateK8sResourcesFromWorkspace();
     updateK8sResourcesFromKustomize();
+    updateK8sResourcesFromHelm();
     updateDiagnostics(doc);
   });
 
@@ -236,6 +277,7 @@ export function activate(context: vscode.ExtensionContext) {
     enableClusterScanningCommand,
     enableWorkSpaceScanningCommand,
     enableKustomizeScanningCommand,
+    enableHelmScanningCommand,
     diagnosticCollection,
     onSave,
     onChange,
@@ -255,7 +297,7 @@ export function activate(context: vscode.ExtensionContext) {
     updateK8sResourcesFromCluster();
     updateK8sResourcesFromWorkspace();
     updateK8sResourcesFromKustomize();
-
+    updateK8sResourcesFromHelm();
   };
 
   console.log("Kubernetes Reference Highlighter activated");
