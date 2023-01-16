@@ -1,6 +1,6 @@
 export type FromWhere = "cluster" | Local;
 
-export type Local = { place: "workspace" | "kustomize"; path: string };
+export type Local = { place: "workspace" | "kustomize" | "helm"; path: string; };
 
 export type Highlight = {
   start: number;

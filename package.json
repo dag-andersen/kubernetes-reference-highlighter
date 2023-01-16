@@ -3,7 +3,7 @@
   "displayName": "Kubernetes Reference Highlighter",
   "publisher": "dag-andersen",
   "description": "",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -34,6 +34,10 @@
       {
         "command": "kubernetes-reference-highlighter.enableKustomizeScanning",
         "title": "Kubernetes Reference Highlighter: Toggle Kustomize Scanning"
+      },
+      {
+        "command": "kubernetes-reference-highlighter.enableHelmScanning",
+        "title": "Kubernetes Reference Highlighter: Toggle Helm Scanning"
       }
     ]
   },
