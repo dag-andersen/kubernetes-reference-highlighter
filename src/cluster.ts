@@ -7,8 +7,7 @@ export function getKubeClient() {
     kc.loadFromDefault();
     const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
     return k8sApi;
-  }
-  catch (err) {
+  } catch (err) {
     console.log(err);
   }
   return undefined;

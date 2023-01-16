@@ -2,9 +2,12 @@ import { K8sResource } from "./types";
 import * as vscode from "vscode";
 import { textToK8sResource, createDiagnostic } from "./extension";
 import { getAllFileNamesInDirectory } from "./extension";
+import { format } from "util";
 
 const kustomizeIsInstalled = isKustomizeInstalled();
-const kustomizeCommand = kustomizeIsInstalled ? "kustomize build" : "kubectl kustomize";
+const kustomizeCommand = kustomizeIsInstalled
+  ? "kustomize build"
+  : "kubectl kustomize";
 
 export function getKustomizeResources(): K8sResource[] {
   const kustomizationFiles = getKustomizationPathsInWorkspace();
@@ -25,9 +28,10 @@ function getKustomizationPathsInWorkspace(): string[] {
 
   const kustomizationFiles = getAllFileNamesInDirectory(
     workspaceFolders
-  ).filter((file) => {
-    return file.endsWith("kustomization.yml") || file.endsWith("kustomization.yaml");
-  });
+  ).filter(
+    (file) =>
+      file.endsWith("kustomization.yml") || file.endsWith("kustomization.yaml")
+  );
 
   return kustomizationFiles;
 }
@@ -105,6 +109,7 @@ export function verifyKustomizeBuild(
         });
         return true;
       } catch (e) {
+        output = format(e.stderr);
         return false;
       }
     })();
@@ -113,7 +118,9 @@ export function verifyKustomizeBuild(
       start,
       end,
       fullText,
-      success ? "✅ Kustomize build succeeded" : "❌ Kustomize build failed",
+      success
+        ? "✅ Kustomize build succeeded"
+        : "❌ Kustomize build failed - " + output,
       success
         ? vscode.DiagnosticSeverity.Information
         : vscode.DiagnosticSeverity.Error

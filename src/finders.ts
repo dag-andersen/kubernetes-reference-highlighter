@@ -42,7 +42,6 @@ export function findValueFromKeyRef(
   thisResource: K8sResource,
   text: string
 ): Highlight[] {
-
   switch (thisResource.kind) {
     case "Deployment":
     case "Pod":

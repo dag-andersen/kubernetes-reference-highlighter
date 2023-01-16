@@ -2,6 +2,7 @@ import { K8sResource } from "./types";
 import * as vscode from "vscode";
 import { textToK8sResource, createDiagnostic } from "./extension";
 import { getAllFileNamesInDirectory } from "./extension";
+import { format } from "util";
 
 const helmCommand = "helm template";
 
@@ -22,11 +23,9 @@ function getHelmPathsInWorkspace(): string[] {
     return [];
   }
 
-  const helmChartFiles = getAllFileNamesInDirectory(
-    workspaceFolders
-  ).filter((file) => {
-    return file.endsWith("Chart.yml") || file.endsWith("Chart.yaml");
-  });
+  const helmChartFiles = getAllFileNamesInDirectory(workspaceFolders).filter(
+    (file) => file.endsWith("Chart.yml") || file.endsWith("Chart.yaml")
+  );
 
   return helmChartFiles;
 }
@@ -78,7 +77,6 @@ export function verifyHelmBuild(
   filePath: string,
   shift: number
 ): vscode.Diagnostic[] {
-
   // check if thisResource.kind is null or undefined
   if (thisResource.kind) {
     return [];
@@ -104,6 +102,7 @@ export function verifyHelmBuild(
         });
         return true;
       } catch (e) {
+        output = format(e.stderr);
         return false;
       }
     })();
@@ -112,7 +111,9 @@ export function verifyHelmBuild(
       start,
       end,
       fullText,
-      success ? "✅ Helm build succeeded" : "❌ Helm build failed",
+      success
+        ? "✅ Helm build succeeded"
+        : "❌ Helm build failed - " + output,
       success
         ? vscode.DiagnosticSeverity.Information
         : vscode.DiagnosticSeverity.Error
