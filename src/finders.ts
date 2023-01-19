@@ -124,8 +124,6 @@ export function findIngressService(
     );
 
     var bestK8sResource = res[m.bestMatchIndex];
-
-    var bestMatchName: string = m.bestMatch.target;
     var bestMatchRating: number = m.bestMatch.rating;
 
     const shift = match[0].indexOf(name);
@@ -145,15 +143,19 @@ export function findIngressService(
       };
     }
 
-    if (bestMatchRating > 0.6) {
-      return {
-        start: start,
-        end: end,
-        message: `'${name}' not found. Did you mean '${bestMatchName}'?`,
-        severity: vscode.DiagnosticSeverity.Hint,
-      };
-    }
+    var resourcesWithRatings = res.map((r, b, _) => {
+      return { ...r, rating: m.ratings[b].rating };
+    });
 
-    return [];
+    return resourcesWithRatings
+      .filter((r) => r.rating > 0.8)
+      .map((r) => {
+        return {
+          start: start,
+          end: end,
+          message: `'${name}' not found. Did you mean '${r.metadata.name}'?`,
+          severity: vscode.DiagnosticSeverity.Hint,
+        };
+      });
   });
 }

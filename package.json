@@ -3,7 +3,7 @@
   "displayName": "Kubernetes Reference Highlighter",
   "publisher": "dag-andersen",
   "description": "",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -70,6 +70,7 @@
   "dependencies": {
     "@kubernetes/client-node": "^0.17.1",
     "js-yaml": "^4.1.0",
+    "string-similarity": "^4.0.4",
     "yaml": "^2.1.1"
   }
 }

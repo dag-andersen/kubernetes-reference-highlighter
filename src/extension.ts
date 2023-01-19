@@ -353,7 +353,7 @@ export function generateMessage(
   let message = "";
   if (fromWhere) {
     if (typeof fromWhere === "string") {
-      message = `Found ${type}, ${name}, in ${fromWhere}`;
+      message = `Found ${type} in ${fromWhere}`;
     } else {
       const fromFilePath = fromWhere.path;
       const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
@@ -370,7 +370,7 @@ export function generateMessage(
           : relativePathFromActive.includes("/")
           ? relativePathFromActive
           : "./" + relativePathFromActive;
-      message = `Found ${type}, ${name}, in ${fromWhere.place} at ${path}`;
+      message = `Found ${type} in ${fromWhere.place} at ${path}`;
     }
   } else {
     message = `Found ${type}, ${name}`;
