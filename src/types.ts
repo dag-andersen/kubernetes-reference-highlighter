@@ -1,14 +1,13 @@
 export type FromWhere = "cluster" | Local;
+import * as vscode from "vscode";
 
 export type Local = { place: "workspace" | "kustomize" | "helm"; path: string };
 
 export type Highlight = {
   start: number;
   end: number;
-  text: string;
-  type: string;
-  name: string;
-  from?: FromWhere;
+  message: string;
+  severity?: vscode.DiagnosticSeverity;
 };
 
 // define basic type

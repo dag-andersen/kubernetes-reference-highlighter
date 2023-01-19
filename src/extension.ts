@@ -181,16 +181,19 @@ export function activate(context: vscode.ExtensionContext) {
       const serviceHighlights = finders.findServices(
         kubeResources,
         thisResource,
+        fileName,
         textSplit
       );
       const valueFromHighlights = finders.findValueFromKeyRef(
         kubeResources,
         thisResource,
+        fileName,
         textSplit
       );
       const ingressHighlights = finders.findIngressService(
         kubeResources,
         thisResource,
+        fileName,
         textSplit
       );
       const highlights = [
@@ -200,12 +203,12 @@ export function activate(context: vscode.ExtensionContext) {
       ];
 
       let diagnostics = highlights.map((h) => {
-        const message = generateMessage(h.type, h.name, fileName, h.from);
         return createDiagnostic(
           h.start + currentIndex,
           h.end + currentIndex,
           fileText,
-          message
+          h.message,
+          h.severity
         );
       });
 
@@ -340,7 +343,7 @@ export function createDiagnostic(
   return new vscode.Diagnostic(range, message, level);
 }
 
-function generateMessage(
+export function generateMessage(
   type: string,
   name: string,
   activeFilePath: string,
