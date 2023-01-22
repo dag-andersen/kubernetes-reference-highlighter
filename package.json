@@ -3,7 +3,7 @@
   "displayName": "Kubernetes Reference Highlighter",
   "publisher": "dag-andersen",
   "description": "",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -39,7 +39,32 @@
         "command": "kubernetes-reference-highlighter.enableHelmScanning",
         "title": "Kubernetes Reference Highlighter: Toggle Helm Scanning"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "kubernetesReferenceHighlighter",
+      "properties": {
+        "kubernetesReferenceHighlighter.enableWorkSpaceScanning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Kubernetes Reference Highlighter: WorkSpace Scanning enabled"
+        },
+        "kubernetesReferenceHighlighter.enableKustomizeScanning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Kubernetes Reference Highlighter: Kustomize Scanning enabled"
+        },
+        "kubernetesReferenceHighlighter.enableHelmScanning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Kubernetes Reference Highlighter: Helm Scanning enabled"
+        },
+        "kubernetesReferenceHighlighter.enableClusterScanning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Kubernetes Reference Highlighter: Cluster Scanning enabled"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run esbuild-base -- --minify",
@@ -68,8 +93,7 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@kubernetes/client-node": "^0.17.1",
-    "js-yaml": "^4.1.0",
+    "@kubernetes/client-node": "^0.18.1",
     "yaml": "^2.1.1"
   }
 }
