@@ -46,22 +46,22 @@
         "kubernetesReferenceHighlighter.enableWorkSpaceScanning": {
           "type": "boolean",
           "default": true,
-          "description": "xxxxx"
+          "description": "Kubernetes Reference Highlighter: WorkSpace Scanning enabled"
         },
         "kubernetesReferenceHighlighter.enableKustomizeScanning": {
           "type": "boolean",
           "default": true,
-          "description": "xxxxx"
+          "description": "Kubernetes Reference Highlighter: Kustomize Scanning enabled"
         },
         "kubernetesReferenceHighlighter.enableHelmScanning": {
           "type": "boolean",
           "default": true,
-          "description": "xxxxx"
+          "description": "Kubernetes Reference Highlighter: Helm Scanning enabled"
         },
         "kubernetesReferenceHighlighter.enableClusterScanning": {
           "type": "boolean",
           "default": true,
-          "description": "xxxxx"
+          "description": "Kubernetes Reference Highlighter: Cluster Scanning enabled"
         }
       }
     }
