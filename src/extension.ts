@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
     () => {
       if (k8sApi) {
         enableClusterScanning = !enableClusterScanning;
-        updateConfigurationKey("enableClusterScanning", false);
+        updateConfigurationKey("enableClusterScanning", enableClusterScanning);
         vscode.window.showInformationMessage(
           `Cluster Scanning: ${enableClusterScanning ? "Enabled" : "Disabled"}`
         );
