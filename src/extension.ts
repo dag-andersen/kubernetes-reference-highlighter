@@ -25,28 +25,23 @@ export function activate(context: vscode.ExtensionContext) {
   let kubeResourcesKustomize: K8sResource[] = [];
   let kubeResourcesHelm: K8sResource[] = [];
 
-  let enableWorkSpaceScanning = true;
-  let enableKustomizeScanning = true;
-  let enableHelmScanning = helm.isHelmInstalled();
-  let enableClusterScanning = k8sApi !== undefined;
+  let enableWorkSpaceScanning = getConfigurationValue("enableWorkSpaceScanning");
+  let enableKustomizeScanning = getConfigurationValue("enableKustomizeScanning");
+  let enableHelmScanning = helm.isHelmInstalled() && getConfigurationValue("enableHelmScanning");
+  let enableClusterScanning = k8sApi !== undefined && getConfigurationValue("enableClusterScanning");
 
   const enableClusterScanningCommand = vscode.commands.registerCommand(
     "kubernetes-reference-highlighter.enableClusterScanning",
     () => {
-      if (enableClusterScanning) {
-        // disable
-        enableClusterScanning = false;
-        vscode.window.showInformationMessage(`Cluster Scanning: Disabled`);
-        kubeResourcesCluster = [];
+      if (k8sApi) {
+        enableClusterScanning = !enableClusterScanning;
+        updateConfigurationKey("enableClusterScanning", false);
+        vscode.window.showInformationMessage(
+          `Cluster Scanning: ${enableClusterScanning ? "Enabled" : "Disabled"}`
+        );
+        updateK8sResourcesFromCluster();
       } else {
-        if (k8sApi) {
-          // enable
-          enableClusterScanning = true;
-          vscode.window.showInformationMessage(`Cluster Scanning: Enabled`);
-          updateK8sResourcesFromCluster();
-        } else {
-          vscode.window.showErrorMessage(`Cluster Scanning: Not available`);
-        }
+        vscode.window.showErrorMessage(`Cluster Scanning: Not available`);
       }
     }
   );
@@ -55,16 +50,16 @@ export function activate(context: vscode.ExtensionContext) {
     "kubernetes-reference-highlighter.enableWorkSpaceScanning",
     () => {
       enableWorkSpaceScanning = !enableWorkSpaceScanning;
+      updateConfigurationKey(
+        "enableWorkSpaceScanning",
+        enableWorkSpaceScanning
+      );
       vscode.window.showInformationMessage(
         `WorkSpace Scanning: ${
           enableWorkSpaceScanning ? "Enabled" : "Disabled"
         }`
       );
-      if (enableWorkSpaceScanning) {
-        updateK8sResourcesFromWorkspace();
-      } else {
-        kubeResourcesWorkspace = [];
-      }
+      updateK8sResourcesFromWorkspace();
     }
   );
 
@@ -72,16 +67,16 @@ export function activate(context: vscode.ExtensionContext) {
     "kubernetes-reference-highlighter.enableKustomizeScanning",
     () => {
       enableKustomizeScanning = !enableKustomizeScanning;
+      updateConfigurationKey(
+        "enableKustomizeScanning",
+        enableKustomizeScanning
+      );
       vscode.window.showInformationMessage(
         `Kustomize Scanning: ${
           enableKustomizeScanning ? "Enabled" : "Disabled"
         }`
       );
-      if (enableKustomizeScanning) {
-        updateK8sResourcesFromKustomize();
-      } else {
-        kubeResourcesKustomize = [];
-      }
+      updateK8sResourcesFromKustomize();
     }
   );
 
@@ -95,19 +90,17 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
       enableHelmScanning = !enableHelmScanning;
+      updateConfigurationKey("enableHelmScanning", enableHelmScanning);
       vscode.window.showInformationMessage(
-        `Kustomize Scanning: ${enableHelmScanning ? "Enabled" : "Disabled"}`
+        `Helm Scanning: ${enableHelmScanning ? "Enabled" : "Disabled"}`
       );
-      if (enableHelmScanning) {
-        updateK8sResourcesFromHelm();
-      } else {
-        kubeResourcesHelm = [];
-      }
+      updateK8sResourcesFromHelm;
     }
   );
 
   const updateK8sResourcesFromWorkspace = () => {
     if (!enableWorkSpaceScanning) {
+      kubeResourcesWorkspace = [];
       return;
     }
     kubeResourcesWorkspace = workspace.getK8sResourceNamesInWorkspace();
@@ -115,6 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   const updateK8sResourcesFromCluster = () => {
     if (!enableClusterScanning) {
+      kubeResourcesCluster = [];
       return;
     }
     kubeResourcesCluster = cluster.getClusterResources(k8sApi);
@@ -122,6 +116,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   const updateK8sResourcesFromKustomize = () => {
     if (!enableKustomizeScanning) {
+      kubeResourcesKustomize = [];
       return;
     }
     kubeResourcesKustomize = kustomize.getKustomizeResources();
@@ -129,6 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   const updateK8sResourcesFromHelm = () => {
     if (!enableHelmScanning) {
+      kubeResourcesHelm = [];
       return;
     }
     kubeResourcesHelm = helm.getHelmResources();
@@ -412,3 +408,18 @@ export function textToK8sResource(text: string): K8sResource {
 
 // this method is called when your extension is deactivated
 export function deactivate() {}
+
+function updateConfigurationKey(key: string, value: any) {
+  const config = vscode.workspace.getConfiguration(
+    "kubernetesReferenceHighlighter"
+  );
+  config.update(key, value, true);
+}
+
+function getConfigurationValue(key: string): boolean {
+  return (
+    vscode.workspace
+      .getConfiguration("kubernetesReferenceHighlighter")
+      .get<boolean>(key) ?? true
+  );
+}
