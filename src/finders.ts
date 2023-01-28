@@ -152,16 +152,24 @@ function getHighlights(
     });
   }
 
+  return getSimilarHighlights(resources, name, start, end);
+}
+
+function getSimilarHighlights(
+  resources: K8sResource[],
+  name: string,
+  start: number,
+  end: number
+): Highlight[] {
   var similarity = findBestMatch(
     name,
     resources.map((r) => r.metadata.name)
   );
 
-  var resourcesWithRatings = resources.map((r, b, _) => {
-    return { ...r, rating: similarity.ratings[b].rating };
-  });
-
-  return resourcesWithRatings
+  return resources
+    .map((r, b, _) => {
+      return { ...r, rating: similarity.ratings[b].rating };
+    })
     .filter((r) => r.rating > 0.8)
     .map((r) => {
       return {
