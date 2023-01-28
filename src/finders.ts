@@ -1,8 +1,12 @@
 import { K8sResource, Highlight } from "./types";
+import * as vscode from "vscode";
+import { generateMessage } from "./extension";
+import { findBestMatch } from "string-similarity";
 
 export function findServices(
   resources: K8sResource[],
   thisResource: K8sResource,
+  activeFilePath: string,
   text: string
 ): Highlight[] {
   if (thisResource.kind === "Ingress" || thisResource.kind === "Service") {
@@ -28,10 +32,7 @@ export function findServices(
         return {
           start: start,
           end: end,
-          text: text,
-          type: refType,
-          name: name,
-          from: r.where,
+          message: generateMessage(refType, name, activeFilePath, r.where),
         };
       });
     });
@@ -40,7 +41,9 @@ export function findServices(
 export function findValueFromKeyRef(
   resources: K8sResource[],
   thisResource: K8sResource,
-  text: string
+  activeFilePath: string,
+  text: string,
+  enableCorrectionHints: boolean
 ): Highlight[] {
   switch (thisResource.kind) {
     case "Deployment":
@@ -56,8 +59,6 @@ export function findValueFromKeyRef(
 
   const regex =
     /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))/gm;
-  //valueFrom:\s*([a-zA-Z]+)KeyRef:\s*([a-zA-Z]+):\s*([a-zA-Z-]+)\s*([a-zA-Z]+):\s*([a-zA-Z-]+)/gm;
-  //valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))\s*([a-zA-Z]+):\s*([a-zA-Z-]+)/gm;
 
   const matches = text.matchAll(regex);
 
@@ -76,59 +77,110 @@ export function findValueFromKeyRef(
 
     let name = match[2] || match[3];
 
-    return resources
+    const shift = match[0].indexOf(name);
+    const start = (match.index || 0) + shift;
+    const end = start + name.length;
+
+    let resourcesScoped = resources
       .filter((r) => r.kind === refType)
-      .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
-      .filter((r) => r.metadata.name === name)
-      .map((r) => {
-        const shift = match[0].indexOf(name);
-        const start = (match.index || 0) + shift;
-        const end = start + name.length;
-        return {
-          start: start,
-          end: end,
-          text: text,
-          type: refType,
-          name: name,
-          from: r.where,
-        };
-      });
+      .filter((r) => r.metadata.namespace === thisResource.metadata.namespace);
+
+    return getHighlights(
+      resourcesScoped,
+      name,
+      start,
+      end,
+      activeFilePath,
+      refType,
+      enableCorrectionHints
+    );
   });
 }
 
 export function findIngressService(
   resources: K8sResource[],
   thisResource: K8sResource,
-  text: string
+  activeFilePath: string,
+  text: string,
+  enableCorrectionHints: boolean
 ): Highlight[] {
   if (thisResource.kind !== "Ingress") {
     return [];
   }
 
+  let refType = "Service";
   const regex =
     /service:\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))/gm;
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
-    let refType = "Service";
     let name = match[1] || match[2];
 
-    return resources
+    let resourcesScoped = resources
       .filter((r) => r.kind === refType)
-      .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
-      .filter((r) => r.metadata.name === name)
-      .map((r) => {
-        const shift = match[0].indexOf(name);
-        const start = (match.index || 0) + shift;
-        const end = start + name.length;
-        return {
-          start: start,
-          end: end,
-          text: text,
-          type: refType,
-          name: name,
-          from: r.where,
-        };
-      });
+      .filter((r) => r.metadata.namespace === thisResource.metadata.namespace);
+
+    const shift = match[0].indexOf(name);
+    const start = (match.index || 0) + shift;
+    const end = start + name.length;
+
+    return getHighlights(
+      resourcesScoped,
+      name,
+      start,
+      end,
+      activeFilePath,
+      refType,
+      enableCorrectionHints
+    );
   });
+}
+
+function getHighlights(
+  resources: K8sResource[],
+  name: string,
+  start: number,
+  end: number,
+  activeFilePath: string,
+  refType: string,
+  enableCorrectionHints: boolean
+): Highlight[] {
+  var exactMatches = resources.filter((r) => r.metadata.name === name);
+  if (exactMatches.length > 0) {
+    return exactMatches.map((r) => {
+      return {
+        start: start,
+        end: end,
+        message: generateMessage(refType, name, activeFilePath, r.where),
+      };
+    });
+  }
+
+  return enableCorrectionHints ? getSimilarHighlights(resources, name, start, end) : [];
+}
+
+function getSimilarHighlights(
+  resources: K8sResource[],
+  name: string,
+  start: number,
+  end: number
+): Highlight[] {
+  var similarity = findBestMatch(
+    name,
+    resources.map((r) => r.metadata.name)
+  );
+
+  return resources
+    .map((r, b, _) => {
+      return { ...r, rating: similarity.ratings[b].rating };
+    })
+    .filter((r) => r.rating > 0.8)
+    .map((r) => {
+      return {
+        start: start,
+        end: end,
+        message: `'${name}' not found. Did you mean '${r.metadata.name}'?`,
+        severity: vscode.DiagnosticSeverity.Hint,
+      };
+    });
 }

@@ -8,6 +8,7 @@ import * as helm from "./helm";
 import * as finders from "./finders";
 
 import { FromWhere, K8sResource } from "./types";
+import { parse } from "yaml";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -25,10 +26,11 @@ export function activate(context: vscode.ExtensionContext) {
   let kubeResourcesKustomize: K8sResource[] = [];
   let kubeResourcesHelm: K8sResource[] = [];
 
-  let enableWorkSpaceScanning = getConfigurationValue("enableWorkSpaceScanning");
-  let enableKustomizeScanning = getConfigurationValue("enableKustomizeScanning");
-  let enableHelmScanning = helm.isHelmInstalled() && getConfigurationValue("enableHelmScanning");
-  let enableClusterScanning = k8sApi !== undefined && getConfigurationValue("enableClusterScanning");
+  let enableWorkSpaceScanning = getConfigurationValue("enableWorkSpaceScanning") ?? true;
+  let enableKustomizeScanning = getConfigurationValue("enableKustomizeScanning") ?? true;
+  let enableHelmScanning = helm.isHelmInstalled() && (getConfigurationValue("enableHelmScanning") ?? true);
+  let enableClusterScanning = k8sApi !== undefined && (getConfigurationValue("enableClusterScanning") ?? true);
+  let enableCorrectionHints = getConfigurationValue("enableCorrectionHints") ?? false;
 
   const enableClusterScanningCommand = vscode.commands.registerCommand(
     "kubernetes-reference-highlighter.enableClusterScanning",
@@ -95,6 +97,19 @@ export function activate(context: vscode.ExtensionContext) {
         `Helm Scanning: ${enableHelmScanning ? "Enabled" : "Disabled"}`
       );
       updateK8sResourcesFromHelm;
+    }
+  );
+
+  const enableCorrectionHintsCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.enableCorrectionHints",
+    () => {
+      enableCorrectionHints = !enableCorrectionHints;
+      updateConfigurationKey("enableCorrectionHints", enableCorrectionHints);
+      vscode.window.showInformationMessage(
+        `Reference Correction Hints: ${
+          enableCorrectionHints ? "Enabled" : "Disabled"
+        }`
+      );
     }
   );
 
@@ -177,17 +192,22 @@ export function activate(context: vscode.ExtensionContext) {
       const serviceHighlights = finders.findServices(
         kubeResources,
         thisResource,
+        fileName,
         textSplit
       );
       const valueFromHighlights = finders.findValueFromKeyRef(
         kubeResources,
         thisResource,
-        textSplit
+        fileName,
+        textSplit,
+        enableCorrectionHints
       );
       const ingressHighlights = finders.findIngressService(
         kubeResources,
         thisResource,
-        textSplit
+        fileName,
+        textSplit,
+        enableCorrectionHints
       );
       const highlights = [
         ...serviceHighlights,
@@ -196,12 +216,12 @@ export function activate(context: vscode.ExtensionContext) {
       ];
 
       let diagnostics = highlights.map((h) => {
-        const message = generateMessage(h.type, h.name, fileName, h.from);
         return createDiagnostic(
           h.start + currentIndex,
           h.end + currentIndex,
           fileText,
-          message
+          h.message,
+          h.severity
         );
       });
 
@@ -274,6 +294,7 @@ export function activate(context: vscode.ExtensionContext) {
     enableWorkSpaceScanningCommand,
     enableKustomizeScanningCommand,
     enableHelmScanningCommand,
+    enableCorrectionHintsCommand,
     diagnosticCollection,
     onSave,
     onChange,
@@ -336,7 +357,7 @@ export function createDiagnostic(
   return new vscode.Diagnostic(range, message, level);
 }
 
-function generateMessage(
+export function generateMessage(
   type: string,
   name: string,
   activeFilePath: string,
@@ -346,7 +367,7 @@ function generateMessage(
   let message = "";
   if (fromWhere) {
     if (typeof fromWhere === "string") {
-      message = `Found ${type}, ${name}, in ${fromWhere}`;
+      message = `Found ${type} in ${fromWhere}`;
     } else {
       const fromFilePath = fromWhere.path;
       const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
@@ -363,7 +384,7 @@ function generateMessage(
           : relativePathFromActive.includes("/")
           ? relativePathFromActive
           : "./" + relativePathFromActive;
-      message = `Found ${type}, ${name}, in ${fromWhere.place} at ${path}`;
+      message = `Found ${type} in ${fromWhere.place} at ${path}`;
     }
   } else {
     message = `Found ${type}, ${name}`;
@@ -395,8 +416,7 @@ function toRange(text: string, start: number, end: number): vscode.Range {
 }
 
 export function textToK8sResource(text: string): K8sResource {
-  const YAML = require("yaml");
-  const yml = YAML.parse(text);
+  const yml = parse(text);
   return {
     kind: yml.kind,
     metadata: {
@@ -409,17 +429,12 @@ export function textToK8sResource(text: string): K8sResource {
 // this method is called when your extension is deactivated
 export function deactivate() {}
 
-function updateConfigurationKey(key: string, value: any) {
-  const config = vscode.workspace.getConfiguration(
-    "kubernetesReferenceHighlighter"
-  );
-  config.update(key, value, true);
-}
+const updateConfigurationKey = (key: string, value: any) =>
+  vscode.workspace
+    .getConfiguration("kubernetesReferenceHighlighter")
+    .update(key, value, true);
 
-function getConfigurationValue(key: string): boolean {
-  return (
-    vscode.workspace
-      .getConfiguration("kubernetesReferenceHighlighter")
-      .get<boolean>(key) ?? true
-  );
-}
+const getConfigurationValue = (key: string) =>
+  vscode.workspace
+    .getConfiguration("kubernetesReferenceHighlighter")
+    .get<boolean>(key);
