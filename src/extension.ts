@@ -26,10 +26,11 @@ export function activate(context: vscode.ExtensionContext) {
   let kubeResourcesKustomize: K8sResource[] = [];
   let kubeResourcesHelm: K8sResource[] = [];
 
-  let enableWorkSpaceScanning = getConfigurationValue("enableWorkSpaceScanning");
-  let enableKustomizeScanning = getConfigurationValue("enableKustomizeScanning");
-  let enableHelmScanning = helm.isHelmInstalled() && getConfigurationValue("enableHelmScanning");
-  let enableClusterScanning = k8sApi !== undefined && getConfigurationValue("enableClusterScanning");
+  let enableWorkSpaceScanning = getConfigurationValue("enableWorkSpaceScanning") ?? true;
+  let enableKustomizeScanning = getConfigurationValue("enableKustomizeScanning") ?? true;
+  let enableHelmScanning = helm.isHelmInstalled() && (getConfigurationValue("enableHelmScanning") ?? true);
+  let enableClusterScanning = k8sApi !== undefined && (getConfigurationValue("enableClusterScanning") ?? true);
+  let enableCorrectionHints = getConfigurationValue("enableCorrectionHints") ?? false;
 
   const enableClusterScanningCommand = vscode.commands.registerCommand(
     "kubernetes-reference-highlighter.enableClusterScanning",
@@ -96,6 +97,19 @@ export function activate(context: vscode.ExtensionContext) {
         `Helm Scanning: ${enableHelmScanning ? "Enabled" : "Disabled"}`
       );
       updateK8sResourcesFromHelm;
+    }
+  );
+
+  const enableCorrectionHintsCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.enableCorrectionHints",
+    () => {
+      enableCorrectionHints = !enableCorrectionHints;
+      updateConfigurationKey("enableCorrectionHints", enableCorrectionHints);
+      vscode.window.showInformationMessage(
+        `Reference Correction Hints: ${
+          enableCorrectionHints ? "Enabled" : "Disabled"
+        }`
+      );
     }
   );
 
@@ -185,13 +199,15 @@ export function activate(context: vscode.ExtensionContext) {
         kubeResources,
         thisResource,
         fileName,
-        textSplit
+        textSplit,
+        enableCorrectionHints
       );
       const ingressHighlights = finders.findIngressService(
         kubeResources,
         thisResource,
         fileName,
-        textSplit
+        textSplit,
+        enableCorrectionHints
       );
       const highlights = [
         ...serviceHighlights,
@@ -278,6 +294,7 @@ export function activate(context: vscode.ExtensionContext) {
     enableWorkSpaceScanningCommand,
     enableKustomizeScanningCommand,
     enableHelmScanningCommand,
+    enableCorrectionHintsCommand,
     diagnosticCollection,
     onSave,
     onChange,
@@ -420,4 +437,4 @@ const updateConfigurationKey = (key: string, value: any) =>
 const getConfigurationValue = (key: string) =>
   vscode.workspace
     .getConfiguration("kubernetesReferenceHighlighter")
-    .get<boolean>(key) ?? true;
+    .get<boolean>(key);

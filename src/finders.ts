@@ -42,7 +42,8 @@ export function findValueFromKeyRef(
   resources: K8sResource[],
   thisResource: K8sResource,
   activeFilePath: string,
-  text: string
+  text: string,
+  enableCorrectionHints: boolean
 ): Highlight[] {
   switch (thisResource.kind) {
     case "Deployment":
@@ -90,7 +91,8 @@ export function findValueFromKeyRef(
       start,
       end,
       activeFilePath,
-      refType
+      refType,
+      enableCorrectionHints
     );
   });
 }
@@ -99,7 +101,8 @@ export function findIngressService(
   resources: K8sResource[],
   thisResource: K8sResource,
   activeFilePath: string,
-  text: string
+  text: string,
+  enableCorrectionHints: boolean
 ): Highlight[] {
   if (thisResource.kind !== "Ingress") {
     return [];
@@ -127,7 +130,8 @@ export function findIngressService(
       start,
       end,
       activeFilePath,
-      refType
+      refType,
+      enableCorrectionHints
     );
   });
 }
@@ -138,9 +142,9 @@ function getHighlights(
   start: number,
   end: number,
   activeFilePath: string,
-  refType: string
+  refType: string,
+  enableCorrectionHints: boolean
 ): Highlight[] {
-
   var exactMatches = resources.filter((r) => r.metadata.name === name);
   if (exactMatches.length > 0) {
     return exactMatches.map((r) => {
@@ -152,7 +156,7 @@ function getHighlights(
     });
   }
 
-  return getSimilarHighlights(resources, name, start, end);
+  return enableCorrectionHints ? getSimilarHighlights(resources, name, start, end) : [];
 }
 
 function getSimilarHighlights(

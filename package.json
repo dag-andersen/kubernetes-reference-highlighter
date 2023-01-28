@@ -38,6 +38,10 @@
       {
         "command": "kubernetes-reference-highlighter.enableHelmScanning",
         "title": "Kubernetes Reference Highlighter: Toggle Helm Scanning"
+      },
+      {
+        "command": "kubernetes-reference-highlighter.enableCorrectionHints",
+        "title": "Kubernetes Reference Highlighter: Toggle Reference Correction Hints"
       }
     ],
     "configuration": {
@@ -62,6 +66,11 @@
           "type": "boolean",
           "default": true,
           "description": "Kubernetes Reference Highlighter: Cluster Scanning enabled"
+        },
+        "kubernetesReferenceHighlighter.enableCorrectionHints": {
+          "type": "boolean",
+          "default": false,
+          "description": "Kubernetes Reference Highlighter: Reference Correction Hints enabled"
         }
       }
     }
