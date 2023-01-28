@@ -140,16 +140,8 @@ function getHighlights(
   activeFilePath: string,
   refType: string
 ): Highlight[] {
-  var similarity = findBestMatch(
-    name,
-    resources.map((r) => r.metadata.name)
-  );
 
-  var resourcesWithRatings = resources.map((r, b, _) => {
-    return { ...r, rating: similarity.ratings[b].rating };
-  });
-
-  var exactMatches = resourcesWithRatings.filter((r) => r.rating === 1);
+  var exactMatches = resources.filter((r) => r.metadata.name === name);
   if (exactMatches.length > 0) {
     return exactMatches.map((r) => {
       return {
@@ -159,6 +151,15 @@ function getHighlights(
       };
     });
   }
+
+  var similarity = findBestMatch(
+    name,
+    resources.map((r) => r.metadata.name)
+  );
+
+  var resourcesWithRatings = resources.map((r, b, _) => {
+    return { ...r, rating: similarity.ratings[b].rating };
+  });
 
   return resourcesWithRatings
     .filter((r) => r.rating > 0.8)
