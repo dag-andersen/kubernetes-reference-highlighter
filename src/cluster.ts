@@ -1,11 +1,11 @@
+import { CoreV1Api, KubeConfig } from "@kubernetes/client-node";
 import { K8sResource } from "./types";
 
 export function getKubeClient() {
   try {
-    const k8s = require("@kubernetes/client-node");
-    const kc = new k8s.KubeConfig();
+    const kc = new KubeConfig();
     kc.loadFromDefault();
-    const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+    const k8sApi = kc.makeApiClient(CoreV1Api);
     return k8sApi;
   } catch (err) {
     console.log(err);

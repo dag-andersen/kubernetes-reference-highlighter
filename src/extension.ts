@@ -8,6 +8,7 @@ import * as helm from "./helm";
 import * as finders from "./finders";
 
 import { FromWhere, K8sResource } from "./types";
+import { parse } from "yaml";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -398,8 +399,7 @@ function toRange(text: string, start: number, end: number): vscode.Range {
 }
 
 export function textToK8sResource(text: string): K8sResource {
-  const YAML = require("yaml");
-  const yml = YAML.parse(text);
+  const yml = parse(text);
   return {
     kind: yml.kind,
     metadata: {
@@ -412,17 +412,12 @@ export function textToK8sResource(text: string): K8sResource {
 // this method is called when your extension is deactivated
 export function deactivate() {}
 
-function updateConfigurationKey(key: string, value: any) {
-  const config = vscode.workspace.getConfiguration(
-    "kubernetesReferenceHighlighter"
-  );
-  config.update(key, value, true);
-}
+const updateConfigurationKey = (key: string, value: any) =>
+  vscode.workspace
+    .getConfiguration("kubernetesReferenceHighlighter")
+    .update(key, value, true);
 
-function getConfigurationValue(key: string): boolean {
-  return (
-    vscode.workspace
-      .getConfiguration("kubernetesReferenceHighlighter")
-      .get<boolean>(key) ?? true
-  );
-}
+const getConfigurationValue = (key: string) =>
+  vscode.workspace
+    .getConfiguration("kubernetesReferenceHighlighter")
+    .get<boolean>(key) ?? true;
