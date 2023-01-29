@@ -419,6 +419,7 @@ export function textToK8sResource(text: string): K8sResource {
   const yml = parse(text);
   return {
     kind: yml.kind,
+    spec: yml.spec,
     metadata: {
       name: yml.metadata?.name,
       namespace: yml.metadata?.namespace,
@@ -438,3 +439,20 @@ const getConfigurationValue = (key: string) =>
   vscode.workspace
     .getConfiguration("kubernetesReferenceHighlighter")
     .get<boolean>(key);
+
+// log message
+
+const diagnosticCollectionTest = vscode.languages.createDiagnosticCollection(
+  "kubernetes-reference-highlighter-test"
+);
+
+export function logText(text: string) {
+  diagnosticCollectionTest.clear();
+  const current = vscode.window.activeTextEditor?.document;
+  const diagnostic = new vscode.Diagnostic(
+    new vscode.Range(0, 0, 0, 0),
+    text,
+    vscode.DiagnosticSeverity.Information
+  );
+  diagnosticCollectionTest.set(current!.uri, [diagnostic]);
+}

@@ -1,7 +1,8 @@
 import { K8sResource, Highlight } from "./types";
 import * as vscode from "vscode";
-import { generateMessage } from "./extension";
+import { generateMessage, logText } from "./extension";
 import { findBestMatch } from "string-similarity";
+import { format } from "util";
 
 export function findServices(
   resources: K8sResource[],
