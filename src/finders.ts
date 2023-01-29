@@ -86,15 +86,21 @@ export function findValueFromKeyRef(
       .filter((r) => r.kind === refType)
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace);
 
-    return getHighlights(
-      resourcesScoped,
-      name,
-      start,
-      end,
-      activeFilePath,
-      refType,
-      enableCorrectionHints
-    );
+    var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
+    if (exactMatches.length > 0) {
+      return getHighlights(
+        exactMatches,
+        name,
+        start,
+        end,
+        activeFilePath,
+        refType
+      );
+    } else {
+      return enableCorrectionHints
+        ? getSimilarHighlights(resourcesScoped, name, start, end)
+        : [];
+    }
   });
 }
 
@@ -125,15 +131,14 @@ export function findIngressService(
     const start = (match.index || 0) + shift;
     const end = start + name.length;
 
-    return getHighlights(
-      resourcesScoped,
-      name,
-      start,
-      end,
-      activeFilePath,
-      refType,
-      enableCorrectionHints
-    );
+    var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
+    if (exactMatches.length > 0) {
+      return getHighlights(exactMatches, name, start, end, activeFilePath, refType);
+    } else {
+      return enableCorrectionHints
+        ? getSimilarHighlights(resourcesScoped, name, start, end)
+        : [];
+    }
   });
 }
 
@@ -143,21 +148,15 @@ function getHighlights(
   start: number,
   end: number,
   activeFilePath: string,
-  refType: string,
-  enableCorrectionHints: boolean
+  refType: string
 ): Highlight[] {
-  var exactMatches = resources.filter((r) => r.metadata.name === name);
-  if (exactMatches.length > 0) {
-    return exactMatches.map((r) => {
-      return {
-        start: start,
-        end: end,
-        message: generateMessage(refType, name, activeFilePath, r.where),
-      };
-    });
-  }
-
-  return enableCorrectionHints ? getSimilarHighlights(resources, name, start, end) : [];
+  return resources.map((r) => {
+    return {
+      start: start,
+      end: end,
+      message: generateMessage(refType, name, activeFilePath, r.where),
+    };
+  });
 }
 
 function getSimilarHighlights(
@@ -166,22 +165,22 @@ function getSimilarHighlights(
   start: number,
   end: number
 ): Highlight[] {
-  var similarity = findBestMatch(
-    name,
-    resources.map((r) => r.metadata.name)
-  );
-
-  return resources
-    .map((r, b, _) => {
-      return { ...r, rating: similarity.ratings[b].rating };
-    })
+  return similarity<K8sResource>(resources, name, (r) => r.metadata.name)
     .filter((r) => r.rating > 0.8)
     .map((r) => {
       return {
         start: start,
         end: end,
-        message: `'${name}' not found. Did you mean '${r.metadata.name}'?`,
+        message: `'${name}' not found. Did you mean '${r.metadata.name}' from ${r.where}?`,
         severity: vscode.DiagnosticSeverity.Hint,
       };
     });
+}
+
+function similarity<T>(l: T[], name: string, f: (r: T) => string) {
+  var similarity = findBestMatch(name, l.map(f));
+
+  return l.map((r, b, _) => {
+    return { ...r, rating: similarity.ratings[b].rating };
+  });
 }
