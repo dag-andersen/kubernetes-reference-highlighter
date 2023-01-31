@@ -392,6 +392,36 @@ export function generateMessage(
   return message;
 }
 
+export function generateNotFoundMessage(
+  name: string,
+  suggestion: string,
+  activeFilePath: string,
+  fromWhere?: FromWhere,
+) {
+  const p = require("path");
+  if (fromWhere) {
+    if (typeof fromWhere !== "string") {
+      const fromFilePath = fromWhere.path;
+      const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
+        fromFilePath || ""
+      );
+      const activeDirPath: string = p.dirname(activeFilePath || "");
+      const relativePathFromActive: string = p.relative(
+        activeDirPath || "",
+        fromFilePath
+      );
+      const path =
+        relativeFilePathFromRoot.length < relativePathFromActive.length
+          ? "/" + relativeFilePathFromRoot
+          : relativePathFromActive.includes("/")
+          ? relativePathFromActive
+          : "./" + relativePathFromActive;
+      return `${name} not found. Did you mean ${suggestion}? (in ${fromWhere.place} at ${path})`;
+    }
+  }
+  return `${name} not found. Did you mean ${suggestion}?`;
+}
+
 function toRange(text: string, start: number, end: number): vscode.Range {
   const diff = end - start;
   const lines = text.substring(0, end).split(/\r?\n/);

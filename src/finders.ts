@@ -1,6 +1,6 @@
 import { K8sResource, Highlight } from "./types";
 import * as vscode from "vscode";
-import { generateMessage, logText } from "./extension";
+import { generateMessage, generateNotFoundMessage, logText } from "./extension";
 import { findBestMatch } from "string-similarity";
 import { format } from "util";
 
@@ -95,7 +95,7 @@ export function findValueFromKeyRef(
       });
     } else {
       return enableCorrectionHints
-        ? getSimilarHighlights(resourcesScoped, name, start, end)
+        ? getSimilarHighlights(resourcesScoped, name, start, end, activeFilePath)
         : [];
     }
   });
@@ -168,7 +168,7 @@ export function findIngressService(
       });
     } else {
       return enableCorrectionHints
-        ? getSimilarHighlights(resourcesScoped, name, start, end)
+        ? getSimilarHighlights(resourcesScoped, name, start, end, activeFilePath)
         : [];
     }
   });
@@ -185,7 +185,8 @@ function getSimilarHighlights(
   resources: K8sResource[],
   name: string,
   start: number,
-  end: number
+  end: number,
+  activeFilePath: string,
 ): Highlight[] {
   return similarity<K8sResource>(resources, name, (r) => r.metadata.name)
     .filter((r) => r.rating > 0.8)
@@ -193,7 +194,7 @@ function getSimilarHighlights(
       return {
         start: start,
         end: end,
-        message: `'${name}' not found. Did you mean '${r.metadata.name}' from ${r.where}?`,
+        message: generateNotFoundMessage(name, r.metadata.name, activeFilePath, r.where),
         severity: vscode.DiagnosticSeverity.Hint,
       };
     });
