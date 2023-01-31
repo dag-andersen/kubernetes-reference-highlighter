@@ -8,6 +8,7 @@ export type Highlight = {
   end: number;
   message: string;
   severity?: vscode.DiagnosticSeverity;
+  importance?: number;
 };
 
 // define basic type

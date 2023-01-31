@@ -215,15 +215,17 @@ export function activate(context: vscode.ExtensionContext) {
         ...ingressHighlights,
       ];
 
-      let diagnostics = highlights.map((h) => {
-        return createDiagnostic(
-          h.start + currentIndex,
-          h.end + currentIndex,
-          fileText,
-          h.message,
-          h.severity
-        );
-      });
+      let diagnostics = highlights
+        .sort((a, b) => (b.importance ?? 0) - (a.importance ?? 0))
+        .map((h) => {
+          return createDiagnostic(
+            h.start + currentIndex,
+            h.end + currentIndex,
+            fileText,
+            h.message,
+            h.severity
+          );
+        });
 
       if (
         enableKustomizeScanning &&

@@ -1,6 +1,6 @@
 import { K8sResource, Highlight } from "./types";
 import * as vscode from "vscode";
-import { generateMessage, generateNotFoundMessage, logText } from "./extension";
+import { generateMessage, generateNotFoundMessage } from "./extension";
 import { findBestMatch } from "string-similarity";
 import { format } from "util";
 
@@ -118,7 +118,6 @@ export function findIngressService(
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
-    logText(format(match));
 
     var name = "not found";
     var portRef = "";
@@ -127,13 +126,11 @@ export function findIngressService(
       name = match[1];
       portRef = match[3];
       portType = match[2];
-      logText(name + " " + portRef.toString());
     }
     if (match[4] === "number" || match[4] === "name") {
       name = match[6];
       portRef = match[5];
       portType = match[4];
-      logText(name + " " + portRef.toString());
     }
 
     let resourcesScoped = resources
