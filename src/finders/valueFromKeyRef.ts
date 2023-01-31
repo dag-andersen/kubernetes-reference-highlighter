@@ -1,6 +1,7 @@
 import { K8sResource, Highlight } from "../types";
 import { generateMessage } from "../extension";
 import { getPositions, getSimilarHighlights } from "./utils";
+import { logText } from "../utils";
 
 export function find(
   resources: K8sResource[],
@@ -22,24 +23,29 @@ export function find(
   }
 
   const regex =
-    /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))/gm;
+    /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:(name):\s*([a-zA-Z-]+)\s*(key):\s*([a-zA-Z-]+)|(key):\s*([a-zA-Z-]+)\s*(name):\s*([a-zA-Z-]+))/gm;
 
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
-    let refType = "";
-    switch (match[1]) {
-      case "secret":
-        refType = "Secret";
-        break;
-      case "configMap":
-        refType = "ConfigMap";
-        break;
-      default:
-        return [];
-    }
 
-    let name = match[2] || match[3];
+    let match1 = match[1];
+    let refType =
+      match1 === "secret"
+        ? "Secret"
+        : match1 === "configMap"
+        ? "ConfigMap"
+        : "";
+
+    var name = "Name not found";
+    var key = "Key not found";
+    if (match[2] === "name" || match[4] === "key") {
+      name = match[3];
+      key = match[5];
+    } else if (match[6] === "key" || match[8] === "name") {
+      key = match[7];
+      name = match[9];
+    }
 
     const { start, end } = getPositions(match, name);
 
@@ -49,12 +55,22 @@ export function find(
 
     var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
     if (exactMatches.length > 0) {
-      return resources.flatMap((r) => {
-        return {
+      return exactMatches.flatMap((r) => {
+        let nameHighlight: Highlight = {
           start: start,
           end: end,
           message: generateMessage(refType, name, activeFilePath, r.where),
         };
+        if (r.data[key]) {
+          let keyHighlight: Highlight = {
+            ...getPositions(match, key),
+            message: "Key Found",
+          };
+          nameHighlight.importance = 1;
+          return [nameHighlight, keyHighlight];
+        }
+
+        return nameHighlight;
       });
     } else {
       return enableCorrectionHints

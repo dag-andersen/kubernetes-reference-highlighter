@@ -36,11 +36,11 @@ export function find(
       portType = match[4];
     }
 
+    const { start, end } = getPositions(match, name);
+
     let resourcesScoped = resources
       .filter((r) => r.kind === refType)
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace);
-
-    const { start, end } = getPositions(match, name);
 
     var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
     if (exactMatches.length > 0) {
