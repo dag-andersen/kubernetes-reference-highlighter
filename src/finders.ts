@@ -117,11 +117,28 @@ export function findIngressService(
 
   let refType = "Service";
   const regex =
-    /service:\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))/gm;
+    /service:\s*(?:name:\s*([a-zA-Z-]+)\s*port:\s*(number|name):\s*(\d+|[a-zA-Z]+)|port:\s*(number|name):\s*(\d+|[a-zA-Z]+)\s*name:\s*([a-zA-Z-]+))/gm;
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
-    let name = match[1] || match[2];
+    logText(format(match));
+
+    var name = "not found";
+    var port = 0;
+    var portType = "not found";
+    if (match[2] === "number" || match[2] === "name") {
+      name = match[1];
+      port = parseInt(match[3]);
+      portType = match[2];
+      logText(name + " " + port.toString());
+    }
+    if (match[4] === "number" || match[4] === "name") {
+      name = match[6];
+      port = parseInt(match[5]);
+      portType = match[4];
+      logText(name + " " + port.toString());
+    }
+
 
     let resourcesScoped = resources
       .filter((r) => r.kind === refType)
@@ -131,7 +148,9 @@ export function findIngressService(
     const start = (match.index || 0) + shift;
     const end = start + name.length;
 
-    var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
+    var exactMatches = resourcesScoped
+      .filter((r) => r.metadata.name === name)
+      .filter((r) => portType === "number" ? r.spec?.ports?.find((p: any) => p?.port === port) : true);
     if (exactMatches.length > 0) {
       return getHighlights(exactMatches, name, start, end, activeFilePath, refType);
     } else {
