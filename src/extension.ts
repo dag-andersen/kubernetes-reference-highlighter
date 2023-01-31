@@ -215,15 +215,17 @@ export function activate(context: vscode.ExtensionContext) {
         ...ingressHighlights,
       ];
 
-      let diagnostics = highlights.map((h) => {
-        return createDiagnostic(
-          h.start + currentIndex,
-          h.end + currentIndex,
-          fileText,
-          h.message,
-          h.severity
-        );
-      });
+      let diagnostics = highlights
+        .sort((a, b) => (b.importance ?? 0) - (a.importance ?? 0))
+        .map((h) => {
+          return createDiagnostic(
+            h.start + currentIndex,
+            h.end + currentIndex,
+            fileText,
+            h.message,
+            h.severity
+          );
+        });
 
       if (
         enableKustomizeScanning &&
@@ -392,6 +394,36 @@ export function generateMessage(
   return message;
 }
 
+export function generateNotFoundMessage(
+  name: string,
+  suggestion: string,
+  activeFilePath: string,
+  fromWhere?: FromWhere,
+) {
+  const p = require("path");
+  if (fromWhere) {
+    if (typeof fromWhere !== "string") {
+      const fromFilePath = fromWhere.path;
+      const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
+        fromFilePath || ""
+      );
+      const activeDirPath: string = p.dirname(activeFilePath || "");
+      const relativePathFromActive: string = p.relative(
+        activeDirPath || "",
+        fromFilePath
+      );
+      const path =
+        relativeFilePathFromRoot.length < relativePathFromActive.length
+          ? "/" + relativeFilePathFromRoot
+          : relativePathFromActive.includes("/")
+          ? relativePathFromActive
+          : "./" + relativePathFromActive;
+      return `${name} not found. Did you mean ${suggestion}? (in ${fromWhere.place} at ${path})`;
+    }
+  }
+  return `${name} not found. Did you mean ${suggestion}?`;
+}
+
 function toRange(text: string, start: number, end: number): vscode.Range {
   const diff = end - start;
   const lines = text.substring(0, end).split(/\r?\n/);
@@ -419,6 +451,7 @@ export function textToK8sResource(text: string): K8sResource {
   const yml = parse(text);
   return {
     kind: yml.kind,
+    spec: yml.spec,
     metadata: {
       name: yml.metadata?.name,
       namespace: yml.metadata?.namespace,
@@ -438,3 +471,20 @@ const getConfigurationValue = (key: string) =>
   vscode.workspace
     .getConfiguration("kubernetesReferenceHighlighter")
     .get<boolean>(key);
+
+// log message
+
+const diagnosticCollectionTest = vscode.languages.createDiagnosticCollection(
+  "kubernetes-reference-highlighter-test"
+);
+
+export function logText(text: string) {
+  diagnosticCollectionTest.clear();
+  const current = vscode.window.activeTextEditor?.document;
+  const diagnostic = new vscode.Diagnostic(
+    new vscode.Range(0, 0, 0, 0),
+    text,
+    vscode.DiagnosticSeverity.Information
+  );
+  diagnosticCollectionTest.set(current!.uri, [diagnostic]);
+}

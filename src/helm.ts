@@ -101,7 +101,7 @@ export function verifyHelmBuild(
           encoding: "utf-8",
         });
         return true;
-      } catch (e) {
+      } catch (e: any) {
         output = format(e.stderr);
         return false;
       }

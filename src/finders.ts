@@ -1,7 +1,8 @@
 import { K8sResource, Highlight } from "./types";
 import * as vscode from "vscode";
-import { generateMessage } from "./extension";
+import { generateMessage, generateNotFoundMessage } from "./extension";
 import { findBestMatch } from "string-similarity";
+import { format } from "util";
 
 export function findServices(
   resources: K8sResource[],
@@ -77,23 +78,26 @@ export function findValueFromKeyRef(
 
     let name = match[2] || match[3];
 
-    const shift = match[0].indexOf(name);
-    const start = (match.index || 0) + shift;
-    const end = start + name.length;
+    const { start, end } = getPositions(match, name);
 
     let resourcesScoped = resources
       .filter((r) => r.kind === refType)
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace);
 
-    return getHighlights(
-      resourcesScoped,
-      name,
-      start,
-      end,
-      activeFilePath,
-      refType,
-      enableCorrectionHints
-    );
+    var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
+    if (exactMatches.length > 0) {
+      return resources.flatMap((r) => {
+        return {
+          start: start,
+          end: end,
+          message: generateMessage(refType, name, activeFilePath, r.where),
+        };
+      });
+    } else {
+      return enableCorrectionHints
+        ? getSimilarHighlights(resourcesScoped, name, start, end, activeFilePath)
+        : [];
+    }
   });
 }
 
@@ -110,77 +114,93 @@ export function findIngressService(
 
   let refType = "Service";
   const regex =
-    /service:\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))\s*(?:name:\s*([a-zA-Z-]+)|port:\s*[a-zA-Z]+:\s*(?:\d+|[a-zA-Z]+))/gm;
+    /service:\s*(?:name:\s*([a-zA-Z-]+)\s*port:\s*(number|name):\s*(\d+|[a-zA-Z]+)|port:\s*(number|name):\s*(\d+|[a-zA-Z]+)\s*name:\s*([a-zA-Z-]+))/gm;
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
-    let name = match[1] || match[2];
+
+    var name = "not found";
+    var portRef = "";
+    var portType = "";
+    if (match[2] === "number" || match[2] === "name") {
+      name = match[1];
+      portRef = match[3];
+      portType = match[2];
+    }
+    if (match[4] === "number" || match[4] === "name") {
+      name = match[6];
+      portRef = match[5];
+      portType = match[4];
+    }
 
     let resourcesScoped = resources
       .filter((r) => r.kind === refType)
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace);
 
-    const shift = match[0].indexOf(name);
-    const start = (match.index || 0) + shift;
-    const end = start + name.length;
+    const { start, end } = getPositions(match, name);
 
-    return getHighlights(
-      resourcesScoped,
-      name,
-      start,
-      end,
-      activeFilePath,
-      refType,
-      enableCorrectionHints
-    );
+    var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
+    if (exactMatches.length > 0) {
+      return exactMatches.flatMap((r) => {
+        let nameHighlight: Highlight = {
+          start: start,
+          end: end,
+          message: generateMessage(refType, name, activeFilePath, r.where),
+        };
+        if (
+          (portType === "number" &&
+            r.spec?.ports?.find((p: any) => p?.port === parseInt(portRef))) ||
+          (portType === "name" &&
+            r.spec?.ports?.find((p: any) => p?.name === portRef))
+        ) {
+          let portHighlight: Highlight = {
+            ...getPositions(match, portRef),
+            message: "Port Found",
+          };
+          nameHighlight.importance = 1;
+          return [nameHighlight, portHighlight];
+        }
+
+        return nameHighlight;
+      });
+    } else {
+      return enableCorrectionHints
+        ? getSimilarHighlights(resourcesScoped, name, start, end, activeFilePath)
+        : [];
+    }
   });
 }
 
-function getHighlights(
-  resources: K8sResource[],
-  name: string,
-  start: number,
-  end: number,
-  activeFilePath: string,
-  refType: string,
-  enableCorrectionHints: boolean
-): Highlight[] {
-  var exactMatches = resources.filter((r) => r.metadata.name === name);
-  if (exactMatches.length > 0) {
-    return exactMatches.map((r) => {
-      return {
-        start: start,
-        end: end,
-        message: generateMessage(refType, name, activeFilePath, r.where),
-      };
-    });
-  }
-
-  return enableCorrectionHints ? getSimilarHighlights(resources, name, start, end) : [];
+function getPositions(match: RegExpMatchArray, name: string) {
+  const shift = match[0].indexOf(name);
+  const start = (match.index || 0) + shift;
+  const end = start + name.length;
+  return { start, end };
 }
 
 function getSimilarHighlights(
   resources: K8sResource[],
   name: string,
   start: number,
-  end: number
+  end: number,
+  activeFilePath: string,
 ): Highlight[] {
-  var similarity = findBestMatch(
-    name,
-    resources.map((r) => r.metadata.name)
-  );
-
-  return resources
-    .map((r, b, _) => {
-      return { ...r, rating: similarity.ratings[b].rating };
-    })
+  return similarity<K8sResource>(resources, name, (r) => r.metadata.name)
     .filter((r) => r.rating > 0.8)
     .map((r) => {
       return {
         start: start,
         end: end,
-        message: `'${name}' not found. Did you mean '${r.metadata.name}'?`,
+        message: generateNotFoundMessage(name, r.metadata.name, activeFilePath, r.where),
         severity: vscode.DiagnosticSeverity.Hint,
       };
     });
+}
+
+function similarity<T>(l: T[], name: string, f: (r: T) => string) {
+  var similarity = findBestMatch(name, l.map(f));
+
+  return l.map((r, b, _) => {
+    return { ...r, rating: similarity.ratings[b].rating };
+  });
 }
