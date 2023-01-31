@@ -1,5 +1,5 @@
 import { CoreV1Api, KubeConfig } from "@kubernetes/client-node";
-import { K8sResource } from "./types";
+import { K8sResource } from "../types";
 
 export function getKubeClient() {
   try {

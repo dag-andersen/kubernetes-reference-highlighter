@@ -1,11 +1,13 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import * as workspace from "./workspace";
-import * as cluster from "./cluster";
-import * as kustomize from "./kustomize";
-import * as helm from "./helm";
-import * as finders from "./finders";
+import * as workspace from "./sources/workspace";
+import * as cluster from "./sources/cluster";
+import * as kustomize from "./sources/kustomize";
+import * as helm from "./sources/helm";
+import * as valueFromKeyRef from "./finders/valueFromKeyRef";
+import * as ingress from "./finders/ingress";
+import * as service from "./finders/service";
 
 import { FromWhere, K8sResource } from "./types";
 import { parse } from "yaml";
@@ -16,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
   console.log(
-    'Congratulations, your extension "Kubernetes Reference Highlighter" is now active!'
+    'Congratulations, extension "Kubernetes Reference Highlighter" is now active!'
   );
 
   let k8sApi = cluster.getKubeClient();
@@ -189,20 +191,20 @@ export function activate(context: vscode.ExtensionContext) {
 
       firstTimeK8sObjectFound(); // first time finding a k8s object
 
-      const serviceHighlights = finders.findServices(
+      const serviceHighlights = service.find(
         kubeResources,
         thisResource,
         fileName,
         textSplit
       );
-      const valueFromHighlights = finders.findValueFromKeyRef(
+      const valueFromHighlights = valueFromKeyRef.find(
         kubeResources,
         thisResource,
         fileName,
         textSplit,
         enableCorrectionHints
       );
-      const ingressHighlights = finders.findIngressService(
+      const ingressHighlights = ingress.find(
         kubeResources,
         thisResource,
         fileName,
@@ -398,7 +400,7 @@ export function generateNotFoundMessage(
   name: string,
   suggestion: string,
   activeFilePath: string,
-  fromWhere?: FromWhere,
+  fromWhere?: FromWhere
 ) {
   const p = require("path");
   if (fromWhere) {

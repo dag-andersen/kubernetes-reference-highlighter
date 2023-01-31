@@ -1,6 +1,6 @@
-import { K8sResource } from "./types";
+import { K8sResource } from "../types";
 import * as vscode from "vscode";
-import { getAllFileNamesInDirectory, textToK8sResource } from "./extension";
+import { getAllFileNamesInDirectory, textToK8sResource } from "../extension";
 
 // get all kubernetes resource names in folder and subfolders
 export function getK8sResourceNamesInWorkspace(): K8sResource[] {
