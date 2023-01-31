@@ -78,9 +78,7 @@ export function findValueFromKeyRef(
 
     let name = match[2] || match[3];
 
-    const shift = match[0].indexOf(name);
-    const start = (match.index || 0) + shift;
-    const end = start + name.length;
+    const { start, end } = getPositions(match, name);
 
     let resourcesScoped = resources
       .filter((r) => r.kind === refType)
@@ -88,14 +86,13 @@ export function findValueFromKeyRef(
 
     var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
     if (exactMatches.length > 0) {
-      return getHighlights(
-        exactMatches,
-        name,
-        start,
-        end,
-        activeFilePath,
-        refType
-      );
+      return resources.flatMap((r) => {
+        return {
+          start: start,
+          end: end,
+          message: generateMessage(refType, name, activeFilePath, r.where),
+        };
+      });
     } else {
       return enableCorrectionHints
         ? getSimilarHighlights(resourcesScoped, name, start, end)
@@ -124,35 +121,51 @@ export function findIngressService(
     logText(format(match));
 
     var name = "not found";
-    var port = 0;
-    var portType = "not found";
+    var portRef = "";
+    var portType = "";
     if (match[2] === "number" || match[2] === "name") {
       name = match[1];
-      port = parseInt(match[3]);
+      portRef = match[3];
       portType = match[2];
-      logText(name + " " + port.toString());
+      logText(name + " " + portRef.toString());
     }
     if (match[4] === "number" || match[4] === "name") {
       name = match[6];
-      port = parseInt(match[5]);
+      portRef = match[5];
       portType = match[4];
-      logText(name + " " + port.toString());
+      logText(name + " " + portRef.toString());
     }
-
 
     let resourcesScoped = resources
       .filter((r) => r.kind === refType)
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace);
 
-    const shift = match[0].indexOf(name);
-    const start = (match.index || 0) + shift;
-    const end = start + name.length;
+    const { start, end } = getPositions(match, name);
 
-    var exactMatches = resourcesScoped
-      .filter((r) => r.metadata.name === name)
-      .filter((r) => portType === "number" ? r.spec?.ports?.find((p: any) => p?.port === port) : true);
+    var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
     if (exactMatches.length > 0) {
-      return getHighlights(exactMatches, name, start, end, activeFilePath, refType);
+      return exactMatches.flatMap((r) => {
+        let nameHighlight: Highlight = {
+          start: start,
+          end: end,
+          message: generateMessage(refType, name, activeFilePath, r.where),
+        };
+        if (
+          (portType === "number" &&
+            r.spec?.ports?.find((p: any) => p?.port === parseInt(portRef))) ||
+          (portType === "name" &&
+            r.spec?.ports?.find((p: any) => p?.name === portRef))
+        ) {
+          let portHighlight: Highlight = {
+            ...getPositions(match, portRef),
+            message: "Port Found",
+          };
+          nameHighlight.importance = 1;
+          return [nameHighlight, portHighlight];
+        }
+
+        return nameHighlight;
+      });
     } else {
       return enableCorrectionHints
         ? getSimilarHighlights(resourcesScoped, name, start, end)
@@ -161,21 +174,11 @@ export function findIngressService(
   });
 }
 
-function getHighlights(
-  resources: K8sResource[],
-  name: string,
-  start: number,
-  end: number,
-  activeFilePath: string,
-  refType: string
-): Highlight[] {
-  return resources.map((r) => {
-    return {
-      start: start,
-      end: end,
-      message: generateMessage(refType, name, activeFilePath, r.where),
-    };
-  });
+function getPositions(match: RegExpMatchArray, name: string) {
+  const shift = match[0].indexOf(name);
+  const start = (match.index || 0) + shift;
+  const end = start + name.length;
+  return { start, end };
 }
 
 function getSimilarHighlights(
