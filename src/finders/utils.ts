@@ -1,6 +1,5 @@
 import { findBestMatch } from "string-similarity";
-import { generateNotFoundMessage } from "../extension";
-import { Highlight, K8sResource } from "../types";
+import { FromWhere, Highlight, K8sResource } from "../types";
 import * as vscode from "vscode";
 
 export function getPositions(match: RegExpMatchArray, name: string) {
@@ -40,4 +39,69 @@ export function getSimilarHighlights(
         severity: vscode.DiagnosticSeverity.Hint,
       };
     });
+}
+
+export function generateMessage(
+  type: string,
+  name: string,
+  activeFilePath: string,
+  fromWhere?: FromWhere
+) {
+  const p = require("path");
+  let message = "";
+  if (fromWhere) {
+    if (typeof fromWhere === "string") {
+      message = `Found ${type} in ${fromWhere}`;
+    } else {
+      const fromFilePath = fromWhere.path;
+      const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
+        fromFilePath || ""
+      );
+      const activeDirPath: string = p.dirname(activeFilePath || "");
+      const relativePathFromActive: string = p.relative(
+        activeDirPath || "",
+        fromFilePath
+      );
+      const path =
+        relativeFilePathFromRoot.length < relativePathFromActive.length
+          ? "/" + relativeFilePathFromRoot
+          : relativePathFromActive.includes("/")
+          ? relativePathFromActive
+          : "./" + relativePathFromActive;
+      message = `✅ Found ${type} in ${fromWhere.place} at ${path}`;
+    }
+  } else {
+    message = `✅Found ${type}, ${name}`;
+  }
+  return message;
+}
+
+export function generateNotFoundMessage(
+  name: string,
+  suggestion: string,
+  activeFilePath: string,
+  fromWhere?: FromWhere
+) {
+  const p = require("path");
+  if (fromWhere) {
+    if (typeof fromWhere !== "string") {
+      const fromFilePath = fromWhere.path;
+      const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
+        fromFilePath || ""
+      );
+      const activeDirPath: string = p.dirname(activeFilePath || "");
+      const relativePathFromActive: string = p.relative(
+        activeDirPath || "",
+        fromFilePath
+      );
+      const path =
+        relativeFilePathFromRoot.length < relativePathFromActive.length
+          ? "/" + relativeFilePathFromRoot
+          : relativePathFromActive.includes("/")
+          ? relativePathFromActive
+          : "./" + relativePathFromActive;
+      return `🤷‍♂️ ${name} not found. Did you mean ${suggestion}? (in ${fromWhere.place} at ${path})`;
+    }
+  }
+  return `🤷‍♂️ ${name} not found. Did you mean ${suggestion}?`;
 }

@@ -9,7 +9,7 @@ import * as valueFromKeyRef from "./finders/valueFromKeyRef";
 import * as ingress from "./finders/ingress";
 import * as service from "./finders/service";
 
-import { FromWhere, K8sResource } from "./types";
+import { K8sResource } from "./types";
 import { parse } from "yaml";
 
 // this method is called when your extension is activated
@@ -359,71 +359,6 @@ export function createDiagnostic(
 ): vscode.Diagnostic {
   const range = toRange(text, start, end);
   return new vscode.Diagnostic(range, message, level);
-}
-
-export function generateMessage(
-  type: string,
-  name: string,
-  activeFilePath: string,
-  fromWhere?: FromWhere
-) {
-  const p = require("path");
-  let message = "";
-  if (fromWhere) {
-    if (typeof fromWhere === "string") {
-      message = `Found ${type} in ${fromWhere}`;
-    } else {
-      const fromFilePath = fromWhere.path;
-      const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
-        fromFilePath || ""
-      );
-      const activeDirPath: string = p.dirname(activeFilePath || "");
-      const relativePathFromActive: string = p.relative(
-        activeDirPath || "",
-        fromFilePath
-      );
-      const path =
-        relativeFilePathFromRoot.length < relativePathFromActive.length
-          ? "/" + relativeFilePathFromRoot
-          : relativePathFromActive.includes("/")
-          ? relativePathFromActive
-          : "./" + relativePathFromActive;
-      message = `Found ${type} in ${fromWhere.place} at ${path}`;
-    }
-  } else {
-    message = `Found ${type}, ${name}`;
-  }
-  return message;
-}
-
-export function generateNotFoundMessage(
-  name: string,
-  suggestion: string,
-  activeFilePath: string,
-  fromWhere?: FromWhere
-) {
-  const p = require("path");
-  if (fromWhere) {
-    if (typeof fromWhere !== "string") {
-      const fromFilePath = fromWhere.path;
-      const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
-        fromFilePath || ""
-      );
-      const activeDirPath: string = p.dirname(activeFilePath || "");
-      const relativePathFromActive: string = p.relative(
-        activeDirPath || "",
-        fromFilePath
-      );
-      const path =
-        relativeFilePathFromRoot.length < relativePathFromActive.length
-          ? "/" + relativeFilePathFromRoot
-          : relativePathFromActive.includes("/")
-          ? relativePathFromActive
-          : "./" + relativePathFromActive;
-      return `${name} not found. Did you mean ${suggestion}? (in ${fromWhere.place} at ${path})`;
-    }
-  }
-  return `${name} not found. Did you mean ${suggestion}?`;
 }
 
 function toRange(text: string, start: number, end: number): vscode.Range {

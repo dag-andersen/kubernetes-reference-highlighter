@@ -1,8 +1,5 @@
 import { K8sResource, Highlight } from "../types";
-import {
-  generateMessage,
-} from "../extension";
-import { getPositions, getSimilarHighlights } from "./utils";
+import { generateMessage, getPositions, getSimilarHighlights } from "./utils";
 
 export function find(
   resources: K8sResource[],
@@ -58,7 +55,7 @@ export function find(
         ) {
           let portHighlight: Highlight = {
             ...getPositions(match, portRef),
-            message: "Port Found",
+            message: "✅ Port Found",
           };
           nameHighlight.importance = 1;
           return [nameHighlight, portHighlight];

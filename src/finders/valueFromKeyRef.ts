@@ -1,7 +1,5 @@
 import { K8sResource, Highlight } from "../types";
-import { generateMessage } from "../extension";
-import { getPositions, getSimilarHighlights } from "./utils";
-import { logText } from "../utils";
+import { generateMessage, getPositions, getSimilarHighlights } from "./utils";
 
 export function find(
   resources: K8sResource[],
@@ -15,8 +13,10 @@ export function find(
     case "Pod":
     case "StatefulSet":
     case "DaemonSet":
+    case "ReplicaSet":
     case "Job":
     case "CronJob":
+    case "ReplicationController":
       break;
     default:
       return [];
@@ -64,7 +64,7 @@ export function find(
         if (r.data[key]) {
           let keyHighlight: Highlight = {
             ...getPositions(match, key),
-            message: "Key Found",
+            message: "✅ Key Found",
           };
           nameHighlight.importance = 1;
           return [nameHighlight, keyHighlight];

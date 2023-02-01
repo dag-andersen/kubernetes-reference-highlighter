@@ -1,5 +1,5 @@
 import { K8sResource, Highlight } from "../types";
-import { generateMessage } from "../extension";
+import { generateMessage } from "./utils";
 
 export function find(
   resources: K8sResource[],
