@@ -14,6 +14,21 @@ export function getHelmResources(): K8sResource[] {
   return resources;
 }
 
+export function isHelmInstalled(): boolean {
+  const execSync = require("child_process").execSync;
+  let output: string = "";
+
+  try {
+    output = execSync(`helm version`, {
+      encoding: "utf-8",
+    });
+  } catch (e) {
+    return false;
+  }
+
+  return true;
+}
+
 function getHelmPathsInWorkspace(): string[] {
   const workspaceFolders =
     vscode.workspace.workspaceFolders &&
@@ -53,21 +68,6 @@ function helmBuild(file: string): K8sResource[] {
     } catch (e) {}
     return [];
   });
-}
-
-export function isHelmInstalled(): boolean {
-  const execSync = require("child_process").execSync;
-  let output: string = "";
-
-  try {
-    output = execSync(`helm version`, {
-      encoding: "utf-8",
-    });
-  } catch (e) {
-    return false;
-  }
-
-  return true;
 }
 
 export function verifyHelmBuild(

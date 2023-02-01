@@ -10,6 +10,9 @@ export function getPositions(match: RegExpMatchArray, name: string) {
 }
 
 export function similarity<T>(l: T[], name: string, f: (r: T) => string) {
+  if (l.length === 0) {
+    return [];
+  }
   var similarity = findBestMatch(name, l.map(f));
 
   return l.map((r, b, _) => {

@@ -18,7 +18,7 @@ export type K8sResource = {
     name: string;
     namespace: string;
   };
-  spec: any;
-  data: any;
+  spec?: any;
+  data?: any;
   where?: FromWhere;
 };
