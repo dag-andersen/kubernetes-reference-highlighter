@@ -12,7 +12,6 @@ import * as service from "./finders/service";
 import { K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./Prefs";
-import { logRest, logText } from "./utils";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -50,8 +49,14 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage(
           `Cluster Scanning: ${prefs.clusterScanning ? "Enabled" : "Disabled"}`
         );
-        updateK8sResourcesFromCluster();
-      } else {
+        updateK8sResourcesFromCluster().then(() => {
+          updateDiagnostics(
+            vscode.window.activeTextEditor?.document,
+            prefs,
+            diagnosticCollection,
+            resources()
+          );
+        });
         vscode.window.showErrorMessage(`Cluster Scanning: Not available`);
       }
     }
@@ -124,23 +129,36 @@ export function activate(context: vscode.ExtensionContext) {
     kubeResourcesWorkspace = prefs.workSpaceScanning ? workspace.getK8sResourceNamesInWorkspace() : [];
   };
 
-  const updateK8sResourcesFromCluster = () => {
-    kubeResourcesCluster = k8sApi && prefs.clusterScanning ? cluster.getClusterResources(k8sApi) : [];
-  };
-  
-  const updateK8sResourcesFromHelm = () => {
-    kubeResourcesHelm = helm.isHelmInstalled() && prefs.helmScanning ? helm.getHelmResources() : [];
-  };
-
   const updateK8sResourcesFromKustomize = () => {
     kubeResourcesKustomize = prefs.kustomizeScanning ? kustomize.getKustomizeResources() : [];
   };
 
+  const updateK8sResourcesFromHelm = () => {
+    kubeResourcesHelm = helm.isHelmInstalled() && prefs.helmScanning ? helm.getHelmResources() : [];
+  };
+
+  const updateK8sResourcesFromCluster = async () => {
+    kubeResourcesCluster = k8sApi && prefs.clusterScanning ? await cluster.getClusterResources(k8sApi) : [];
+  };
+
     const updateResources = () => {
-      updateK8sResourcesFromCluster();
       updateK8sResourcesFromWorkspace();
       updateK8sResourcesFromKustomize();
       updateK8sResourcesFromHelm();
+      updateDiagnostics(
+        vscode.window.activeTextEditor?.document,
+        prefs,
+        diagnosticCollection,
+        resources()
+      );
+      updateK8sResourcesFromCluster().then(() => {     
+        updateDiagnostics(
+          vscode.window.activeTextEditor?.document,
+          prefs,
+          diagnosticCollection,
+          resources()
+        );
+      });
     };
 
   // create diagnostic collection
@@ -153,7 +171,6 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     updateResources();
-    updateDiagnostics(doc, prefs, diagnosticCollection, resources());
   });
 
   const onOpen = vscode.workspace.onDidOpenTextDocument((doc) =>
@@ -176,12 +193,6 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   updateResources();
-  updateDiagnostics(
-    vscode.window.activeTextEditor!.document,
-    prefs,
-    diagnosticCollection,
-    resources()
-  );
 
   console.log("Kubernetes Reference Highlighter activated");
 }
@@ -263,13 +274,15 @@ export function textToK8sResource(text: string): K8sResource {
 export function deactivate() {}
 
 function updateDiagnostics(
-  doc: vscode.TextDocument,
+  doc: vscode.TextDocument | undefined,
   prefs: Prefs,
   diagnosticCollection: vscode.DiagnosticCollection,
   kubeResources: K8sResource[]
 ) {
-  logRest();
-  logText("hej");
+  if (!doc) {
+    return;
+  }
+
   const fileName = doc.fileName;
   if (!fileName.endsWith(".yaml") && !fileName.endsWith(".yml")) {
     return;
@@ -294,8 +307,6 @@ function updateDiagnostics(
       : fileTextSplitted.flatMap((textSplit) => {
           let thisResource: K8sResource;
 
-          logText(textSplit);
-
           try {
             thisResource = textToK8sResource(textSplit);
           } catch (e) {
@@ -316,7 +327,6 @@ function updateDiagnostics(
             textSplit,
             prefs.hints
           );
-          logText(valueFromHighlights, 3);
           const ingressHighlights = ingress.find(
             kubeResources,
             thisResource,
@@ -324,7 +334,6 @@ function updateDiagnostics(
             textSplit,
             prefs.hints
           );
-          logText("hej", 8);
           const highlights = [
             ...serviceHighlights,
             ...valueFromHighlights,
