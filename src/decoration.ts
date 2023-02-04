@@ -7,7 +7,7 @@ import {
   Position,
   TextDocument,
 } from "vscode";
-import { generateMessage } from "./utils";
+import { generateMessage, Message } from "./utils";
 import { Highlight, HighLightType } from "./types";
 
 export function getDecoration(
@@ -62,11 +62,12 @@ type Deco = {
 
 export function highlightsToDecorations(
   doc: TextDocument,
-  highlights: Highlight[]
+  highlights: Highlight[],
+  shift: number,
 ): DecorationOptions[] {
   let decorations = highlights.map((highlight) => {
     return {
-      position: doc.lineAt(doc.positionAt(highlight.start)).range.end,
+      position: doc.lineAt(doc.positionAt(highlight.start + shift)).range.end,
       highlight: highlight,
     };
   });

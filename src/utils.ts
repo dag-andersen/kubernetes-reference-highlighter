@@ -48,7 +48,7 @@ function generateFoundMessage(mg: ReferenceFound) {
   let message = "";
   if (fromWhere) {
     if (typeof fromWhere === "string") {
-      message = `Found ${type} in ${fromWhere}`;
+      message = `✅ Found ${type}: ${name} in ${fromWhere}`;
     } else {
       const fromFilePath = fromWhere.path;
       const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
@@ -65,10 +65,10 @@ function generateFoundMessage(mg: ReferenceFound) {
           : relativePathFromActive.includes("/")
           ? relativePathFromActive
           : "./" + relativePathFromActive;
-      message = `✅ Found ${type} in ${fromWhere.place} at ${path}`;
+      message = `✅ Found ${type}: ${name} in ${fromWhere.place} at ${path}`;
     }
   } else {
-    message = `✅ Found ${type}, ${name}`;
+    message = `✅ Found ${type}: ${name}`;
   }
   return message;
 }

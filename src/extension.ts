@@ -324,7 +324,7 @@ function updateHighlighting(
             );
           }
 
-          let decorations = highlightsToDecorations(doc, highlights);
+          let decorations = highlightsToDecorations(doc, highlights, currentIndex);
 
           currentIndex += textSplit.length + split.length;
           decorations.sort(

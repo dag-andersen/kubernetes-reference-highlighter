@@ -4,7 +4,7 @@ export type FromWhere = "cluster" | Local;
 
 export type Local = { place: "workspace" | "kustomize" | "helm"; path: string };
 
-export type HighLightType = "reference" | "success" | "error" | "hint";
+export type HighLightType = "reference" | "hint" | "success" | "error" ;
 
 export type Highlight = {
   start: number;
