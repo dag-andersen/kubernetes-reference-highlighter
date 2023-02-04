@@ -55,7 +55,6 @@ export function activate(context: vscode.ExtensionContext) {
           updateHighlighting (
             vscode.window.activeTextEditor,
             prefs,
-            diagnosticCollection,
             resources()
           );
         });
@@ -144,25 +143,23 @@ export function activate(context: vscode.ExtensionContext) {
     kubeResourcesCluster = k8sApi && prefs.clusterScanning ? await cluster.getClusterResources(k8sApi) : [];
   };
 
-    const updateResources = () => {
-      updateK8sResourcesFromWorkspace();
-      updateK8sResourcesFromKustomize();
-      updateK8sResourcesFromHelm();
+  const updateResources = () => {
+    updateK8sResourcesFromWorkspace();
+    updateK8sResourcesFromKustomize();
+    updateK8sResourcesFromHelm();
     updateHighlighting (
       vscode.window.activeTextEditor,
-        prefs,
-        diagnosticCollection,
-        resources()
-      );
+      prefs,
+      resources()
+    );
       updateK8sResourcesFromCluster().then(() => {     
       updateHighlighting (
         vscode.window.activeTextEditor,
-          prefs,
-          diagnosticCollection,
-          resources()
-        );
-      });
-    };
+        prefs,
+        resources()
+      );
+    });
+  };
 
   // create diagnostic collection
   const diagnosticCollection = vscode.languages.createDiagnosticCollection(
@@ -189,7 +186,6 @@ export function activate(context: vscode.ExtensionContext) {
     enableKustomizeScanningCommand,
     enableHelmScanningCommand,
     enableCorrectionHintsCommand,
-    diagnosticCollection,
     onSave,
     onChange,
     onOpen
@@ -305,61 +301,23 @@ function updateHighlighting (
             textSplit,
             prefs.hints
           );
+
           const highlights = [
             ...serviceHighlights,
             ...valueFromHighlights,
             ...ingressHighlights,
           ];
 
-          let diagnostics = highlights
-            .sort((a, b) => (b.importance ?? 0) - (a.importance ?? 0))
-            .map((h) => {
-              return createDiagnostic(
-                h.start + currentIndex,
-                h.end + currentIndex,
-                fileText,
-                h.message,
-                h.severity
-              );
-            });
-
-          if (
-            prefs.kustomizeScanning &&
-            (fileName.endsWith("kustomization.yaml") ||
-              fileName.endsWith("kustomization.yml"))
-          ) {
-            diagnostics.push(
-              ...kustomize.verifyKustomizeBuild(
-                thisResource,
-                textSplit,
-                fileText,
-                fileName,
-                currentIndex
-              )
-            );
-          }
-
-          if (prefs.helmScanning && fileName.endsWith("Chart.yaml")) {
-            diagnostics.push(
-              ...helm.verifyHelmBuild(
-                thisResource,
-                textSplit,
-                fileText,
-                fileName,
-                currentIndex
-              )
-            );
-          }
+          let decorations = highlightsToDecorations(doc, highlights);
 
           currentIndex += textSplit.length + split.length;
-          diagnostics.sort((a, b) => a.message.length - b.message.length);
-          return diagnostics;
+          decorations.sort(
+            (a, b) =>
+              (a.renderOptions?.after?.contentText?.length ?? 0) -
+              (b.renderOptions?.after?.contentText?.length ?? 0)
+          );
+          return decorations;
         });
 
-  //diagnosticCollection.clear();
-  diagnosticCollection.set(doc.uri, diagnosticsCombined);
+  decorate(editor, diagnosticsCombined);
 }
-
-// function listener(editor: vscode.TextEditor | undefined): Promise<void> {
-//   return Promise.resolve();
-// }

@@ -4,20 +4,19 @@ import {
   Range,
   TextEditor,
   MarkdownString,
+  Position,
+  TextDocument,
 } from "vscode";
 import { Highlight } from "./types";
 
+export type Deco = { ln: number; position: Position; message: string };
+
 export function getDecoration(
   message: string,
-  posIndex: number
+  posIndex: Position
 ): DecorationOptions {
-  const textEditor = window.activeTextEditor!;
-
-  const matchPosition = textEditor.document.positionAt(posIndex);
-  const endPosition = textEditor.document.lineAt(matchPosition).range.end;
-
   let decoration: DecorationOptions = {
-    range: new Range(endPosition, endPosition),
+    range: new Range(posIndex, posIndex),
     hoverMessage: new MarkdownString(message),
     renderOptions: {
       after: {
@@ -39,9 +38,37 @@ export function decorate(editor: TextEditor, decorations: DecorationOptions[]) {
 }
 
 export function highlightsToDecorations(
+  doc: TextDocument,
   highlights: Highlight[]
 ): DecorationOptions[] {
-  return highlights.map((h) => {
-    return getDecoration(h.message, h.start);
+  let decorations = highlights.map((highlight) => {
+    return {
+      position: doc.lineAt(doc.positionAt(highlight.start)).range.end,
+      highlight: highlight,
+    };
+  });
+
+  const grouped: Deco[] = [];
+  decorations
+    .sort((a, b) => b.position.line - a.position.line)
+    .forEach((h, index) => {
+      const previousLineNumber = decorations[index - 1]?.position.line;
+      const currentLineNumber = h.position.line;
+      if (previousLineNumber === currentLineNumber) {
+        grouped[grouped.length - 1].message =
+          grouped[grouped.length - 1].message +
+          "\n" +
+          h.highlight.message;
+      } else {
+        grouped.push({
+          ln: h.position.line,
+          position: h.position,
+          message: h.highlight.message,
+        });
+      }
+    });
+
+  return grouped.map((h) => {
+    return getDecoration(h.message, h.position);
   });
 }
