@@ -1,6 +1,7 @@
 import { K8sResource } from "../types";
 import * as vscode from "vscode";
-import { textToK8sResource, createDiagnostic } from "../extension";
+import { textToK8sResource } from "../extension";
+import { createDiagnostic } from "../diagnostic";
 import { getAllFileNamesInDirectory } from "../extension";
 import { format } from "util";
 

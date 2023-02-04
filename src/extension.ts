@@ -12,6 +12,8 @@ import * as service from "./finders/service";
 import { K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./Prefs";
+import { decorate, getDecoration, highlightsToDecorations } from "./decoration";
+import { createDiagnostic } from "./diagnostic";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -50,13 +52,14 @@ export function activate(context: vscode.ExtensionContext) {
           `Cluster Scanning: ${prefs.clusterScanning ? "Enabled" : "Disabled"}`
         );
         updateK8sResourcesFromCluster().then(() => {
-          updateDiagnostics(
-            vscode.window.activeTextEditor?.document,
+          updateHighlighting (
+            vscode.window.activeTextEditor,
             prefs,
             diagnosticCollection,
             resources()
           );
         });
+      } else {
         vscode.window.showErrorMessage(`Cluster Scanning: Not available`);
       }
     }
@@ -145,15 +148,15 @@ export function activate(context: vscode.ExtensionContext) {
       updateK8sResourcesFromWorkspace();
       updateK8sResourcesFromKustomize();
       updateK8sResourcesFromHelm();
-      updateDiagnostics(
-        vscode.window.activeTextEditor?.document,
+    updateHighlighting (
+      vscode.window.activeTextEditor,
         prefs,
         diagnosticCollection,
         resources()
       );
       updateK8sResourcesFromCluster().then(() => {     
-        updateDiagnostics(
-          vscode.window.activeTextEditor?.document,
+      updateHighlighting (
+        vscode.window.activeTextEditor,
           prefs,
           diagnosticCollection,
           resources()
@@ -174,10 +177,10 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   const onOpen = vscode.workspace.onDidOpenTextDocument((doc) =>
-    updateDiagnostics(doc, prefs, diagnosticCollection, resources())
+    updateHighlighting (vscode.window.activeTextEditor, prefs, resources())
   );
   const onChange = vscode.workspace.onDidChangeTextDocument((event) =>
-    updateDiagnostics(event.document, prefs, diagnosticCollection, resources())
+    updateHighlighting (vscode.window.activeTextEditor, prefs, resources())
   );
 
   context.subscriptions.push(
@@ -223,40 +226,6 @@ export function getAllFileNamesInDirectory(dirPath: string) {
   return files;
 }
 
-export function createDiagnostic(
-  start: number,
-  end: number,
-  text: string,
-  message: string,
-  level: vscode.DiagnosticSeverity = vscode.DiagnosticSeverity.Information
-): vscode.Diagnostic {
-  const range = toRange(text, start, end);
-  return new vscode.Diagnostic(range, message, level);
-}
-
-function toRange(text: string, start: number, end: number): vscode.Range {
-  const diff = end - start;
-  const lines = text.substring(0, end).split(/\r?\n/);
-  const endLine = lines.length - 1;
-  const endCharacter = lines[endLine].length;
-
-  let currentCharacter = diff;
-  let currentLine = endLine;
-  while (currentCharacter > 0 && currentLine >= 0) {
-    if (lines[currentLine].length < currentCharacter) {
-      currentCharacter -= lines[currentLine].length + 1;
-      currentLine--;
-    } else {
-      break;
-    }
-  }
-
-  const startLine = currentLine;
-  const startCharacter = lines[startLine].length - currentCharacter;
-
-  return new vscode.Range(startLine, startCharacter, endLine, endCharacter);
-}
-
 export function textToK8sResource(text: string): K8sResource {
   const yml = parse(text);
   return {
@@ -273,12 +242,14 @@ export function textToK8sResource(text: string): K8sResource {
 // this method is called when your extension is deactivated
 export function deactivate() {}
 
-function updateDiagnostics(
-  doc: vscode.TextDocument | undefined,
+function updateHighlighting (
+  editor: vscode.TextEditor | undefined,
   prefs: Prefs,
-  diagnosticCollection: vscode.DiagnosticCollection,
   kubeResources: K8sResource[]
 ) {
+
+  const doc = editor?.document;
+
   if (!doc) {
     return;
   }
