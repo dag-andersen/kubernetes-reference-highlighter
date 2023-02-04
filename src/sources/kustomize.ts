@@ -1,7 +1,6 @@
-import { K8sResource } from "../types";
+import { Highlight, K8sResource } from "../types";
 import * as vscode from "vscode";
 import { textToK8sResource } from "../extension";
-import { createDiagnostic } from "../diagnostic";
 import { getAllFileNamesInDirectory } from "../extension";
 import { format } from "util";
 
@@ -81,10 +80,9 @@ function isKustomizeInstalled(): boolean {
 export function verifyKustomizeBuild(
   thisResource: K8sResource,
   text: string,
-  fullText: string,
   filePath: string,
   shift: number
-): vscode.Diagnostic[] {
+): Highlight[] {
   if (thisResource.kind !== "Kustomization") {
     return [];
   }
@@ -96,7 +94,6 @@ export function verifyKustomizeBuild(
 
   return [...matches].flatMap((match) => {
     const start = (match.index || 0) + shift + match[0].indexOf(refType);
-    const end = start + refType.length;
 
     const path = filePath.substring(0, filePath.lastIndexOf("/"));
 
@@ -115,16 +112,12 @@ export function verifyKustomizeBuild(
       }
     })();
 
-    return createDiagnostic(
-      start,
-      end,
-      fullText,
-      success
+    return {
+      message: success
         ? "✅ Kustomize build succeeded"
         : "❌ Kustomize build failed - " + output,
-      success
-        ? vscode.DiagnosticSeverity.Information
-        : vscode.DiagnosticSeverity.Error
-    );
+      type: success ? "success" : "error",
+      start: start,
+    };
   });
 }

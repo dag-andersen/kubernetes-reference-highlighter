@@ -1,5 +1,4 @@
 import { K8sResource, Highlight } from "../types";
-import { generateMessage } from "./utils";
 
 export function find(
   resources: K8sResource[],
@@ -26,11 +25,10 @@ export function find(
 
       return [...matches].map((match) => {
         const start = (match.index || 0) + 1;
-        const end = start + name.length;
         return {
           start: start,
-          end: end,
-          message: generateMessage(refType, name, activeFilePath, r.where),
+          type: "reference",
+          message: { type: refType, name, activeFilePath, fromWhere: r.where },
         };
       });
     });

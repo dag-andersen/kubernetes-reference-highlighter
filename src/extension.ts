@@ -12,8 +12,7 @@ import * as service from "./finders/service";
 import { K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./Prefs";
-import { decorate, getDecoration, highlightsToDecorations } from "./decoration";
-import { createDiagnostic } from "./diagnostic";
+import { decorate, highlightsToDecorations } from "./decoration";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -52,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
           `Cluster Scanning: ${prefs.clusterScanning ? "Enabled" : "Disabled"}`
         );
         updateK8sResourcesFromCluster().then(() => {
-          updateHighlighting (
+          updateHighlighting(
             vscode.window.activeTextEditor,
             prefs,
             resources()
@@ -147,17 +146,9 @@ export function activate(context: vscode.ExtensionContext) {
     updateK8sResourcesFromWorkspace();
     updateK8sResourcesFromKustomize();
     updateK8sResourcesFromHelm();
-    updateHighlighting (
-      vscode.window.activeTextEditor,
-      prefs,
-      resources()
-    );
-      updateK8sResourcesFromCluster().then(() => {     
-      updateHighlighting (
-        vscode.window.activeTextEditor,
-        prefs,
-        resources()
-      );
+    updateHighlighting(vscode.window.activeTextEditor, prefs, resources());
+    updateK8sResourcesFromCluster().then(() => {
+      updateHighlighting(vscode.window.activeTextEditor, prefs, resources());
     });
   };
 
@@ -174,10 +165,10 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   const onOpen = vscode.workspace.onDidOpenTextDocument((doc) =>
-    updateHighlighting (vscode.window.activeTextEditor, prefs, resources())
+    updateHighlighting(vscode.window.activeTextEditor, prefs, resources())
   );
   const onChange = vscode.workspace.onDidChangeTextDocument((event) =>
-    updateHighlighting (vscode.window.activeTextEditor, prefs, resources())
+    updateHighlighting(vscode.window.activeTextEditor, prefs, resources())
   );
 
   context.subscriptions.push(
@@ -238,12 +229,11 @@ export function textToK8sResource(text: string): K8sResource {
 // this method is called when your extension is deactivated
 export function deactivate() {}
 
-function updateHighlighting (
+function updateHighlighting(
   editor: vscode.TextEditor | undefined,
   prefs: Prefs,
   kubeResources: K8sResource[]
 ) {
-
   const doc = editor?.document;
 
   if (!doc) {
@@ -307,6 +297,32 @@ function updateHighlighting (
             ...valueFromHighlights,
             ...ingressHighlights,
           ];
+
+          if (
+            prefs.kustomizeScanning &&
+            (fileName.endsWith("kustomization.yaml") ||
+              fileName.endsWith("kustomization.yml"))
+          ) {
+            highlights.push(
+              ...kustomize.verifyKustomizeBuild(
+                thisResource,
+                textSplit,
+                fileName,
+                currentIndex
+              )
+            );
+          }
+
+          if (prefs.helmScanning && fileName.endsWith("Chart.yaml")) {
+            highlights.push(
+              ...helm.verifyHelmBuild(
+                thisResource,
+                textSplit,
+                fileName,
+                currentIndex
+              )
+            );
+          }
 
           let decorations = highlightsToDecorations(doc, highlights);
 

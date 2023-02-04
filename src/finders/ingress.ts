@@ -1,5 +1,5 @@
 import { K8sResource, Highlight } from "../types";
-import { generateMessage, getPositions, getSimilarHighlights } from "./utils";
+import { getPositions, getSimilarHighlights } from "./utils";
 
 export function find(
   resources: K8sResource[],
@@ -18,7 +18,6 @@ export function find(
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
-
     var name = "not found";
     var portRef = "";
     var portType = "";
@@ -44,8 +43,8 @@ export function find(
       return exactMatches.flatMap((r) => {
         let nameHighlight: Highlight = {
           start: start,
-          end: end,
-          message: generateMessage(refType, name, activeFilePath, r.where),
+          type: "reference",
+          message: { type: refType, name, activeFilePath, fromWhere: r.where },
         };
         if (
           (portType === "number" &&
@@ -55,9 +54,9 @@ export function find(
         ) {
           let portHighlight: Highlight = {
             ...getPositions(match, portRef),
+            type: "reference",
             message: "✅ Port Found",
           };
-          nameHighlight.importance = 1;
           return [nameHighlight, portHighlight];
         }
 
@@ -65,7 +64,7 @@ export function find(
       });
     } else {
       return enableCorrectionHints
-        ? getSimilarHighlights(resourcesScoped, name, start, end, activeFilePath)
+        ? getSimilarHighlights(resourcesScoped, name, start, activeFilePath)
         : [];
     }
   });

@@ -1,10 +1,8 @@
 import * as vscode from "vscode";
 
-
 export function createDiagnostic(
   start: number,
   end: number,
-  text: string,
   message: string,
   level: vscode.DiagnosticSeverity = vscode.DiagnosticSeverity.Information
 ): vscode.Diagnostic {
