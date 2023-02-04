@@ -56,14 +56,14 @@ export function decorate(editor: TextEditor, decorations: DecorationOptions[]) {
 type Deco = {
   ln: number;
   position: Position;
-  message: string;
+  message: (string | Message)[];
   icon: HighLightType;
 };
 
 export function highlightsToDecorations(
   doc: TextDocument,
   highlights: Highlight[],
-  shift: number,
+  shift: number
 ): DecorationOptions[] {
   let decorations = highlights.map((highlight) => {
     return {
@@ -75,27 +75,36 @@ export function highlightsToDecorations(
   const grouped: Deco[] = [];
   decorations
     .sort((a, b) => b.position.line - a.position.line)
-    .forEach((h, index) => {
-      const previousLineNumber = decorations[index - 1]?.position.line;
-      const currentLineNumber = h.position.line;
-      if (previousLineNumber === currentLineNumber) {
-        grouped[grouped.length - 1].message =
-          grouped[grouped.length - 1].message + "\n" + h.highlight.message;
+    .forEach((current, index) => {
+      const previous = decorations[index - 1];
+      const message = current.highlight.message;
+      const currentLineNumber = current.position.line;
+      if (
+        previous &&
+        previous.highlight.type === current.highlight.type &&
+        previous.position.line === currentLineNumber
+      ) {
+        grouped[grouped.length - 1].message.push(message);
       } else {
-        const message =
-          typeof h.highlight.message !== "string"
-            ? generateMessage(h.highlight.message)
-            : h.highlight.message;
         grouped.push({
-          ln: h.position.line,
-          position: h.position,
-          message: message,
-          icon: h.highlight.type,
+          ln: current.position.line,
+          position: current.position,
+          message: [message],
+          icon: current.highlight.type,
         });
       }
     });
 
   return grouped.map((d) => {
-    return getDecoration(d.message, d.icon, d.position);
+    let message = "";
+    d.message.forEach((element, index) => {
+      if (index > 0) {
+        message += "\\\n";
+      }
+      message +=
+        typeof element === "string" ? element : generateMessage(element);
+    });
+
+    return getDecoration(message, d.icon, d.position);
   });
 }

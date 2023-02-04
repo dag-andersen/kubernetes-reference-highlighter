@@ -64,7 +64,14 @@ export function find(
           let keyHighlight: Highlight = {
             ...getPositions(match, key),
             type: "reference",
-            message: "✅ Key Found",
+            message: {
+              subType: "key",
+              mainType: refType,
+              subName: key,
+              mainName: name,
+              activeFilePath,
+              fromWhere: r.where,
+            },
           };
           return [nameHighlight, keyHighlight];
         }

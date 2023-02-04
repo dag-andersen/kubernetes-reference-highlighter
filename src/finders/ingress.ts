@@ -55,7 +55,14 @@ export function find(
           let portHighlight: Highlight = {
             ...getPositions(match, portRef),
             type: "reference",
-            message: "✅ Port Found",
+            message: {
+              subType: "port",
+              mainType: refType,
+              subName: portRef,
+              mainName: name,
+              activeFilePath,
+              fromWhere: r.where,
+            },
           };
           return [nameHighlight, portHighlight];
         }
