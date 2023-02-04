@@ -1,14 +1,15 @@
+import { Message } from "./utils";
+
 export type FromWhere = "cluster" | Local;
-import * as vscode from "vscode";
 
 export type Local = { place: "workspace" | "kustomize" | "helm"; path: string };
 
+export type HighLightType = "reference" | "hint" | "success" | "error" ;
+
 export type Highlight = {
   start: number;
-  end: number;
-  message: string;
-  severity?: vscode.DiagnosticSeverity;
-  importance?: number;
+  message: string | Message;
+  type: HighLightType;
 };
 
 // define basic type
@@ -18,7 +19,7 @@ export type K8sResource = {
     name: string;
     namespace: string;
   };
-  spec: any;
-  data: any;
+  spec?: any;
+  data?: any;
   where?: FromWhere;
 };
