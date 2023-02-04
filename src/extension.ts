@@ -12,6 +12,7 @@ import * as service from "./finders/service";
 import { K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./Prefs";
+import { decorate, highlightsToDecorations } from "./decoration";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -50,13 +51,13 @@ export function activate(context: vscode.ExtensionContext) {
           `Cluster Scanning: ${prefs.clusterScanning ? "Enabled" : "Disabled"}`
         );
         updateK8sResourcesFromCluster().then(() => {
-          updateDiagnostics(
-            vscode.window.activeTextEditor?.document,
+          updateHighlighting(
+            vscode.window.activeTextEditor,
             prefs,
-            diagnosticCollection,
             resources()
           );
         });
+      } else {
         vscode.window.showErrorMessage(`Cluster Scanning: Not available`);
       }
     }
@@ -141,25 +142,15 @@ export function activate(context: vscode.ExtensionContext) {
     kubeResourcesCluster = k8sApi && prefs.clusterScanning ? await cluster.getClusterResources(k8sApi) : [];
   };
 
-    const updateResources = () => {
-      updateK8sResourcesFromWorkspace();
-      updateK8sResourcesFromKustomize();
-      updateK8sResourcesFromHelm();
-      updateDiagnostics(
-        vscode.window.activeTextEditor?.document,
-        prefs,
-        diagnosticCollection,
-        resources()
-      );
-      updateK8sResourcesFromCluster().then(() => {     
-        updateDiagnostics(
-          vscode.window.activeTextEditor?.document,
-          prefs,
-          diagnosticCollection,
-          resources()
-        );
-      });
-    };
+  const updateResources = () => {
+    updateK8sResourcesFromWorkspace();
+    updateK8sResourcesFromKustomize();
+    updateK8sResourcesFromHelm();
+    updateHighlighting(vscode.window.activeTextEditor, prefs, resources());
+    updateK8sResourcesFromCluster().then(() => {
+      updateHighlighting(vscode.window.activeTextEditor, prefs, resources());
+    });
+  };
 
   // create diagnostic collection
   const diagnosticCollection = vscode.languages.createDiagnosticCollection(
@@ -174,10 +165,10 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   const onOpen = vscode.workspace.onDidOpenTextDocument((doc) =>
-    updateDiagnostics(doc, prefs, diagnosticCollection, resources())
+    updateHighlighting(vscode.window.activeTextEditor, prefs, resources())
   );
   const onChange = vscode.workspace.onDidChangeTextDocument((event) =>
-    updateDiagnostics(event.document, prefs, diagnosticCollection, resources())
+    updateHighlighting(vscode.window.activeTextEditor, prefs, resources())
   );
 
   context.subscriptions.push(
@@ -186,7 +177,6 @@ export function activate(context: vscode.ExtensionContext) {
     enableKustomizeScanningCommand,
     enableHelmScanningCommand,
     enableCorrectionHintsCommand,
-    diagnosticCollection,
     onSave,
     onChange,
     onOpen
@@ -223,40 +213,6 @@ export function getAllFileNamesInDirectory(dirPath: string) {
   return files;
 }
 
-export function createDiagnostic(
-  start: number,
-  end: number,
-  text: string,
-  message: string,
-  level: vscode.DiagnosticSeverity = vscode.DiagnosticSeverity.Information
-): vscode.Diagnostic {
-  const range = toRange(text, start, end);
-  return new vscode.Diagnostic(range, message, level);
-}
-
-function toRange(text: string, start: number, end: number): vscode.Range {
-  const diff = end - start;
-  const lines = text.substring(0, end).split(/\r?\n/);
-  const endLine = lines.length - 1;
-  const endCharacter = lines[endLine].length;
-
-  let currentCharacter = diff;
-  let currentLine = endLine;
-  while (currentCharacter > 0 && currentLine >= 0) {
-    if (lines[currentLine].length < currentCharacter) {
-      currentCharacter -= lines[currentLine].length + 1;
-      currentLine--;
-    } else {
-      break;
-    }
-  }
-
-  const startLine = currentLine;
-  const startCharacter = lines[startLine].length - currentCharacter;
-
-  return new vscode.Range(startLine, startCharacter, endLine, endCharacter);
-}
-
 export function textToK8sResource(text: string): K8sResource {
   const yml = parse(text);
   return {
@@ -273,12 +229,13 @@ export function textToK8sResource(text: string): K8sResource {
 // this method is called when your extension is deactivated
 export function deactivate() {}
 
-function updateDiagnostics(
-  doc: vscode.TextDocument | undefined,
+function updateHighlighting(
+  editor: vscode.TextEditor | undefined,
   prefs: Prefs,
-  diagnosticCollection: vscode.DiagnosticCollection,
   kubeResources: K8sResource[]
 ) {
+  const doc = editor?.document;
+
   if (!doc) {
     return;
   }
@@ -334,34 +291,22 @@ function updateDiagnostics(
             textSplit,
             prefs.hints
           );
+
           const highlights = [
             ...serviceHighlights,
             ...valueFromHighlights,
             ...ingressHighlights,
           ];
 
-          let diagnostics = highlights
-            .sort((a, b) => (b.importance ?? 0) - (a.importance ?? 0))
-            .map((h) => {
-              return createDiagnostic(
-                h.start + currentIndex,
-                h.end + currentIndex,
-                fileText,
-                h.message,
-                h.severity
-              );
-            });
-
           if (
             prefs.kustomizeScanning &&
             (fileName.endsWith("kustomization.yaml") ||
               fileName.endsWith("kustomization.yml"))
           ) {
-            diagnostics.push(
+            highlights.push(
               ...kustomize.verifyKustomizeBuild(
                 thisResource,
                 textSplit,
-                fileText,
                 fileName,
                 currentIndex
               )
@@ -369,26 +314,26 @@ function updateDiagnostics(
           }
 
           if (prefs.helmScanning && fileName.endsWith("Chart.yaml")) {
-            diagnostics.push(
+            highlights.push(
               ...helm.verifyHelmBuild(
                 thisResource,
                 textSplit,
-                fileText,
                 fileName,
                 currentIndex
               )
             );
           }
 
+          let decorations = highlightsToDecorations(doc, highlights, currentIndex);
+
           currentIndex += textSplit.length + split.length;
-          diagnostics.sort((a, b) => a.message.length - b.message.length);
-          return diagnostics;
+          decorations.sort(
+            (a, b) =>
+              (a.renderOptions?.after?.contentText?.length ?? 0) -
+              (b.renderOptions?.after?.contentText?.length ?? 0)
+          );
+          return decorations;
         });
 
-  //diagnosticCollection.clear();
-  diagnosticCollection.set(doc.uri, diagnosticsCombined);
+  decorate(editor, diagnosticsCombined);
 }
-
-// function listener(editor: vscode.TextEditor | undefined): Promise<void> {
-//   return Promise.resolve();
-// }

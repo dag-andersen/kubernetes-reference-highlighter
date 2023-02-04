@@ -1,6 +1,6 @@
-import { K8sResource } from "../types";
+import { Highlight, K8sResource } from "../types";
 import * as vscode from "vscode";
-import { textToK8sResource, createDiagnostic } from "../extension";
+import { textToK8sResource } from "../extension";
 import { getAllFileNamesInDirectory } from "../extension";
 import { format } from "util";
 
@@ -13,6 +13,8 @@ export function getHelmResources(): K8sResource[] {
 
   return resources;
 }
+
+export const helmIsInstalled = isHelmInstalled();
 
 export function isHelmInstalled(): boolean {
   const execSync = require("child_process").execSync;
@@ -73,10 +75,9 @@ function helmBuild(file: string): K8sResource[] {
 export function verifyHelmBuild(
   thisResource: K8sResource,
   text: string,
-  fullText: string,
   filePath: string,
   shift: number
-): vscode.Diagnostic[] {
+): Highlight[] {
   // check if thisResource.kind is null or undefined
   if (thisResource.kind) {
     return [];
@@ -88,7 +89,6 @@ export function verifyHelmBuild(
   return [...matches].flatMap((match) => {
     const name = match[1];
     const start = (match.index || 0) + shift + match[0].indexOf(name);
-    const end = start + name.length;
 
     const path = filePath.substring(0, filePath.lastIndexOf("/"));
 
@@ -107,16 +107,12 @@ export function verifyHelmBuild(
       }
     })();
 
-    return createDiagnostic(
+    return {
       start,
-      end,
-      fullText,
-      success
+      message: success
         ? "✅ Helm build succeeded"
         : "❌ Helm build failed - " + output,
-      success
-        ? vscode.DiagnosticSeverity.Information
-        : vscode.DiagnosticSeverity.Error
-    );
+      type: success ? "success" : "error",
+    };
   });
 }

@@ -5,3 +5,6 @@ update:
 
 publish:
 	vsce publish
+
+uninstall:
+	code --uninstall-extension dag-andersen.kubernetes-reference-highlighter
