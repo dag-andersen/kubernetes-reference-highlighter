@@ -1,5 +1,4 @@
 import { K8sResource, Highlight } from "../types";
-import { generateMessage } from "../extension";
 import { getPositions, getSimilarHighlights } from "./utils";
 
 export function find(
@@ -14,15 +13,17 @@ export function find(
     case "Pod":
     case "StatefulSet":
     case "DaemonSet":
+    case "ReplicaSet":
     case "Job":
     case "CronJob":
+    case "ReplicationController":
       break;
     default:
       return [];
   }
 
   const regex =
-    /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))\s*(?:key:\s*[a-zA-Z-]+|name:\s*([a-zA-Z-]+))/gm;
+    /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:(name):\s*([a-zA-Z-]+)\s*(key):\s*([a-zA-Z-]+)|(key):\s*([a-zA-Z-]+)\s*(name):\s*([a-zA-Z-]+))/gm;
 
   const matches = text.matchAll(regex);
 
@@ -39,7 +40,15 @@ export function find(
         return [];
     }
 
-    let name = match[2] || match[3];
+    var name = "Name not found";
+    var key = "Key not found";
+    if (match[2] === "name" || match[4] === "key") {
+      name = match[3];
+      key = match[5];
+    } else if (match[6] === "key" || match[8] === "name") {
+      key = match[7];
+      name = match[9];
+    }
 
     const { start, end } = getPositions(match, name);
 
@@ -49,16 +58,33 @@ export function find(
 
     var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
     if (exactMatches.length > 0) {
-      return resources.flatMap((r) => {
-        return {
+      return exactMatches.flatMap((r) => {
+        let nameHighlight: Highlight = {
           start: start,
-          end: end,
-          message: generateMessage(refType, name, activeFilePath, r.where),
+          type: "reference",
+          message: { type: refType, name, activeFilePath, fromWhere: r.where },
         };
+        if (r.data[key]) {
+          let keyHighlight: Highlight = {
+            ...getPositions(match, key),
+            type: "reference",
+            message: {
+              subType: "key",
+              mainType: refType,
+              subName: key,
+              mainName: name,
+              activeFilePath,
+              fromWhere: r.where,
+            },
+          };
+          return [nameHighlight, keyHighlight];
+        }
+
+        return nameHighlight;
       });
     } else {
       return enableCorrectionHints
-        ? getSimilarHighlights(resourcesScoped, name, start, end, activeFilePath)
+        ? getSimilarHighlights(resourcesScoped, name, start, activeFilePath)
         : [];
     }
   });

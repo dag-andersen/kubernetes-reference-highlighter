@@ -1,7 +1,5 @@
 import { findBestMatch } from "string-similarity";
-import { generateNotFoundMessage } from "../extension";
 import { Highlight, K8sResource } from "../types";
-import * as vscode from "vscode";
 
 export function getPositions(match: RegExpMatchArray, name: string) {
   const shift = match[0].indexOf(name);
@@ -11,6 +9,9 @@ export function getPositions(match: RegExpMatchArray, name: string) {
 }
 
 export function similarity<T>(l: T[], name: string, f: (r: T) => string) {
+  if (l.length === 0) {
+    return [];
+  }
   var similarity = findBestMatch(name, l.map(f));
 
   return l.map((r, b, _) => {
@@ -22,7 +23,6 @@ export function getSimilarHighlights(
   resources: K8sResource[],
   name: string,
   start: number,
-  end: number,
   activeFilePath: string
 ): Highlight[] {
   return similarity<K8sResource>(resources, name, (r) => r.metadata.name)
@@ -30,14 +30,13 @@ export function getSimilarHighlights(
     .map((r) => {
       return {
         start: start,
-        end: end,
-        message: generateNotFoundMessage(
-          name,
-          r.metadata.name,
+        message: {
+          name: name,
+          suggestion: r.metadata.name,
           activeFilePath,
-          r.where
-        ),
-        severity: vscode.DiagnosticSeverity.Hint,
+          fromWhere: r.where,
+        },
+        type: "hint",
       };
     });
 }

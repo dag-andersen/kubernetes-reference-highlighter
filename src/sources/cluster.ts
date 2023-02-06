@@ -13,56 +13,71 @@ export function getKubeClient() {
   return undefined;
 }
 
-export function getClusterResources(k8sApi: any): K8sResource[] {
-  let resources: K8sResource[] = [];
-  k8sApi.listServiceForAllNamespaces().then((res: any) => {
-    let s = res.body.items;
-    resources.push(
-      ...s.map((r: any) => {
+export async function getClusterResources(
+  k8sApi: CoreV1Api
+): Promise<K8sResource[]> {
+  let service: Promise<K8sResource[]> = k8sApi
+    .listServiceForAllNamespaces()
+    .then((res) => {
+      return res.body.items.map((r): K8sResource => {
         return {
           kind: "Service",
           metadata: {
-            name: r.metadata.name,
-            namespace: r.metadata.namespace,
+            name: r.metadata?.name || "",
+            namespace: r.metadata?.namespace || "",
           },
           where: "cluster",
+          spec: r.spec,
         };
-      })
-    );
-    console.log("service name list updated");
-  });
-  k8sApi.listSecretForAllNamespaces().then((res: any) => {
-    let s = res.body.items;
-    resources.push(
-      ...s.map((r: any) => {
+      });
+    })
+    .catch((_a) => {
+      return [];
+    });
+
+  let secret: Promise<K8sResource[]> = k8sApi
+    .listSecretForAllNamespaces()
+    .then((res) => {
+      return res.body.items.map((r): K8sResource => {
         return {
           kind: "Secret",
           metadata: {
-            name: r.metadata.name,
-            namespace: r.metadata.namespace,
+            name: r.metadata?.name || "",
+            namespace: r.metadata?.namespace || "",
           },
           where: "cluster",
+          data: r.data,
         };
-      })
-    );
-    console.log("secrets with name updated");
-  });
-  k8sApi.listConfigMapForAllNamespaces().then((res: any) => {
-    let s = res.body.items;
-    resources.push(
-      ...s.map((r: any) => {
+      });
+    })
+    .catch((_a) => {
+      return [];
+    });
+
+  let configMap: Promise<K8sResource[]> = k8sApi
+    .listConfigMapForAllNamespaces()
+    .then((res) => {
+      return res.body.items.map((r): K8sResource => {
         return {
           kind: "ConfigMap",
           metadata: {
-            name: r.metadata.name,
-            namespace: r.metadata.namespace,
+            name: r.metadata?.name || "",
+            namespace: r.metadata?.namespace || "",
           },
           where: "cluster",
+          data: r.data,
         };
-      })
-    );
-    console.log("ConfigMaps with name updated");
-  });
+      });
+    })
+    .catch((_a) => {
+      return [];
+    });
 
-  return resources;
+  return Promise.all([service, secret, configMap])
+    .then((a) => {
+      return [...a[0], ...a[1], ...a[2]];
+    })
+    .catch((_a) => {
+      return [];
+    });
 }
