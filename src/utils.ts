@@ -2,7 +2,9 @@ import { format } from "util";
 import * as vscode from "vscode";
 import { FromWhere } from "./types";
 
-// log message
+// LOGS 
+
+//TODO: REPLACE DIAGNOSTICS WITH DECORATIONS
 const diagnosticCollectionTest = vscode.languages.createDiagnosticCollection(
   "kubernetes-reference-highlighter-test"
 );
@@ -25,9 +27,11 @@ export function logText(a: any, b = 0) {
   diagnosticCollectionTest.set(current!.uri, diagnostics);
 }
 
+// MESSAGES
+
 export type Message = ReferenceFound | ReferenceNotFound | SubItemFound;
 
-export function generateMessage(mg: Message) {
+export function generateMessage(mg: Message): string {
   if ("type" in mg) {
     return generateFoundMessage(mg);
   } else if ("suggestion" in mg) {
@@ -44,7 +48,7 @@ type ReferenceFound = {
   fromWhere?: FromWhere;
 };
 
-function generateFoundMessage(mg: ReferenceFound) {
+function generateFoundMessage(mg: ReferenceFound): string {
   const { type, name, activeFilePath, fromWhere } = mg;
   const p = require("path");
   let message = `✅ Found ${type}: ${name}`;
@@ -80,7 +84,7 @@ type ReferenceNotFound = {
   fromWhere?: FromWhere;
 };
 
-function generateNotFoundMessage(mg: ReferenceNotFound) {
+function generateNotFoundMessage(mg: ReferenceNotFound): string {
   const { name, activeFilePath, fromWhere, suggestion } = mg;
   const p = require("path");
   let message = `🤷‍♂️ ${name} not found. Did you mean ${suggestion}?`;
@@ -116,7 +120,7 @@ type SubItemFound = {
   fromWhere?: FromWhere;
 };
 
-function generateSubItemFoundMessage(mg: SubItemFound) {
+function generateSubItemFoundMessage(mg: SubItemFound): string {
   const { subType, mainType, subName, mainName, activeFilePath, fromWhere } = mg;
   const p = require("path");
   let message = `✅ Found ${subType}: ${subName} in ${mainType}: ${mainName}`;

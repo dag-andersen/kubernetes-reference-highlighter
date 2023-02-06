@@ -10,39 +10,6 @@ import {
 import { generateMessage, Message } from "./utils";
 import { Highlight, HighLightType } from "./types";
 
-export function getDecoration(
-  message: string,
-  icon: HighLightType,
-  posIndex: Position
-): DecorationOptions {
-  let i = "";
-  switch (icon) {
-    case "success":
-      i = "✅";
-      break;
-    case "error":
-      i = "❌";
-      break;
-    case "hint":
-      i = "🤷‍♂️";
-      break;
-    case "reference":
-      i = "🔗";
-      break;
-  }
-
-  let decoration: DecorationOptions = {
-    range: new Range(posIndex, posIndex),
-    hoverMessage: new MarkdownString(message),
-    renderOptions: {
-      after: {
-        contentText: i,
-      },
-    },
-  };
-  return decoration;
-}
-
 let deco = window.createTextEditorDecorationType({
   after: {
     margin: "2em",
@@ -107,4 +74,37 @@ export function highlightsToDecorations(
 
     return getDecoration(message, d.icon, d.position);
   });
+}
+
+export function getDecoration(
+  message: string,
+  icon: HighLightType,
+  posIndex: Position
+): DecorationOptions {
+  let i = "";
+  switch (icon) {
+    case "success":
+      i = "✅";
+      break;
+    case "error":
+      i = "❌";
+      break;
+    case "hint":
+      i = "🤷‍♂️";
+      break;
+    case "reference":
+      i = "🔗";
+      break;
+  }
+
+  let decoration: DecorationOptions = {
+    range: new Range(posIndex, posIndex),
+    hoverMessage: new MarkdownString(message),
+    renderOptions: {
+      after: {
+        contentText: i,
+      },
+    },
+  };
+  return decoration;
 }
