@@ -47,10 +47,10 @@ type ReferenceFound = {
 function generateFoundMessage(mg: ReferenceFound) {
   const { type, name, activeFilePath, fromWhere } = mg;
   const p = require("path");
-  let message = "";
+  let message = `✅ Found ${type}: ${name}`;
   if (fromWhere) {
     if (typeof fromWhere === "string") {
-      message = `✅ Found ${type}: ${name} in ${fromWhere}`;
+      message += ` in ${fromWhere}`;
     } else {
       const fromFilePath = fromWhere.path;
       const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
@@ -67,10 +67,8 @@ function generateFoundMessage(mg: ReferenceFound) {
           : relativePathFromActive.includes("/")
           ? relativePathFromActive
           : "./" + relativePathFromActive;
-      message = `✅ Found ${type}: ${name} in ${fromWhere.place} at ${path}`;
+      message += ` in ${fromWhere.place} at ${path}`;
     }
-  } else {
-    message = `✅ Found ${type}: ${name}`;
   }
   return message;
 }
@@ -85,6 +83,7 @@ type ReferenceNotFound = {
 function generateNotFoundMessage(mg: ReferenceNotFound) {
   const { name, activeFilePath, fromWhere, suggestion } = mg;
   const p = require("path");
+  let message = `🤷‍♂️ ${name} not found. Did you mean ${suggestion}?`;
   if (fromWhere) {
     if (typeof fromWhere !== "string") {
       const fromFilePath = fromWhere.path;
@@ -102,10 +101,10 @@ function generateNotFoundMessage(mg: ReferenceNotFound) {
           : relativePathFromActive.includes("/")
           ? relativePathFromActive
           : "./" + relativePathFromActive;
-      return `🤷‍♂️ ${name} not found. Did you mean ${suggestion}? (in ${fromWhere.place} at ${path})`;
+      message += ` (in ${fromWhere.place} at ${path})`;
     }
   }
-  return `🤷‍♂️ ${name} not found. Did you mean ${suggestion}?`;
+  return message;
 }
 
 type SubItemFound = {

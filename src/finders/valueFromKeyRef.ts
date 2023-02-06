@@ -28,13 +28,17 @@ export function find(
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
-    let match1 = match[1];
-    let refType =
-      match1 === "secret"
-        ? "Secret"
-        : match1 === "configMap"
-        ? "ConfigMap"
-        : "";
+    let refType = "";
+    switch (match[1]) {
+      case "secret":
+        refType = "Secret";
+        break;
+      case "configMap":
+        refType = "ConfigMap";
+        break;
+      default:
+        return [];
+    }
 
     var name = "Name not found";
     var key = "Key not found";
