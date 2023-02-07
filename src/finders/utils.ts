@@ -15,7 +15,7 @@ export function similarity<T>(l: T[], name: string, f: (r: T) => string) {
   var similarity = findBestMatch(name, l.map(f));
 
   return l.map((r, b, _) => {
-    return { ...r, rating: similarity.ratings[b].rating };
+    return { content: r, rating: similarity.ratings[b].rating };
   });
 }
 
@@ -32,9 +32,9 @@ export function getSimilarHighlights(
         start: start,
         message: {
           name: name,
-          suggestion: r.metadata.name,
+          suggestion: r.content.metadata.name,
           activeFilePath,
-          fromWhere: r.where,
+          fromWhere: r.content.where,
         },
         type: "hint",
       };

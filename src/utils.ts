@@ -2,7 +2,7 @@ import { format } from "util";
 import * as vscode from "vscode";
 import { FromWhere } from "./types";
 
-// LOGS 
+// LOGS
 
 //TODO: REPLACE DIAGNOSTICS WITH DECORATIONS
 const diagnosticCollectionTest = vscode.languages.createDiagnosticCollection(
@@ -29,16 +29,23 @@ export function logText(a: any, b = 0) {
 
 // MESSAGES
 
-export type Message = ReferenceFound | ReferenceNotFound | SubItemFound;
+export type Message =
+  | SubItemNotFound
+  | ReferenceNotFound
+  | ReferenceFound
+  | SubItemFound;
 
 export function generateMessage(mg: Message): string {
   if ("type" in mg) {
     return generateFoundMessage(mg);
+  } else if ("suggestion" in mg && "subType" in mg) {
+    return generateSubItemNotFoundMessage(mg);
   } else if ("suggestion" in mg) {
     return generateNotFoundMessage(mg);
-  } else {
+  } else if ("subType" in mg) {
     return generateSubItemFoundMessage(mg);
   }
+  return "";
 }
 
 type ReferenceFound = {
@@ -50,28 +57,16 @@ type ReferenceFound = {
 
 function generateFoundMessage(mg: ReferenceFound): string {
   const { type, name, activeFilePath, fromWhere } = mg;
-  const p = require("path");
-  let message = `✅ Found ${type}: ${name}`;
+  let message = `✅ Found ${type}: \`${name}\``;
   if (fromWhere) {
     if (typeof fromWhere === "string") {
       message += ` in ${fromWhere}`;
     } else {
-      const fromFilePath = fromWhere.path;
-      const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
-        fromFilePath || ""
-      );
-      const activeDirPath: string = p.dirname(activeFilePath || "");
-      const relativePathFromActive: string = p.relative(
-        activeDirPath || "",
-        fromFilePath
-      );
-      const path =
-        relativeFilePathFromRoot.length < relativePathFromActive.length
-          ? "/" + relativeFilePathFromRoot
-          : relativePathFromActive.includes("/")
-          ? relativePathFromActive
-          : "./" + relativePathFromActive;
-      message += ` in ${fromWhere.place} at ${path}`;
+      const relativePath = getRelativePath(fromWhere.path, activeFilePath);
+      message +=
+        fromWhere.place === "workspace"
+          ? ` in \`${relativePath}\``
+          : ` with ${fromWhere.place} at \`${relativePath}\``;
     }
   }
   return message;
@@ -86,26 +81,16 @@ type ReferenceNotFound = {
 
 function generateNotFoundMessage(mg: ReferenceNotFound): string {
   const { name, activeFilePath, fromWhere, suggestion } = mg;
-  const p = require("path");
-  let message = `🤷‍♂️ ${name} not found. Did you mean ${suggestion}?`;
+  let message = `🤷‍♂️ \`${name}\` not found. Did you mean \`${suggestion}\`?`;
   if (fromWhere) {
-    if (typeof fromWhere !== "string") {
-      const fromFilePath = fromWhere.path;
-      const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
-        fromFilePath || ""
-      );
-      const activeDirPath: string = p.dirname(activeFilePath || "");
-      const relativePathFromActive: string = p.relative(
-        activeDirPath || "",
-        fromFilePath
-      );
-      const path =
-        relativeFilePathFromRoot.length < relativePathFromActive.length
-          ? "/" + relativeFilePathFromRoot
-          : relativePathFromActive.includes("/")
-          ? relativePathFromActive
-          : "./" + relativePathFromActive;
-      message += ` (in ${fromWhere.place} at ${path})`;
+    if (typeof fromWhere === "string") {
+      message += ` (found in ${fromWhere})`;
+    } else {
+      const relativePath = getRelativePath(fromWhere.path, activeFilePath);
+      message +=
+        fromWhere.place === "workspace"
+          ? ` (in \`${relativePath}\`)`
+          : ` (with ${fromWhere.place} at \`${relativePath}\`)`;
     }
   }
   return message;
@@ -122,29 +107,62 @@ type SubItemFound = {
 
 function generateSubItemFoundMessage(mg: SubItemFound): string {
   const { subType, mainType, subName, mainName, activeFilePath, fromWhere } = mg;
-  const p = require("path");
-  let message = `✅ Found ${subType}: ${subName} in ${mainType}: ${mainName}`;
+  let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
   if (fromWhere) {
     if (typeof fromWhere === "string") {
       message += ` at ${fromWhere}`;
     } else {
-      const fromFilePath = fromWhere.path;
-      const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
-        fromFilePath || ""
-      );
-      const activeDirPath: string = p.dirname(activeFilePath || "");
-      const relativePathFromActive: string = p.relative(
-        activeDirPath || "",
-        fromFilePath
-      );
-      const path =
-        relativeFilePathFromRoot.length < relativePathFromActive.length
-          ? "/" + relativeFilePathFromRoot
-          : relativePathFromActive.includes("/")
-          ? relativePathFromActive
-          : "./" + relativePathFromActive;
-      message += ` at ${fromWhere.place} at ${path}`;
+      const relativePath = getRelativePath(fromWhere.path, activeFilePath);
+      message +=
+        fromWhere.place === "workspace"
+          ? ` in \`${relativePath}\``
+          : ` with ${fromWhere.place} at \`${relativePath}\``;
     }
   }
   return message;
+}
+
+type SubItemNotFound = {
+  subType: string;
+  mainType: string;
+  subName: string;
+  mainName: string;
+  suggestion: string;
+  activeFilePath: string;
+  fromWhere?: FromWhere;
+};
+
+function generateSubItemNotFoundMessage(mg: SubItemNotFound): string {
+  const { subType, activeFilePath, subName, mainType, fromWhere, suggestion, mainName } = mg;
+  let message = `🤷‍♂️ _${subType}_: \`${subName}\` not found in _${mainType}_: \`${mainName}\``;
+  if (fromWhere) {
+    if (typeof fromWhere === "string") {
+      message += ` (in ${fromWhere})`;
+    } else {
+      const relativePath = getRelativePath(fromWhere.path, activeFilePath);
+      message +=
+        fromWhere.place === "workspace"
+          ? ` (in \`${relativePath}\`)`
+          : ` (with ${fromWhere.place} at \`${relativePath}\`)`;
+    }
+  }
+  return message + `.\\\nDid you mean \`${suggestion}\`?`;
+}
+
+function getRelativePath(path: string, activeFilePath: string): string {
+  const p = require("path");
+  const fromFilePath = path;
+  const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
+    fromFilePath || ""
+  );
+  const activeDirPath: string = p.dirname(activeFilePath || "");
+  const relativePathFromActive: string = p.relative(
+    activeDirPath || "",
+    fromFilePath
+  );
+  return relativeFilePathFromRoot.length < relativePathFromActive.length
+    ? "/" + relativeFilePathFromRoot
+    : relativePathFromActive.includes("/")
+    ? relativePathFromActive
+    : "./" + relativePathFromActive;
 }

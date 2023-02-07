@@ -1,5 +1,5 @@
 import { K8sResource, Highlight } from "../types";
-import { getPositions, getSimilarHighlights } from "./utils";
+import { getPositions, getSimilarHighlights, similarity } from "./utils";
 
 export function find(
   resources: K8sResource[],
@@ -14,7 +14,7 @@ export function find(
 
   let refType = "Service";
   const regex =
-    /service:\s*(?:name:\s*([a-zA-Z-]+)\s*port:\s*(number|name):\s*(\d+|[a-zA-Z]+)|port:\s*(number|name):\s*(\d+|[a-zA-Z]+)\s*name:\s*([a-zA-Z-]+))/gm;
+    /service:\s*(?:name:\s*([a-zA-Z-]+)\s*port:\s*(number|name):\s*(\d+|[a-zA-Z-]+)|port:\s*(number|name):\s*(\d+|[a-zA-Z-]+)\s*name:\s*([a-zA-Z-]+))/gm;
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
@@ -67,7 +67,46 @@ export function find(
           return [nameHighlight, portHighlight];
         }
 
+        if (portType === "number") {
+          let ports: string[] = r.spec?.ports?.map((p: any) => "" + p?.port) || [];
+          let portSuggestion: Highlight[] = getPortSimilarities(ports, 0.5);
+          if (portSuggestion.length > 0) {
+            return [nameHighlight, ...portSuggestion];
+          }
+        }
+
+        if (portType === "name") {
+          let ports: string[] = r.spec?.ports?.map((p: any) => p?.name) || [];
+          let portSuggestion: Highlight[] = getPortSimilarities(ports, 0.8);
+          if (portSuggestion.length > 0) {
+            return [nameHighlight, ...portSuggestion];
+          }
+        }
+
         return nameHighlight;
+
+        function getPortSimilarities(
+          ports: string[],
+          rating: number
+        ): Highlight[] {
+          return similarity<string>(ports, portRef, (a) => a)
+            .filter((a) => a.rating > rating)
+            .map((a) => {
+              return {
+                ...getPositions(match, portRef),
+                type: "hint",
+                message: {
+                  subType: "port",
+                  mainType: refType,
+                  subName: portRef,
+                  mainName: name,
+                  suggestion: a.content,
+                  activeFilePath,
+                  fromWhere: r.where,
+                },
+              };
+            });
+        }
       });
     } else {
       return enableCorrectionHints
