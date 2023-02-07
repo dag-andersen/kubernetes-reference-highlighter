@@ -1,5 +1,4 @@
 import { K8sResource, Highlight } from "../types";
-import { logText } from "../utils";
 import { getPositions, getSimilarHighlights, similarity } from "./utils";
 
 export function find(
@@ -65,7 +64,7 @@ export function find(
           type: "reference",
           message: { type: refType, name, activeFilePath, fromWhere: r.where },
         };
-        //TODO: add suggestions for keys
+        
         if (r.data[key]) {
           let keyHighlight: Highlight = {
             ...getPositions(match, key),
@@ -82,7 +81,6 @@ export function find(
           return [nameHighlight, keyHighlight];
         }
         
-        logText("hej", 1);
         let keys = Object.keys(r.data);
           
         if (keys.length > 0) {
@@ -97,13 +95,12 @@ export function find(
                   mainType: refType,
                   subName: key,
                   mainName: name,
-                  suggestion: a.valueOf().toString(),
+                  suggestion: a.content,
                   activeFilePath,
                   fromWhere: r.where,
                 },
               };
             });
-          logText(keySuggestion,2);
           return [nameHighlight, ...keySuggestion];
         }
 

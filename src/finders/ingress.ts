@@ -1,5 +1,5 @@
 import { K8sResource, Highlight } from "../types";
-import { getPositions, getSimilarHighlights } from "./utils";
+import { getPositions, getSimilarHighlights, similarity } from "./utils";
 
 export function find(
   resources: K8sResource[],
@@ -65,6 +65,64 @@ export function find(
             },
           };
           return [nameHighlight, portHighlight];
+        }
+
+        if (portType === "number") {
+          let ports = r.spec?.ports?.map((p: any) => p?.port) || [];
+
+          if (ports.length > 0) {
+            let portSuggestion: Highlight[] = similarity<string>(
+              ports,
+              portRef,
+              (a) => a
+            )
+              .filter((a) => a.rating > 0.8)
+              .map((a) => {
+                return {
+                  ...getPositions(match, portRef),
+                  type: "hint",
+                  message: {
+                    subType: "port",
+                    mainType: refType,
+                    subName: portRef,
+                    mainName: name,
+                    suggestion: a.content,
+                    activeFilePath,
+                    fromWhere: r.where,
+                  },
+                };
+              });
+            return [nameHighlight, ...portSuggestion];
+          }
+        }
+
+        if (portType === "name") {
+          let ports = r.spec?.ports?.map((p: any) => p?.name) || [];
+
+          if (ports.length > 0) {
+            let portSuggestion: Highlight[] = similarity<string>(
+              ports,
+              portRef,
+              (a) => a
+            )
+              .filter((a) => a.rating > 0.8)
+              .map((a) => {
+                return {
+                  ...getPositions(match, portRef),
+                  type: "hint",
+                  message: {
+                    subType: "port",
+                    mainType: refType,
+                    subName: portRef,
+                    mainName: name,
+                    suggestion: a.content,
+                    activeFilePath,
+                    fromWhere: r.where,
+                  },
+                };
+              });
+            return [nameHighlight, ...portSuggestion];
+          }
         }
 
         return nameHighlight;
