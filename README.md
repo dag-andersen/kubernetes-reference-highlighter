@@ -17,7 +17,7 @@ All resources are namespace-sensitive. A resource will not be highlighted if the
 The extension calls the Kubernetes API of your current kube-config and collects all the object-names of the objects you have access to.
 
 <p float="left">
-  <img src="/images/deco/cluster-pod.png" width="700" />
+  <img src="/images/deco/cluster-pod.png" width="600" />
 </p>
 
 
@@ -26,7 +26,7 @@ The extension calls the Kubernetes API of your current kube-config and collects 
 The extension will collect all the Kubernetes object's names in the manifest files found in the open VSCode workspace.  
 
 <p float="left">
-  <img src="/images/deco/workspace-ingress.png" width="620" />
+  <img src="/images/deco/workspace-ingress.png" width="650" />
 </p>
 
 #### Kustomize Scanning
@@ -34,7 +34,7 @@ The extension will collect all the Kubernetes object's names in the manifest fil
 The extension will run `kustomize build` on all `kustomization`-files in the open workspace and collect all the Kubernetes object names found in the generated kustomize-output.
 
 <p float="left">
-  <img src="/images/deco/kustomize-ingress.png" width="900" />
+  <img src="/images/deco/kustomize-ingress.png" width="600" />
 </p>
 
 #### Helm Scanning
@@ -42,7 +42,7 @@ The extension will run `kustomize build` on all `kustomization`-files in the ope
 The extension will run `helm template` on all helm charts in the open workspace and collect all the Kubernetes object names found in the generated helm-output.
 
 <p float="left">
-  <img src="/images/deco/helm-ingress.png" width="900" />
+  <img src="/images/deco/helm-ingress.png" width="600" />
 </p>
 
 ### Kustomize Build
