@@ -29,16 +29,23 @@ export function logText(a: any, b = 0) {
 
 // MESSAGES
 
-export type Message = ReferenceFound | ReferenceNotFound | SubItemFound;
+export type Message =
+  | SubItemNotFound
+  | ReferenceNotFound
+  | ReferenceFound
+  | SubItemFound;
 
 export function generateMessage(mg: Message): string {
   if ("type" in mg) {
     return generateFoundMessage(mg);
+  } else if ("suggestion" in mg && "subType" in mg) {
+    return generateSubItemNotFoundMessage(mg);
   } else if ("suggestion" in mg) {
     return generateNotFoundMessage(mg);
-  } else {
+  } else if ("subType" in mg) {
     return generateSubItemFoundMessage(mg);
   }
+  return "";
 }
 
 type ReferenceFound = {
@@ -144,6 +151,43 @@ function generateSubItemFoundMessage(mg: SubItemFound): string {
           ? relativePathFromActive
           : "./" + relativePathFromActive;
       message += ` at ${fromWhere.place} at ${path}`;
+    }
+  }
+  return message;
+}
+
+type SubItemNotFound = {
+  suggestion: string;
+  subType: string;
+  mainType: string;
+  subName: string;
+  mainName: string;
+  activeFilePath: string;
+  fromWhere?: FromWhere;
+};
+
+function generateSubItemNotFoundMessage(mg: SubItemNotFound): string {
+  const { subType, activeFilePath, subName, mainType, fromWhere, suggestion, mainName } = mg;
+  const p = require("path");
+  let message = `🤷‍♂️ ${subType}: ${subName} not found in ${mainType}: ${mainName}. Did you mean ${suggestion}?`;
+  if (fromWhere) {
+    if (typeof fromWhere !== "string") {
+      const fromFilePath = fromWhere.path;
+      const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
+        fromFilePath || ""
+      );
+      const activeDirPath: string = p.dirname(activeFilePath || "");
+      const relativePathFromActive: string = p.relative(
+        activeDirPath || "",
+        fromFilePath
+      );
+      const path =
+        relativeFilePathFromRoot.length < relativePathFromActive.length
+          ? "/" + relativeFilePathFromRoot
+          : relativePathFromActive.includes("/")
+          ? relativePathFromActive
+          : "./" + relativePathFromActive;
+      message += ` (in ${fromWhere.place} at ${path})`;
     }
   }
   return message;
