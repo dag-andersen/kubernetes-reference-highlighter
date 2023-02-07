@@ -68,64 +68,45 @@ export function find(
         }
 
         if (portType === "number") {
-          let ports = r.spec?.ports?.map((p: any) => p?.port) || [];
-
-          if (ports.length > 0) {
-            let portSuggestion: Highlight[] = similarity<string>(
-              ports,
-              portRef,
-              (a) => a
-            )
-              .filter((a) => a.rating > 0.8)
-              .map((a) => {
-                return {
-                  ...getPositions(match, portRef),
-                  type: "hint",
-                  message: {
-                    subType: "port",
-                    mainType: refType,
-                    subName: portRef,
-                    mainName: name,
-                    suggestion: a.content,
-                    activeFilePath,
-                    fromWhere: r.where,
-                  },
-                };
-              });
+          let ports: string[] = r.spec?.ports?.map((p: any) => "" + p?.port) || [];
+          let portSuggestion: Highlight[] = getPortSimilarities(ports, 0.5);
+          if (portSuggestion.length > 0) {
             return [nameHighlight, ...portSuggestion];
           }
         }
 
         if (portType === "name") {
-          let ports = r.spec?.ports?.map((p: any) => p?.name) || [];
-
-          if (ports.length > 0) {
-            let portSuggestion: Highlight[] = similarity<string>(
-              ports,
-              portRef,
-              (a) => a
-            )
-              .filter((a) => a.rating > 0.8)
-              .map((a) => {
-                return {
-                  ...getPositions(match, portRef),
-                  type: "hint",
-                  message: {
-                    subType: "port",
-                    mainType: refType,
-                    subName: portRef,
-                    mainName: name,
-                    suggestion: a.content,
-                    activeFilePath,
-                    fromWhere: r.where,
-                  },
-                };
-              });
+          let ports: string[] = r.spec?.ports?.map((p: any) => p?.name) || [];
+          let portSuggestion: Highlight[] = getPortSimilarities(ports, 0.8);
+          if (portSuggestion.length > 0) {
             return [nameHighlight, ...portSuggestion];
           }
         }
 
         return nameHighlight;
+
+        function getPortSimilarities(
+          ports: string[],
+          rating: number
+        ): Highlight[] {
+          return similarity<string>(ports, portRef, (a) => a)
+            .filter((a) => a.rating > rating)
+            .map((a) => {
+              return {
+                ...getPositions(match, portRef),
+                type: "hint",
+                message: {
+                  subType: "port",
+                  mainType: refType,
+                  subName: portRef,
+                  mainName: name,
+                  suggestion: a.content,
+                  activeFilePath,
+                  fromWhere: r.where,
+                },
+              };
+            });
+        }
       });
     } else {
       return enableCorrectionHints
