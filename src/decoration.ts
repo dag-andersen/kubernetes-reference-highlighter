@@ -7,7 +7,7 @@ import {
   Position,
   TextDocument,
 } from "vscode";
-import { generateMessage, Message } from "./utils";
+import { generateMessage, Message } from "./Messages";
 import { Highlight, HighLightType } from "./types";
 
 let deco = window.createTextEditorDecorationType({
@@ -23,8 +23,8 @@ export function decorate(editor: TextEditor, decorations: DecorationOptions[]) {
 type Deco = {
   ln: number;
   position: Position;
-  message: (string | Message)[];
-  icon: HighLightType;
+  message: Message[];
+  highLightType: HighLightType;
 };
 
 export function highlightsToDecorations(
@@ -57,21 +57,14 @@ export function highlightsToDecorations(
           ln: current.position.line,
           position: current.position,
           message: [message],
-          icon: current.highlight.type,
+          highLightType: current.highlight.type,
         });
       }
     });
 
   return grouped.map((d) => {
-    let message = "";
-    d.message.forEach((element, index) => {
-      if (index > 0) {
-        message += "\\\n";
-      }
-      message += typeof element === "string" ? element : generateMessage(element);
-    });
-
-    return getDecoration(message, d.icon, d.position);
+    let message = generateMessage(d.message);
+    return getDecoration(message, d.highLightType, d.position);
   });
 }
 

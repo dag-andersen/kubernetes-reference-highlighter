@@ -1,4 +1,4 @@
-import { Message } from "./utils";
+import { Message } from "./Messages";
 
 export type FromWhere = "cluster" | Local;
 
@@ -8,7 +8,7 @@ export type HighLightType = "reference" | "hint" | "success" | "error" ;
 
 export type Highlight = {
   start: number;
-  message: string | Message;
+  message: Message;
   type: HighLightType;
 };
 

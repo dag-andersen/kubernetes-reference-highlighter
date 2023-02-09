@@ -109,9 +109,11 @@ export function verifyHelmBuild(
 
     return {
       start,
-      message: success
-        ? "✅ Helm build succeeded"
-        : "❌ Helm build failed - " + output,
+      message: {
+        content: success
+          ? "✅ Helm build succeeded"
+          : "❌ Helm build failed - " + output,
+      },
       type: success ? "success" : "error",
     };
   });

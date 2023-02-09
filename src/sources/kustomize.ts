@@ -113,9 +113,11 @@ export function verifyKustomizeBuild(
     })();
 
     return {
-      message: success
-        ? "✅ Kustomize build succeeded"
-        : "❌ Kustomize build failed - " + output,
+      message: {
+        content: success
+          ? "✅ Kustomize build succeeded"
+          : "❌ Kustomize build failed - " + output,
+      },
       type: success ? "success" : "error",
       start: start,
     };
