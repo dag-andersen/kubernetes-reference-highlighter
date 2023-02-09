@@ -1,33 +1,60 @@
-import { format } from "util";
 import * as vscode from "vscode";
+import {
+  DecorationOptions,
+  MarkdownString,
+  Position,
+  Range,
+  window,
+} from "vscode";
 import { FromWhere } from "./types";
 
-// LOGS
+// LOGS -----------------------------------------------
 
-//TODO: REPLACE DIAGNOSTICS WITH DECORATIONS
-const diagnosticCollectionTest = vscode.languages.createDiagnosticCollection(
-  "kubernetes-reference-highlighter-test"
-);
+let log: string[] = [];
 
-const diagnostics: vscode.Diagnostic[] = [];
+let deco = window.createTextEditorDecorationType({
+  after: {
+    margin: "2em",
+  },
+});
 
-export function logRest() {
-  diagnostics.length = 0;
+export function logTextTextReset() {
+  log.length = 0;
 }
 
-export function logText(a: any, b = 0) {
-  const current = vscode.window.activeTextEditor?.document;
-  diagnostics.push(
-    new vscode.Diagnostic(
-      new vscode.Range(b, 0, b, 0),
-      format(a),
-      vscode.DiagnosticSeverity.Information
-    )
-  );
-  diagnosticCollectionTest.set(current!.uri, diagnostics);
+export function logTextText(text: string, line: number = 0) {
+  const editor = window.activeTextEditor;
+  if (!editor) {
+    return;
+  }
+
+  log.push(text);
+
+  let end = editor.document.lineAt(new Position(line, 0)).range.end;
+
+  let message = "";
+
+  log.forEach((element, index) => {
+    if (index > 0) {
+      message += "\\\n";
+    }
+    message += element;
+  });
+
+  let decoration: DecorationOptions = {
+    range: new vscode.Range(end, end),
+    hoverMessage: new MarkdownString(message),
+    renderOptions: {
+      after: {
+        contentText: "🐞",
+      },
+    },
+  };
+
+  editor.setDecorations(deco, [decoration]);
 }
 
-// MESSAGES
+// MESSAGES -----------------------------------------------
 
 export type Message =
   | SubItemNotFound

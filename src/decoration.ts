@@ -68,8 +68,7 @@ export function highlightsToDecorations(
       if (index > 0) {
         message += "\\\n";
       }
-      message +=
-        typeof element === "string" ? element : generateMessage(element);
+      message += typeof element === "string" ? element : generateMessage(element);
     });
 
     return getDecoration(message, d.icon, d.position);
@@ -106,5 +105,6 @@ export function getDecoration(
       },
     },
   };
+
   return decoration;
 }
