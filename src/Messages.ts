@@ -87,13 +87,13 @@ type ReferenceNotFound = {
 };
 
 function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
-  let message = "";
-  mg.forEach((mg, i) => {
-    if (i > 0) {
-      message += "\\\n";
-    }
-    const { name, activeFilePath, fromWhere, suggestion } = mg;
-    message += `🤷‍♂️ \`${name}\` not found. Did you mean \`${suggestion}\`?`;
+  if (mg.length === 0) {
+    return "Error";
+  }
+
+  if (mg.length === 1) {
+    const { name, activeFilePath, fromWhere, suggestion } = mg[0];
+    let message = `🤷‍♂️ \`${name}\` not found. Did you mean \`${suggestion}\`?`;
     if (fromWhere) {
       if (typeof fromWhere === "string") {
         message += ` (found in ${fromWhere})`;
@@ -103,6 +103,25 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
           fromWhere.place === "workspace"
             ? ` (in \`${relativePath}\`)`
             : ` (with ${fromWhere.place} at \`${relativePath}\`)`;
+      }
+    }
+    return message;
+  }
+
+  const { name } = mg[0];
+  let message = `🤷‍♂️ \`${name}\` not found.`;
+  mg.forEach((mg, i) => {
+    message += "\n";
+    const { activeFilePath, fromWhere, suggestion } = mg;
+    if (fromWhere) {
+      if (typeof fromWhere === "string") {
+        message += `- Did you mean \`${suggestion}\`? (found in ${fromWhere})`;
+      } else {
+        const relativePath = getRelativePath(fromWhere.path, activeFilePath);
+        message +=
+          fromWhere.place === "workspace"
+            ? `- Did you mean \`${suggestion}\`? (from \`${relativePath}\`)`
+            : `- Did you mean \`${suggestion}\`? (from \`${relativePath}\` with ${fromWhere.place})`;
       }
     }
   });
