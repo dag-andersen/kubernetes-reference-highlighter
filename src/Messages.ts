@@ -5,11 +5,12 @@ type DefaultMessage = {
   content: string;
 };
 
-export type Message = SubItemNotFound |
-  ReferenceNotFound |
-  ReferenceFound |
-  SubItemFound |
-  DefaultMessage;
+export type Message =
+  | SubItemNotFound
+  | ReferenceNotFound
+  | ReferenceFound
+  | SubItemFound
+  | DefaultMessage;
 
 export function generateMessage(mg: Message[]): string {
   if (mg.every((m) => "type" in m)) {
@@ -33,13 +34,12 @@ type ReferenceFound = {
 };
 
 function generateFoundMessage(mg: ReferenceFound[]): string {
-  let message = "";
-  mg.forEach((mg, i) => {
-    if (i > 0) {
-      message += "\\\n";
-    }
-    const { type, name, activeFilePath, fromWhere } = mg;
-    message += `✅ Found ${type}: \`${name}\``;
+  if (mg.length === 0) {
+    return "Error";
+  }
+  if (mg.length === 1) {
+    const { type, name, activeFilePath, fromWhere } = mg[0];
+    let message = `✅ Found ${type}: \`${name}\``;
     if (fromWhere) {
       if (typeof fromWhere === "string") {
         message += ` in ${fromWhere}`;
@@ -49,6 +49,30 @@ function generateFoundMessage(mg: ReferenceFound[]): string {
           fromWhere.place === "workspace"
             ? ` in \`${relativePath}\``
             : ` with ${fromWhere.place} at \`${relativePath}\``;
+      }
+    }
+    return message;
+  }
+
+  const type = mg[0].type;
+  const name = mg[0].name;
+
+  let message = `✅ Found ${type}: \`${name}\``;
+  mg.forEach((mg, i) => {
+    if (i === 0) {
+      message += " in:";
+    }
+    message += "\n";
+    const { activeFilePath, fromWhere } = mg;
+    if (fromWhere) {
+      if (typeof fromWhere === "string") {
+        message += `- ${fromWhere}`;
+      } else {
+        const relativePath = getRelativePath(fromWhere.path, activeFilePath);
+        message +=
+          fromWhere.place === "workspace"
+            ? `- \`${relativePath}\``
+            : `- \`${relativePath}\` with ${fromWhere.place}`;
       }
     }
   });
@@ -63,13 +87,13 @@ type ReferenceNotFound = {
 };
 
 function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
-  let message = "";
-  mg.forEach((mg, i) => {
-    if (i > 0) {
-      message += "\\\n";
-    }
-    const { name, activeFilePath, fromWhere, suggestion } = mg;
-    message += `🤷‍♂️ \`${name}\` not found. Did you mean \`${suggestion}\`?`;
+  if (mg.length === 0) {
+    return "Error";
+  }
+
+  if (mg.length === 1) {
+    const { name, activeFilePath, fromWhere, suggestion } = mg[0];
+    let message = `🤷‍♂️ \`${name}\` not found. Did you mean \`${suggestion}\`?`;
     if (fromWhere) {
       if (typeof fromWhere === "string") {
         message += ` (found in ${fromWhere})`;
@@ -79,6 +103,25 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
           fromWhere.place === "workspace"
             ? ` (in \`${relativePath}\`)`
             : ` (with ${fromWhere.place} at \`${relativePath}\`)`;
+      }
+    }
+    return message;
+  }
+
+  const { name } = mg[0];
+  let message = `🤷‍♂️ \`${name}\` not found.`;
+  mg.forEach((mg, i) => {
+    message += "\n";
+    const { activeFilePath, fromWhere, suggestion } = mg;
+    if (fromWhere) {
+      if (typeof fromWhere === "string") {
+        message += `- Did you mean \`${suggestion}\`? (found in ${fromWhere})`;
+      } else {
+        const relativePath = getRelativePath(fromWhere.path, activeFilePath);
+        message +=
+          fromWhere.place === "workspace"
+            ? `- Did you mean \`${suggestion}\`? (from \`${relativePath}\`)`
+            : `- Did you mean \`${suggestion}\`? (from \`${relativePath}\` with ${fromWhere.place})`;
       }
     }
   });
@@ -94,13 +137,12 @@ type SubItemFound = {
   fromWhere?: FromWhere;
 };
 function generateSubItemFoundMessage(mg: SubItemFound[]): string {
-  let message = "";
-  mg.forEach((mg, i) => {
-    if (i > 0) {
-      message += "\\\n";
-    }
-    const { subType, mainType, subName, mainName, activeFilePath, fromWhere } = mg;
-    message += `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
+  if (mg.length === 0) {
+    return "Error";
+  }
+  if (mg.length === 1) {
+    const { subType, mainType, subName, mainName, activeFilePath, fromWhere } = mg[0];
+    let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
     if (fromWhere) {
       if (typeof fromWhere === "string") {
         message += ` at ${fromWhere}`;
@@ -110,6 +152,29 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
           fromWhere.place === "workspace"
             ? ` in \`${relativePath}\``
             : ` with ${fromWhere.place} at \`${relativePath}\``;
+      }
+    }
+    return message;
+  }
+  
+  const { subType, mainType, subName, mainName } = mg[0];
+
+  let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
+  mg.forEach((mg, i) => {
+    if (i === 0) {
+      message += " in:";
+    }
+    message += "\n";
+    const { activeFilePath, fromWhere } = mg;
+    if (fromWhere) {
+      if (typeof fromWhere === "string") {
+        message += `- ${fromWhere}`;
+      } else {
+        const relativePath = getRelativePath(fromWhere.path, activeFilePath);
+        message +=
+          fromWhere.place === "workspace"
+            ? `- \`${relativePath}\``
+            : `- \`${relativePath}\` with ${fromWhere.place}`;
       }
     }
   });
@@ -127,13 +192,12 @@ type SubItemNotFound = {
 };
 
 function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
-  let message = "";
-  mg.forEach((mg, i) => {
-    if (i > 0) {
-      message += "\\\n";
-    }
-    const { subType, activeFilePath, subName, mainType, fromWhere, suggestion, mainName } = mg;
-    message += `🤷‍♂️ _${subType}_: \`${subName}\` not found in _${mainType}_: \`${mainName}\``;
+  if (mg.length === 0) {
+    return "Error";
+  }
+  if (mg.length === 1) {
+    const { subType, activeFilePath, subName, mainType, fromWhere, suggestion, mainName } = mg[0];
+    let message = `🤷‍♂️ _${subType}_: \`${subName}\` not found in _${mainType}_: \`${mainName}\``;
     if (fromWhere) {
       if (typeof fromWhere === "string") {
         message += ` (in ${fromWhere})`;
@@ -143,6 +207,28 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
           fromWhere.place === "workspace"
             ? ` (in \`${relativePath}\`)`
             : ` (with ${fromWhere.place} at \`${relativePath}\`)`;
+      }
+    }
+    return message + `.\\\nDid you mean \`${suggestion}\`?`;
+  }
+
+  const { subType, subName, mainType, mainName } = mg[0];
+  let message = `🤷‍♂️ _${subType}_: \`${subName}\` not found`;
+  mg.forEach((mg, i) => {
+    if (i === 0) {
+      message += " in:";
+    }
+    message += "\n";
+    const { activeFilePath, fromWhere, suggestion } = mg;
+    if (fromWhere) {
+      if (typeof fromWhere === "string") {
+        message += `- _${mainType}_: \`${mainName}\ from ${fromWhere}`;
+      } else {
+        const relativePath = getRelativePath(fromWhere.path, activeFilePath);
+        message +=
+          fromWhere.place === "workspace"
+            ? `- _${mainType}_: \`${mainName}\` from \`${relativePath}\`)`
+            : `- _${mainType}_: \`${mainName}\` from \`${relativePath}\` with ${fromWhere.place}`;
       }
     }
     message += `.\\\nDid you mean \`${suggestion}\`?`;
@@ -164,6 +250,6 @@ function getRelativePath(path: string, activeFilePath: string): string {
   return relativeFilePathFromRoot.length < relativePathFromActive.length
     ? "/" + relativeFilePathFromRoot
     : relativePathFromActive.includes("/")
-      ? relativePathFromActive
-      : "./" + relativePathFromActive;
+    ? relativePathFromActive
+    : "./" + relativePathFromActive;
 }
