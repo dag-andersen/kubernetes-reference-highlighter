@@ -273,7 +273,7 @@ function updateHighlighting(
 
   let currentIndex = 0;
 
-  const diagnosticsCombined =
+  const decorationsCombined =
     kubeResources.length === 0
       ? []
       : fileTextSplitted.flatMap((textSplit) => {
@@ -350,5 +350,5 @@ function updateHighlighting(
           return decorations;
         });
 
-  decorate(editor, diagnosticsCombined);
+  decorate(editor, decorationsCombined);
 }
