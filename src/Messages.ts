@@ -67,10 +67,7 @@ function generateFoundMessage(mg: ReferenceFound[]): string {
       if (typeof fromWhere === "string") {
         message += `- ${fromWhere}`;
       } else {
-        message +=
-          fromWhere.place === "workspace"
-            ? `- ${link(fromWhere, pwd)}`
-            : `- ${link(fromWhere, pwd)} with ${fromWhere.place}`;
+        message += `- ${link(fromWhere, pwd)}`;
       }
     }
   });
@@ -114,10 +111,7 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
       if (typeof fromWhere === "string") {
         message += `- Did you mean \`${suggestion}\`? (found in ${fromWhere})`;
       } else {
-        message +=
-          fromWhere.place === "workspace"
-            ? `- Did you mean \`${suggestion}\`? (from ${link(fromWhere, pwd)})`
-            : `- Did you mean \`${suggestion}\`? (from ${link(fromWhere, pwd)} with ${fromWhere.place})`;
+        message += `- Did you mean \`${suggestion}\`? (from ${link(fromWhere, pwd)})`;
       }
     }
   });
@@ -141,7 +135,7 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
     let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
     if (fromWhere) {
       if (typeof fromWhere === "string") {
-        message += ` at ${fromWhere}`;
+        message += ` in ${fromWhere}`;
       } else {
         message +=
           fromWhere.place === "workspace"
@@ -165,10 +159,7 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
       if (typeof fromWhere === "string") {
         message += `- ${fromWhere}`;
       } else {
-        message +=
-          fromWhere.place === "workspace"
-            ? `- ${link(fromWhere, pwd)}`
-            : `- ${link(fromWhere, pwd)} with ${fromWhere.place}`;
+        message += `- ${link(fromWhere, pwd)}`;
       }
     }
   });
@@ -215,12 +206,9 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
     const { pwd, fromWhere, suggestion } = mg;
     if (fromWhere) {
       if (typeof fromWhere === "string") {
-        message += `- _${mainType}_: \`${mainName}\ from ${fromWhere}`;
+        message += `- _${mainType}_: \`${mainName}\` from ${fromWhere}`;
       } else {
-        message +=
-          fromWhere.place === "workspace"
-            ? `- _${mainType}_: \`${mainName}\` from ${link(fromWhere, pwd)})`
-            : `- _${mainType}_: \`${mainName}\` from ${link(fromWhere, pwd)} with ${fromWhere.place}`;
+        message += `- _${mainType}_: \`${mainName}\` from ${link(fromWhere, pwd)}`;
       }
     }
     message += `.\\\nDid you mean \`${suggestion}\`?`;
@@ -252,7 +240,7 @@ function link(local: Local, pwd: string): string {
   if (place === "kustomize" || place === "helm") {
     const folder = path.substring(0, path.lastIndexOf("/"));
     const relativePath = getRelativePath(folder, pwd);
-    return `[\`${relativePath}\`](${path})`;
+    return `[\`${relativePath}\`](${path}) (_${place.charAt(0).toUpperCase() + place.slice(1)}_)`;
   }
 
   const relativePath = getRelativePath(path, pwd);
