@@ -118,13 +118,12 @@ type SubItemFound = {
   fromWhere?: FromWhere;
 };
 function generateSubItemFoundMessage(mg: SubItemFound[]): string {
-  let message = "";
-  mg.forEach((mg, i) => {
-    if (i > 0) {
-      message += "\\\n";
-    }
-    const { subType, mainType, subName, mainName, activeFilePath, fromWhere } = mg;
-    message += `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
+  if (mg.length === 0) {
+    return "Error";
+  }
+  if (mg.length === 1) {
+    const { subType, mainType, subName, mainName, activeFilePath, fromWhere } = mg[0];
+    let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
     if (fromWhere) {
       if (typeof fromWhere === "string") {
         message += ` at ${fromWhere}`;
@@ -134,6 +133,29 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
           fromWhere.place === "workspace"
             ? ` in \`${relativePath}\``
             : ` with ${fromWhere.place} at \`${relativePath}\``;
+      }
+    }
+    return message;
+  }
+  
+  const { subType, mainType, subName, mainName } = mg[0];
+
+  let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
+  mg.forEach((mg, i) => {
+    if (i === 0) {
+      message += " in:";
+    }
+    message += "\n";
+    const { activeFilePath, fromWhere } = mg;
+    if (fromWhere) {
+      if (typeof fromWhere === "string") {
+        message += `- ${fromWhere}`;
+      } else {
+        const relativePath = getRelativePath(fromWhere.path, activeFilePath);
+        message +=
+          fromWhere.place === "workspace"
+            ? `- \`${relativePath}\``
+            : `- \`${relativePath}\` with ${fromWhere.place}`;
       }
     }
   });
