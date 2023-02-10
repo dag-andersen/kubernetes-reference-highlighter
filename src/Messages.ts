@@ -41,14 +41,7 @@ function generateFoundMessage(mg: ReferenceFound[]): string {
     const { type, name, pwd, fromWhere } = mg[0];
     let message = `✅ Found ${type}: \`${name}\``;
     if (fromWhere) {
-      if (typeof fromWhere === "string") {
-        message += ` in ${fromWhere}`;
-      } else {
-        message +=
-          fromWhere.place === "workspace"
-            ? ` in ${link(fromWhere, pwd)}`
-            : ` with ${fromWhere.place} at ${link(fromWhere, pwd)}`;
-      }
+      message += ` ${individualRef(fromWhere, pwd)}`;
     }
     return message;
   }
@@ -64,11 +57,7 @@ function generateFoundMessage(mg: ReferenceFound[]): string {
     message += "\n";
     const { pwd, fromWhere } = mg;
     if (fromWhere) {
-      if (typeof fromWhere === "string") {
-        message += `- ${fromWhere}`;
-      } else {
-        message += `- ${link(fromWhere, pwd)}`;
-      }
+      message += `- ${listRef(fromWhere, pwd)}`;
     }
   });
   return message;
@@ -90,14 +79,7 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
     const { name, pwd, fromWhere, suggestion } = mg[0];
     let message = `🤷‍♂️ \`${name}\` not found. Did you mean \`${suggestion}\`?`;
     if (fromWhere) {
-      if (typeof fromWhere === "string") {
-        message += ` (found in ${fromWhere})`;
-      } else {
-        message +=
-          fromWhere.place === "workspace"
-            ? ` (in ${link(fromWhere, pwd)})`
-            : ` (with ${fromWhere.place} at ${link(fromWhere, pwd)})`;
-      }
+      message += ` (From ${individualRef(fromWhere, pwd)})`;
     }
     return message;
   }
@@ -108,11 +90,7 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
     message += "\n";
     const { pwd, fromWhere, suggestion } = mg;
     if (fromWhere) {
-      if (typeof fromWhere === "string") {
-        message += `- Did you mean \`${suggestion}\`? (found in ${fromWhere})`;
-      } else {
-        message += `- Did you mean \`${suggestion}\`? (from ${link(fromWhere, pwd)})`;
-      }
+      message += `- Did you mean \`${suggestion}\`? (From ${listRef(fromWhere, pwd)})`;
     }
   });
   return message;
@@ -134,20 +112,12 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
     const { subType, mainType, subName, mainName, pwd, fromWhere } = mg[0];
     let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
     if (fromWhere) {
-      if (typeof fromWhere === "string") {
-        message += ` in ${fromWhere}`;
-      } else {
-        message +=
-          fromWhere.place === "workspace"
-            ? ` in ${link(fromWhere, pwd)}`
-            : ` with ${fromWhere.place} at ${link(fromWhere, pwd)}`;
-      }
+      message += ` ${individualRef(fromWhere, pwd)}`;
     }
     return message;
   }
 
   const { subType, mainType, subName, mainName } = mg[0];
-
   let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
   mg.forEach((mg, i) => {
     if (i === 0) {
@@ -156,11 +126,7 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
     message += "\n";
     const { pwd, fromWhere } = mg;
     if (fromWhere) {
-      if (typeof fromWhere === "string") {
-        message += `- ${fromWhere}`;
-      } else {
-        message += `- ${link(fromWhere, pwd)}`;
-      }
+      message += `- ${listRef(fromWhere, pwd)}`;
     }
   });
   return message;
@@ -184,14 +150,7 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
     const { subType, pwd, subName, mainType, fromWhere, suggestion, mainName } = mg[0];
     let message = `🤷‍♂️ _${subType}_: \`${subName}\` not found in _${mainType}_: \`${mainName}\``;
     if (fromWhere) {
-      if (typeof fromWhere === "string") {
-        message += ` (in ${fromWhere})`;
-      } else {
-        message +=
-          fromWhere.place === "workspace"
-            ? ` (in ${link(fromWhere, pwd)})`
-            : ` (with ${fromWhere.place} at ${link(fromWhere, pwd)})`;
-      }
+      message += ` ${individualRef(fromWhere, pwd)}`;
     }
     return message + `.\\\nDid you mean \`${suggestion}\`?`;
   }
@@ -205,11 +164,7 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
     message += "\n";
     const { pwd, fromWhere, suggestion } = mg;
     if (fromWhere) {
-      if (typeof fromWhere === "string") {
-        message += `- _${mainType}_: \`${mainName}\` from ${fromWhere}`;
-      } else {
-        message += `- _${mainType}_: \`${mainName}\` from ${link(fromWhere, pwd)}`;
-      }
+      message += `- _${mainType}_: \`${mainName}\` ${listRef(fromWhere, pwd)}`;
     }
     message += `.\\\nDid you mean \`${suggestion}\`?`;
   });
@@ -234,15 +189,44 @@ function getRelativePath(path: string, pwd: string): string {
     : "./" + relativePathFromActive;
 }
 
+function individualRef(fromWhere: FromWhere, pwd: string): string {
+  if (typeof fromWhere === "string") {
+    return `in ${fromWhere}`;
+  }
+  const { place, path } = fromWhere;
+  if (place === "workspace") {
+    return `in ${link(fromWhere, pwd)}`;
+  }
+  if (place === "helm" || place === "kustomize") {
+    return `with _${capitalize(place)}_ at ${link(fromWhere, pwd)}`;
+  }
+  return "Error";
+}
+
+function listRef(fromWhere: FromWhere, pwd: string): string {
+  if (typeof fromWhere === "string") {
+    return fromWhere;
+  }
+  const { place } = fromWhere;
+  if (place === "kustomize" || place === "helm") {
+    return link(fromWhere, pwd) + ` (_${capitalize(fromWhere.place)}_)`;
+  }
+  return link(fromWhere, pwd);
+}
+
 function link(local: Local, pwd: string): string {
   const { place, path } = local;
 
   if (place === "kustomize" || place === "helm") {
     const folder = path.substring(0, path.lastIndexOf("/"));
     const relativePath = getRelativePath(folder, pwd);
-    return `[\`${relativePath}\`](${path}) (_${place.charAt(0).toUpperCase() + place.slice(1)}_)`;
+    return `[\`${relativePath}\`](${path})`;
   }
 
   const relativePath = getRelativePath(path, pwd);
   return `[\`${relativePath}\`](${path})`;
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
