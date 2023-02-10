@@ -11,7 +11,7 @@ import * as service from "./finders/service";
 
 import { K8sResource } from "./types";
 import { parse } from "yaml";
-import { loadPreferences, Prefs, updateConfigurationKey } from "./Prefs";
+import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decoration";
 import { logTextText } from "./utils";
 

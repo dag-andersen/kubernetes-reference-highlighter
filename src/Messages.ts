@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { FromWhere } from "./types";
+import { FromWhere, Local } from "./types";
 
 type DefaultMessage = {
   content: string;
@@ -46,8 +46,8 @@ function generateFoundMessage(mg: ReferenceFound[]): string {
       } else {
         message +=
           fromWhere.place === "workspace"
-            ? ` in ${link(fromWhere.path, pwd)}`
-            : ` with ${fromWhere.place} at ${link(fromWhere.path, pwd)}`;
+            ? ` in ${link(fromWhere, pwd)}`
+            : ` with ${fromWhere.place} at ${link(fromWhere, pwd)}`;
       }
     }
     return message;
@@ -69,8 +69,8 @@ function generateFoundMessage(mg: ReferenceFound[]): string {
       } else {
         message +=
           fromWhere.place === "workspace"
-            ? `- ${link(fromWhere.path, pwd)}`
-            : `- ${link(fromWhere.path, pwd)} with ${fromWhere.place}`;
+            ? `- ${link(fromWhere, pwd)}`
+            : `- ${link(fromWhere, pwd)} with ${fromWhere.place}`;
       }
     }
   });
@@ -98,8 +98,8 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
       } else {
         message +=
           fromWhere.place === "workspace"
-            ? ` (in ${link(fromWhere.path, pwd)})`
-            : ` (with ${fromWhere.place} at ${link(fromWhere.path, pwd)})`;
+            ? ` (in ${link(fromWhere, pwd)})`
+            : ` (with ${fromWhere.place} at ${link(fromWhere, pwd)})`;
       }
     }
     return message;
@@ -116,8 +116,8 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
       } else {
         message +=
           fromWhere.place === "workspace"
-            ? `- Did you mean \`${suggestion}\`? (from ${link(fromWhere.path, pwd)})`
-            : `- Did you mean \`${suggestion}\`? (from ${link(fromWhere.path, pwd)} with ${fromWhere.place})`;
+            ? `- Did you mean \`${suggestion}\`? (from ${link(fromWhere, pwd)})`
+            : `- Did you mean \`${suggestion}\`? (from ${link(fromWhere, pwd)} with ${fromWhere.place})`;
       }
     }
   });
@@ -145,8 +145,8 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
       } else {
         message +=
           fromWhere.place === "workspace"
-            ? ` in ${link(fromWhere.path, pwd)}`
-            : ` with ${fromWhere.place} at ${link(fromWhere.path, pwd)}`;
+            ? ` in ${link(fromWhere, pwd)}`
+            : ` with ${fromWhere.place} at ${link(fromWhere, pwd)}`;
       }
     }
     return message;
@@ -167,8 +167,8 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
       } else {
         message +=
           fromWhere.place === "workspace"
-            ? `- ${link(fromWhere.path, pwd)}`
-            : `- ${link(fromWhere.path, pwd)} with ${fromWhere.place}`;
+            ? `- ${link(fromWhere, pwd)}`
+            : `- ${link(fromWhere, pwd)} with ${fromWhere.place}`;
       }
     }
   });
@@ -198,8 +198,8 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
       } else {
         message +=
           fromWhere.place === "workspace"
-            ? ` (in ${link(fromWhere.path, pwd)})`
-            : ` (with ${fromWhere.place} at ${link(fromWhere.path, pwd)})`;
+            ? ` (in ${link(fromWhere, pwd)})`
+            : ` (with ${fromWhere.place} at ${link(fromWhere, pwd)})`;
       }
     }
     return message + `.\\\nDid you mean \`${suggestion}\`?`;
@@ -219,8 +219,8 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
       } else {
         message +=
           fromWhere.place === "workspace"
-            ? `- _${mainType}_: \`${mainName}\` from ${link(fromWhere.path, pwd)})`
-            : `- _${mainType}_: \`${mainName}\` from ${link(fromWhere.path, pwd)} with ${fromWhere.place}`;
+            ? `- _${mainType}_: \`${mainName}\` from ${link(fromWhere, pwd)})`
+            : `- _${mainType}_: \`${mainName}\` from ${link(fromWhere, pwd)} with ${fromWhere.place}`;
       }
     }
     message += `.\\\nDid you mean \`${suggestion}\`?`;
@@ -246,7 +246,15 @@ function getRelativePath(path: string, pwd: string): string {
     : "./" + relativePathFromActive;
 }
 
-function link(fullPath: string, pwd: string) : string {
-  const relativePath = getRelativePath(fullPath, pwd);
-  return `[\`${relativePath}\`](${fullPath})`;
+function link(local: Local, pwd: string): string {
+  const { place, path } = local;
+
+  if (place === "kustomize" || place === "helm") {
+    const folder = path.substring(0, path.lastIndexOf("/"));
+    const relativePath = getRelativePath(folder, pwd);
+    return `[\`${relativePath}\`](${path})`;
+  }
+
+  const relativePath = getRelativePath(path, pwd);
+  return `[\`${relativePath}\`](${path})`;
 }

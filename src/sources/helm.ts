@@ -65,7 +65,7 @@ function helmBuild(file: string): K8sResource[] {
   return split.flatMap((text) => {
     try {
       const r = textToK8sResource(text);
-      r.where = { place: "helm", path: path };
+      r.where = { place: "helm", path: file };
       return r;
     } catch (e) {}
     return [];

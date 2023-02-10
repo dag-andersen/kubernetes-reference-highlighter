@@ -7,7 +7,7 @@ import {
   Position,
   TextDocument,
 } from "vscode";
-import { generateMessage, Message } from "./Messages";
+import { generateMessage, Message } from "./messages";
 import { Highlight, HighLightType } from "./types";
 
 let deco = window.createTextEditorDecorationType({

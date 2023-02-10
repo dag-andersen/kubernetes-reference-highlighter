@@ -1,4 +1,4 @@
-import { Message } from "./Messages";
+import { Message } from "./messages";
 
 export type FromWhere = "cluster" | Local;
 
