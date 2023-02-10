@@ -39,9 +39,12 @@ export function logTextText(input: any, line: number = 0) {
     message += element;
   });
 
+  let markdown = new MarkdownString(message);
+  markdown.isTrusted = true;
+
   let decoration: DecorationOptions = {
     range: new vscode.Range(end, end),
-    hoverMessage: new MarkdownString(message),
+    hoverMessage: markdown,
     renderOptions: {
       after: {
         contentText: "🐞",

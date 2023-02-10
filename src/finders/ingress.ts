@@ -4,7 +4,7 @@ import { getPositions, getSimilarHighlights, similarity } from "./utils";
 export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
-  activeFilePath: string,
+  pwd: string,
   text: string,
   enableCorrectionHints: boolean
 ): Highlight[] {
@@ -44,7 +44,7 @@ export function find(
         let nameHighlight: Highlight = {
           start: start,
           type: "reference",
-          message: { type: refType, name, activeFilePath, fromWhere: r.where },
+          message: { type: refType, name, pwd, fromWhere: r.where },
         };
 
         if (
@@ -59,7 +59,7 @@ export function find(
               mainType: refType,
               subName: portRef,
               mainName: name,
-              activeFilePath,
+              pwd,
               fromWhere: r.where,
             },
           };
@@ -83,7 +83,7 @@ export function find(
                     subName: portRef,
                     mainName: name,
                     suggestion: a.content,
-                    activeFilePath,
+                    pwd,
                     fromWhere: r.where,
                   },
                 };
@@ -111,7 +111,7 @@ export function find(
       });
     } else {
       return enableCorrectionHints
-        ? getSimilarHighlights(resourcesScoped, name, start, activeFilePath)
+        ? getSimilarHighlights(resourcesScoped, name, start, pwd)
         : [];
     }
   });

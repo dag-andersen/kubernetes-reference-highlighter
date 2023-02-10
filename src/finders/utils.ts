@@ -23,7 +23,7 @@ export function getSimilarHighlights(
   resources: K8sResource[],
   name: string,
   start: number,
-  activeFilePath: string
+  pwd: string
 ): Highlight[] {
   return similarity<K8sResource>(resources, name, (r) => r.metadata.name)
     .filter((r) => r.rating > 0.8)
@@ -33,7 +33,7 @@ export function getSimilarHighlights(
         message: {
           name: name,
           suggestion: r.content.metadata.name,
-          activeFilePath,
+          pwd,
           fromWhere: r.content.where,
         },
         type: "hint",

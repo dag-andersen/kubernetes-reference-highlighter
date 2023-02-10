@@ -89,9 +89,12 @@ export function getDecoration(
       break;
   }
 
+  const markdown = new MarkdownString(message);
+  markdown.isTrusted = true;
+
   let decoration: DecorationOptions = {
     range: new Range(posIndex, posIndex),
-    hoverMessage: new MarkdownString(message),
+    hoverMessage: markdown,
     renderOptions: {
       after: {
         contentText: i,
