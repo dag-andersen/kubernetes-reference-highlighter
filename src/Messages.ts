@@ -5,11 +5,12 @@ type DefaultMessage = {
   content: string;
 };
 
-export type Message = SubItemNotFound |
-  ReferenceNotFound |
-  ReferenceFound |
-  SubItemFound |
-  DefaultMessage;
+export type Message =
+  | SubItemNotFound
+  | ReferenceNotFound
+  | ReferenceFound
+  | SubItemFound
+  | DefaultMessage;
 
 export function generateMessage(mg: Message[]): string {
   if (mg.every((m) => "type" in m)) {
@@ -33,13 +34,12 @@ type ReferenceFound = {
 };
 
 function generateFoundMessage(mg: ReferenceFound[]): string {
-  let message = "";
-  mg.forEach((mg, i) => {
-    if (i > 0) {
-      message += "\\\n";
-    }
-    const { type, name, activeFilePath, fromWhere } = mg;
-    message += `✅ Found ${type}: \`${name}\``;
+  if (mg.length === 0) {
+    return "Error";
+  }
+  if (mg.length === 1) {
+    const { type, name, activeFilePath, fromWhere } = mg[0];
+    let message = `✅ Found ${type}: \`${name}\``;
     if (fromWhere) {
       if (typeof fromWhere === "string") {
         message += ` in ${fromWhere}`;
@@ -49,6 +49,30 @@ function generateFoundMessage(mg: ReferenceFound[]): string {
           fromWhere.place === "workspace"
             ? ` in \`${relativePath}\``
             : ` with ${fromWhere.place} at \`${relativePath}\``;
+      }
+    }
+    return message;
+  }
+
+  const type = mg[0].type;
+  const name = mg[0].name;
+
+  let message = `✅ Found ${type}: \`${name}\``;
+  mg.forEach((mg, i) => {
+    if (i === 0) {
+      message += " in:";
+    }
+    message += "\n";
+    const { activeFilePath, fromWhere } = mg;
+    if (fromWhere) {
+      if (typeof fromWhere === "string") {
+        message += `- ${fromWhere}`;
+      } else {
+        const relativePath = getRelativePath(fromWhere.path, activeFilePath);
+        message +=
+          fromWhere.place === "workspace"
+            ? `- \`${relativePath}\``
+            : `- \`${relativePath}\` with ${fromWhere.place}`;
       }
     }
   });
@@ -164,6 +188,6 @@ function getRelativePath(path: string, activeFilePath: string): string {
   return relativeFilePathFromRoot.length < relativePathFromActive.length
     ? "/" + relativeFilePathFromRoot
     : relativePathFromActive.includes("/")
-      ? relativePathFromActive
-      : "./" + relativePathFromActive;
+    ? relativePathFromActive
+    : "./" + relativePathFromActive;
 }
