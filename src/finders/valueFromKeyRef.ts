@@ -52,21 +52,21 @@ export function find(
 
     const { start, end } = getPositions(match, name);
 
-    let resourcesScoped = resources
+    const resourcesScoped = resources
       .filter((r) => r.kind === refType)
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace);
 
     var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
     if (exactMatches.length > 0) {
       return exactMatches.flatMap((r) => {
-        let nameHighlight: Highlight = {
+        const nameHighlight: Highlight = {
           start: start,
           type: "reference",
           message: { type: refType, name, pwd, fromWhere: r.where },
         };
 
         if (r.data[key]) {
-          let keyHighlight: Highlight = {
+          const keyHighlight: Highlight = {
             ...getPositions(match, key),
             type: "reference",
             message: {
@@ -82,10 +82,10 @@ export function find(
         }
         
         if (enableCorrectionHints) {
-          let keys = Object.keys(r.data);
+          const keys = Object.keys(r.data);
 
           if (keys.length > 0) {
-            let keySuggestion: Highlight[] = similarity<string>(keys, key, (a) => a)
+            const keySuggestion: Highlight[] = similarity<string>(keys, key, (a) => a)
               .filter((a) => a.rating > 0.8)
               .map((a) => {
                 return {

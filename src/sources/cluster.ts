@@ -1,5 +1,5 @@
 import { CoreV1Api, KubeConfig } from "@kubernetes/client-node";
-import { Cluster, K8sResource } from "../types";
+import { K8sResource } from "../types";
 
 export type ClusterClient = {
   k8sApi: CoreV1Api;
@@ -22,7 +22,7 @@ export function getKubeClient(): ClusterClient | undefined {
 export async function getClusterResources(
   cc: ClusterClient
 ): Promise<K8sResource[]> {
-  let service: Promise<K8sResource[]> = cc.k8sApi
+  const service: Promise<K8sResource[]> = cc.k8sApi
     .listServiceForAllNamespaces()
     .then((res) => {
       return res.body.items.map((r): K8sResource => {
@@ -41,7 +41,7 @@ export async function getClusterResources(
       return [];
     });
 
-  let secret: Promise<K8sResource[]> = cc.k8sApi
+  const secret: Promise<K8sResource[]> = cc.k8sApi
     .listSecretForAllNamespaces()
     .then((res) => {
       return res.body.items.map((r): K8sResource => {
@@ -60,7 +60,7 @@ export async function getClusterResources(
       return [];
     });
 
-  let configMap: Promise<K8sResource[]> = cc.k8sApi
+  const configMap: Promise<K8sResource[]> = cc.k8sApi
     .listConfigMapForAllNamespaces()
     .then((res) => {
       return res.body.items.map((r): K8sResource => {
