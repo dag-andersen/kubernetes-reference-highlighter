@@ -15,11 +15,11 @@ let deco = window.createTextEditorDecorationType({
   },
 });
 
-export function logTextTextReset() {
+export function logTextReset() {
   log.length = 0;
 }
 
-export function logTextText(input: any, line: number = 0) {
+export function logText(input: any, line: number = 0) {
   const editor = window.activeTextEditor;
   if (!editor) {
     return;

@@ -1,12 +1,18 @@
 import { CoreV1Api, KubeConfig } from "@kubernetes/client-node";
-import { K8sResource } from "../types";
+import { Cluster, K8sResource } from "../types";
 
-export function getKubeClient() {
+export type ClusterClient = {
+  k8sApi: CoreV1Api;
+  context: string;
+};
+
+export function getKubeClient(): ClusterClient | undefined {
   try {
     const kc = new KubeConfig();
     kc.loadFromDefault();
     const k8sApi = kc.makeApiClient(CoreV1Api);
-    return k8sApi;
+    const context = kc.getCurrentContext();
+    return { k8sApi, context };
   } catch (err) {
     console.log(err);
   }
@@ -14,9 +20,9 @@ export function getKubeClient() {
 }
 
 export async function getClusterResources(
-  k8sApi: CoreV1Api
+  cc: ClusterClient
 ): Promise<K8sResource[]> {
-  let service: Promise<K8sResource[]> = k8sApi
+  let service: Promise<K8sResource[]> = cc.k8sApi
     .listServiceForAllNamespaces()
     .then((res) => {
       return res.body.items.map((r): K8sResource => {
@@ -26,7 +32,7 @@ export async function getClusterResources(
             name: r.metadata?.name || "",
             namespace: r.metadata?.namespace || "",
           },
-          where: "cluster",
+          where: { place: "cluster", context: cc.context },
           spec: r.spec,
         };
       });
@@ -35,7 +41,7 @@ export async function getClusterResources(
       return [];
     });
 
-  let secret: Promise<K8sResource[]> = k8sApi
+  let secret: Promise<K8sResource[]> = cc.k8sApi
     .listSecretForAllNamespaces()
     .then((res) => {
       return res.body.items.map((r): K8sResource => {
@@ -45,7 +51,7 @@ export async function getClusterResources(
             name: r.metadata?.name || "",
             namespace: r.metadata?.namespace || "",
           },
-          where: "cluster",
+          where: { place: "cluster", context: cc.context },
           data: r.data,
         };
       });
@@ -54,7 +60,7 @@ export async function getClusterResources(
       return [];
     });
 
-  let configMap: Promise<K8sResource[]> = k8sApi
+  let configMap: Promise<K8sResource[]> = cc.k8sApi
     .listConfigMapForAllNamespaces()
     .then((res) => {
       return res.body.items.map((r): K8sResource => {
@@ -64,7 +70,7 @@ export async function getClusterResources(
             name: r.metadata?.name || "",
             namespace: r.metadata?.namespace || "",
           },
-          where: "cluster",
+          where: { place: "cluster", context: cc.context },
           data: r.data,
         };
       });

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { FromWhere, Local } from "./types";
+import { Cluster, FromWhere, Local } from "./types";
 
 type DefaultMessage = {
   content: string;
@@ -152,10 +152,12 @@ function getRelativePath(path: string, pwd: string): string {
 }
 
 function individualRef(fromWhere: FromWhere, pwd: string): string {
-  if (typeof fromWhere === "string") {
-    return `in ${fromWhere}`;
-  }
   const { place } = fromWhere;
+  
+  if (place === "cluster") {
+    return `in Cluster (_${(fromWhere as Cluster).context}_)`;
+  }
+  
   if (place === "workspace") {
     return `in ${link(fromWhere, pwd)}`;
   }
@@ -166,13 +168,16 @@ function individualRef(fromWhere: FromWhere, pwd: string): string {
 }
 
 function listRef(fromWhere: FromWhere, pwd: string): string {
-  if (typeof fromWhere === "string") {
-    return fromWhere;
-  }
   const { place } = fromWhere;
-  if (place === "kustomize" || place === "helm") {
-    return link(fromWhere, pwd) + ` (_${capitalize(fromWhere.place)}_)`;
+  
+  if (place === "cluster") {
+    return `Cluster (_${(fromWhere as Cluster).context}_)`;
   }
+  
+  if (place === "kustomize" || place === "helm") {
+    return `${link(fromWhere, pwd)} (_${capitalize(fromWhere.place)}_)`;
+  }
+  
   return link(fromWhere, pwd);
 }
 

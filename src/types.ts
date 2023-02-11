@@ -1,8 +1,13 @@
 import { Message } from "./messages";
 
-export type FromWhere = "cluster" | Local;
+export type FromWhere = Cluster | Local;
 
-export type Local = { place: "workspace" | "kustomize" | "helm"; path: string };
+export type Cluster = { place: "cluster", context: string };
+
+export type Local = {
+  place: "workspace" | "kustomize" | "helm";
+  path: string;
+};
 
 export type HighLightType = "reference" | "hint" | "success" | "error" ;
 
