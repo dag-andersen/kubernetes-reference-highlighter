@@ -13,7 +13,6 @@ import { K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decoration";
-import { logText } from "./utils";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed

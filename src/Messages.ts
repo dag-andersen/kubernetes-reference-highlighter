@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { Cluster, FromWhere, Local } from "./types";
+import { FromWhere, Local } from "./types";
 
 type DefaultMessage = {
   content: string;
@@ -48,11 +48,11 @@ function generateFoundMessage(mg: ReferenceFound[]): string {
   const type = mg[0].type;
   const name = mg[0].name;
 
-  let message = `✅ Found ${type}: \`${name}\` in:`;
-  mg.forEach(({ pwd, fromWhere }) => {
-    message += `\n- ${listRef(fromWhere, pwd)}`;
-  });
-  return message;
+  const header = `✅ Found ${type}: \`${name}\` in:`;
+  return mg.reduce(
+    (acc, { pwd, fromWhere }) => acc + `\n- ${listRef(fromWhere, pwd)}`,
+    header
+  );
 }
 
 type ReferenceNotFound = {
@@ -69,15 +69,16 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
 
   if (mg.length === 1) {
     const { name, pwd, fromWhere, suggestion } = mg[0];
-    return  `🤷‍♂️ \`${name}\` not found. Did you mean \`${suggestion}\`? (From ${individualRef(fromWhere, pwd)})`;
+    return `🤷‍♂️ \`${name}\` not found. Did you mean \`${suggestion}\`? (From ${individualRef(fromWhere, pwd)})`;
   }
 
   const { name } = mg[0];
-  let message = `🤷‍♂️ \`${name}\` not found.`;
-  mg.forEach(({ pwd, fromWhere, suggestion }, i) => {
-    message += `\n- Did you mean \`${suggestion}\`? (From ${listRef(fromWhere, pwd)})`;
-  });
-  return message;
+  const header = `🤷‍♂️ \`${name}\` not found.`;
+  return mg.reduce(
+    (acc, { pwd, fromWhere, suggestion }) =>
+      acc + `\n- Did you mean \`${suggestion}\`? (From ${listRef(fromWhere, pwd)})`,
+    header
+  );
 }
 
 type SubItemFound = {
@@ -99,11 +100,11 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
   }
 
   const { subType, mainType, subName, mainName } = mg[0];
-  let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\` in:`;
-  mg.forEach(({ pwd, fromWhere }) => {
-    message += `\n- ${listRef(fromWhere, pwd)}`;
-  });
-  return message;
+  let header = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\` in:`;
+  return mg.reduce(
+    (acc, { pwd, fromWhere }) => acc + `\n- ${listRef(fromWhere, pwd)}`,
+    header
+  );
 }
 
 type SubItemNotFound = {
@@ -126,11 +127,12 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
   }
 
   const { subType, subName, mainType, mainName } = mg[0];
-  let message = `🤷‍♂️ _${subType}_: \`${subName}\` not found in:`;
-  mg.forEach(({ pwd, fromWhere, suggestion }) => {
-    message += `\n- _${mainType}_: \`${mainName}\` ${listRef(fromWhere, pwd)}.\\\nDid you mean \`${suggestion}\`?`;
-  });
-  return message;
+  let header = `🤷‍♂️ _${subType}_: \`${subName}\` not found in:`;
+  return mg.reduce(
+    (acc, { pwd, fromWhere, suggestion }) =>
+      acc + `\n- _${mainType}_: \`${mainName}\` ${listRef(fromWhere, pwd)}.\\\nDid you mean \`${suggestion}\`?`,
+    header
+  );
 }
 
 function getRelativePath(path: string, pwd: string): string {
@@ -153,11 +155,11 @@ function getRelativePath(path: string, pwd: string): string {
 
 function individualRef(fromWhere: FromWhere, pwd: string): string {
   const { place } = fromWhere;
-  
+
   if (place === "cluster") {
-    return `in Cluster (_${(fromWhere).context}_)`;
+    return `in Cluster (_${fromWhere.context}_)`;
   }
-  
+
   if (place === "workspace") {
     return `in ${link(fromWhere, pwd)}`;
   }
@@ -169,15 +171,15 @@ function individualRef(fromWhere: FromWhere, pwd: string): string {
 
 function listRef(fromWhere: FromWhere, pwd: string): string {
   const { place } = fromWhere;
-  
+
   if (place === "cluster") {
     return `Cluster (_${fromWhere.context}_)`;
   }
-  
+
   if (place === "kustomize" || place === "helm") {
     return `${link(fromWhere, pwd)} (_${capitalize(fromWhere.place)}_)`;
   }
-  
+
   return link(fromWhere, pwd);
 }
 

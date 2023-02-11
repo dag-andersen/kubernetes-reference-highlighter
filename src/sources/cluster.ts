@@ -1,5 +1,5 @@
 import { CoreV1Api, KubeConfig } from "@kubernetes/client-node";
-import { Cluster, K8sResource } from "../types";
+import { K8sResource } from "../types";
 
 export type ClusterClient = {
   k8sApi: CoreV1Api;
