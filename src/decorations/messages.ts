@@ -42,13 +42,13 @@ function generateFoundMessage(mg: ReferenceFound[]): string {
   }
   if (mg.length === 1) {
     const { type, name, pwd, fromWhere } = mg[0];
-    return `✅ Found ${type}: \`${name}\` ${individualRef(fromWhere, pwd)}`;
+    return `✅ Found ${i(type)}: ${c(name)} ${individualRef(fromWhere, pwd)}`;
   }
 
   const type = mg[0].type;
   const name = mg[0].name;
 
-  const header = `✅ Found ${type}: \`${name}\` in:`;
+  const header = `✅ Found ${i(type)}: ${c(name)} in:`;
   return mg.reduce(
     (acc, { pwd, fromWhere }) => acc + `\n- ${listRef(fromWhere, pwd)}`,
     header
@@ -69,14 +69,14 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
 
   if (mg.length === 1) {
     const { name, pwd, fromWhere, suggestion } = mg[0];
-    return `🤷‍♂️ \`${name}\` not found. Did you mean \`${suggestion}\`? (From ${individualRef(fromWhere, pwd)})`;
+    return `🤷‍♂️ ${c(name)} not found. Did you mean ${c(suggestion)}? (From ${individualRef(fromWhere, pwd)})`;
   }
 
   const { name } = mg[0];
-  const header = `🤷‍♂️ \`${name}\` not found.`;
+  const header = `🤷‍♂️ ${c(name)} not found.`;
   return mg.reduce(
     (acc, { pwd, fromWhere, suggestion }) =>
-      acc + `\n- Did you mean \`${suggestion}\`? (From ${listRef(fromWhere, pwd)})`,
+      acc + `\n- Did you mean ${c(suggestion)}? (From ${listRef(fromWhere, pwd)})`,
     header
   );
 }
@@ -96,11 +96,11 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
   }
   if (mg.length === 1) {
     const { subType, mainType, subName, mainName, pwd, fromWhere } = mg[0];
-    return `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\` ${individualRef(fromWhere, pwd)}`;
+    return `✅ Found ${i(subType)}: ${c(subName)} in ${i(mainType)}: ${c(mainName)} ${individualRef(fromWhere, pwd)}`;
   }
 
   const { subType, mainType, subName, mainName } = mg[0];
-  const header = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\` in:`;
+  const header = `✅ Found ${i(subType)}: ${c(subName)} in ${i(mainType)}: ${c(mainName)} in:`;
   return mg.reduce(
     (acc, { pwd, fromWhere }) => acc + `\n- ${listRef(fromWhere, pwd)}`,
     header
@@ -123,14 +123,14 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
   }
   if (mg.length === 1) {
     const { subType, pwd, subName, mainType, fromWhere, suggestion, mainName } = mg[0];
-    return `🤷‍♂️ _${subType}_: \`${subName}\` not found in _${mainType}_: \`${mainName}\` ${individualRef(fromWhere, pwd)}.\\\nDid you mean \`${suggestion}\`?`;
+    return `🤷‍♂️ ${i(subType)}: ${c(subName)} not found in ${i(mainType)}: ${c(mainName)} ${individualRef(fromWhere, pwd)}.\\\nDid you mean ${i(subType)}: ${c(suggestion)}?`;
   }
 
   const { subType, subName, mainType, mainName } = mg[0];
-  const header = `🤷‍♂️ _${subType}_: \`${subName}\` not found in:`;
+  const header = `🤷‍♂️ ${i(subType)}: ${c(subName)} is ***not*** in:`;
   return mg.reduce(
     (acc, { pwd, fromWhere, suggestion }) =>
-      acc + `\n- _${mainType}_: \`${mainName}\` ${listRef(fromWhere, pwd)}.\\\nDid you mean \`${suggestion}\`?`,
+      acc + `\n- ${i(mainType)}: ${c(mainName)} found ${individualRef(fromWhere, pwd)}.\\\nDid you mean ${i(subType)}: ${c(suggestion)}?`,
     header
   );
 }
@@ -157,14 +157,14 @@ function individualRef(fromWhere: FromWhere, pwd: string): string {
   const { place } = fromWhere;
 
   if (place === "cluster") {
-    return `in Cluster (_${fromWhere.context}_)`;
+    return `in Cluster (${c(fromWhere.context)})`;
   }
 
   if (place === "workspace") {
     return `in ${link(fromWhere, pwd)}`;
   }
   if (place === "kustomize" || place === "helm") {
-    return `with _${capitalize(place)}_ at ${link(fromWhere, pwd)}`;
+    return `with ${i(capitalize(place))} at ${link(fromWhere, pwd)}`;
   }
   return "Error";
 }
@@ -173,11 +173,11 @@ function listRef(fromWhere: FromWhere, pwd: string): string {
   const { place } = fromWhere;
 
   if (place === "cluster") {
-    return `Cluster (_${fromWhere.context}_)`;
+    return `Cluster (${i(fromWhere.context)})`;
   }
 
   if (place === "kustomize" || place === "helm") {
-    return `${link(fromWhere, pwd)} (_${capitalize(fromWhere.place)}_)`;
+    return `${link(fromWhere, pwd)} (${i(capitalize(fromWhere.place))})`;
   }
 
   return link(fromWhere, pwd);
@@ -199,3 +199,6 @@ function link(local: Local, pwd: string): string {
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+const c = (s: string): string => `\`${s}\``;
+const i = (s: string): string => `_${s}_`;
