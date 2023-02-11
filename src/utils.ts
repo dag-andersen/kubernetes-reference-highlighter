@@ -4,7 +4,6 @@ import {
   DecorationOptions,
   MarkdownString,
   Position,
-  Range,
   window,
 } from "vscode";
 
@@ -16,11 +15,11 @@ let deco = window.createTextEditorDecorationType({
   },
 });
 
-export function logTextTextReset() {
+export function logTextReset() {
   log.length = 0;
 }
 
-export function logTextText(input: any, line: number = 0) {
+export function logText(input: any, line: number = 0) {
   const editor = window.activeTextEditor;
   if (!editor) {
     return;
@@ -39,9 +38,12 @@ export function logTextText(input: any, line: number = 0) {
     message += element;
   });
 
+  let markdown = new MarkdownString(message);
+  markdown.isTrusted = true;
+
   let decoration: DecorationOptions = {
     range: new vscode.Range(end, end),
-    hoverMessage: new MarkdownString(message),
+    hoverMessage: markdown,
     renderOptions: {
       after: {
         contentText: "🐞",

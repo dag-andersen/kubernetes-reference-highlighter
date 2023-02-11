@@ -3,7 +3,7 @@ import { K8sResource, Highlight } from "../types";
 export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
-  activeFilePath: string,
+  pwd: string,
   text: string
 ): Highlight[] {
   if (thisResource.kind === "Ingress" || thisResource.kind === "Service") {
@@ -28,7 +28,7 @@ export function find(
         return {
           start: start,
           type: "reference",
-          message: { type: refType, name, activeFilePath, fromWhere: r.where },
+          message: { type: refType, name, pwd, fromWhere: r.where },
         };
       });
     });

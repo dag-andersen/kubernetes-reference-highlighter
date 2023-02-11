@@ -7,7 +7,7 @@ import {
   Position,
   TextDocument,
 } from "vscode";
-import { generateMessage, Message } from "./Messages";
+import { generateMessage, Message } from "./messages";
 import { Highlight, HighLightType } from "./types";
 
 let deco = window.createTextEditorDecorationType({
@@ -41,6 +41,7 @@ export function highlightsToDecorations(
 
   const grouped: Deco[] = [];
   decorations
+    .sort((a, b) => a.highlight.type > b.highlight.type ? 1 : -1)
     .sort((a, b) => b.position.line - a.position.line)
     .forEach((current, index) => {
       const previous = decorations[index - 1];
@@ -89,9 +90,12 @@ export function getDecoration(
       break;
   }
 
+  const markdown = new MarkdownString(message);
+  markdown.isTrusted = true;
+
   let decoration: DecorationOptions = {
     range: new Range(posIndex, posIndex),
-    hoverMessage: new MarkdownString(message),
+    hoverMessage: markdown,
     renderOptions: {
       after: {
         contentText: i,

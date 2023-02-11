@@ -11,8 +11,9 @@ import * as service from "./finders/service";
 
 import { K8sResource } from "./types";
 import { parse } from "yaml";
-import { loadPreferences, Prefs, updateConfigurationKey } from "./Prefs";
+import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decoration";
+import { logText } from "./utils";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
@@ -22,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
     'Congratulations, extension "Kubernetes Reference Highlighter" is now active!'
   );
 
-  let k8sApi = cluster.getKubeClient();
+  let clusterClient = cluster.getKubeClient();
 
   let kubeResourcesCluster: K8sResource[] = [];
   let kubeResourcesWorkspace: K8sResource[] = [];
@@ -45,8 +46,8 @@ export function activate(context: vscode.ExtensionContext) {
   const enableClusterScanningCommand = vscode.commands.registerCommand(
     "kubernetes-reference-highlighter.enableClusterScanning",
     () => {
-      k8sApi = cluster.getKubeClient();
-      if (k8sApi) {
+      clusterClient = cluster.getKubeClient();
+      if (clusterClient) {
         prefs.clusterScanning = !prefs.clusterScanning;
         updateConfigurationKey("enableClusterScanning", prefs.clusterScanning);
         vscode.window.showInformationMessage(
@@ -145,7 +146,7 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   const updateK8sResourcesFromCluster = async () => {
-    kubeResourcesCluster = k8sApi && prefs.clusterScanning ? await cluster.getClusterResources(k8sApi) : [];
+    kubeResourcesCluster = clusterClient && prefs.clusterScanning ? await cluster.getClusterResources(clusterClient) : [];
   };
 
   const updateResources = () => {
@@ -228,7 +229,7 @@ export function getAllFileNamesInDirectory(dirPath: string) {
   return files;
 }
 
-export function textToK8sResource(text: string): K8sResource {
+export function textToK8sResource(text: string) {
   const yml = parse(text);
   return {
     kind: yml.kind,
@@ -280,7 +281,11 @@ function updateHighlighting(
           let thisResource: K8sResource;
 
           try {
-            thisResource = textToK8sResource(textSplit);
+            thisResource = {
+              ...textToK8sResource(textSplit),
+              where: { place: "workspace", path: fileName },
+            };
+
           } catch (e) {
             currentIndex += textSplit.length + split.length;
             return [];
