@@ -53,9 +53,10 @@ function kustomizeBuild(file: string): K8sResource[] {
   const split = output.split("---");
   return split.flatMap((text) => {
     try {
-      const r = textToK8sResource(text);
-      r.where = { place: "kustomize", path: file };
-      return r;
+      return {
+        ...textToK8sResource(text),
+        where: { place: "kustomize", path: file },
+      };
     } catch (e) {}
     return [];
   });

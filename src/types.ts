@@ -21,5 +21,5 @@ export type K8sResource = {
   };
   spec?: any;
   data?: any;
-  where?: FromWhere;
+  where: FromWhere;
 };

@@ -30,7 +30,7 @@ type ReferenceFound = {
   type: string;
   name: string;
   pwd: string;
-  fromWhere?: FromWhere;
+  fromWhere: FromWhere;
 };
 
 function generateFoundMessage(mg: ReferenceFound[]): string {
@@ -67,7 +67,7 @@ type ReferenceNotFound = {
   name: string;
   suggestion: string;
   pwd: string;
-  fromWhere?: FromWhere;
+  fromWhere: FromWhere;
 };
 
 function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
@@ -102,7 +102,7 @@ type SubItemFound = {
   subName: string;
   mainName: string;
   pwd: string;
-  fromWhere?: FromWhere;
+  fromWhere: FromWhere;
 };
 function generateSubItemFoundMessage(mg: SubItemFound[]): string {
   if (mg.length === 0) {
@@ -139,7 +139,7 @@ type SubItemNotFound = {
   mainName: string;
   suggestion: string;
   pwd: string;
-  fromWhere?: FromWhere;
+  fromWhere: FromWhere;
 };
 
 function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
@@ -149,9 +149,7 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
   if (mg.length === 1) {
     const { subType, pwd, subName, mainType, fromWhere, suggestion, mainName } = mg[0];
     let message = `🤷‍♂️ _${subType}_: \`${subName}\` not found in _${mainType}_: \`${mainName}\``;
-    if (fromWhere) {
       message += ` ${individualRef(fromWhere, pwd)}`;
-    }
     return message + `.\\\nDid you mean \`${suggestion}\`?`;
   }
 
@@ -163,9 +161,7 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
     }
     message += "\n";
     const { pwd, fromWhere, suggestion } = mg;
-    if (fromWhere) {
       message += `- _${mainType}_: \`${mainName}\` ${listRef(fromWhere, pwd)}`;
-    }
     message += `.\\\nDid you mean \`${suggestion}\`?`;
   });
   return message;

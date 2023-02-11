@@ -229,7 +229,7 @@ export function getAllFileNamesInDirectory(dirPath: string) {
   return files;
 }
 
-export function textToK8sResource(text: string): K8sResource {
+export function textToK8sResource(text: string) {
   const yml = parse(text);
   return {
     kind: yml.kind,
@@ -281,7 +281,11 @@ function updateHighlighting(
           let thisResource: K8sResource;
 
           try {
-            thisResource = textToK8sResource(textSplit);
+            thisResource = {
+              ...textToK8sResource(textSplit),
+              where: { place: "workspace", path: fileName },
+            };
+
           } catch (e) {
             currentIndex += textSplit.length + split.length;
             return [];
