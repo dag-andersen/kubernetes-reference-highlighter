@@ -12,7 +12,7 @@ export function find(
     return [];
   }
 
-  let refType = "Service";
+  const refType = "Service";
   const regex =
     /service:\s*(?:name:\s*([a-zA-Z-]+)\s*port:\s*(number|name):\s*(\d+|[a-zA-Z-]+)|port:\s*(number|name):\s*(\d+|[a-zA-Z-]+)\s*name:\s*([a-zA-Z-]+))/gm;
   const matches = text.matchAll(regex);
@@ -34,14 +34,14 @@ export function find(
 
     const { start, end } = getPositions(match, name);
 
-    let resourcesScoped = resources
+    const resourcesScoped = resources
       .filter((r) => r.kind === refType)
       .filter((r) => r.metadata.namespace === thisResource.metadata.namespace);
 
     var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
     if (exactMatches.length > 0) {
       return exactMatches.flatMap((r) => {
-        let nameHighlight: Highlight = {
+        const nameHighlight: Highlight = {
           start: start,
           type: "reference",
           message: { type: refType, name, pwd, fromWhere: r.where },
@@ -51,7 +51,7 @@ export function find(
           (portType === "number"  && r.spec?.ports?.find((p: any) => p?.port === parseInt(portRef))) ||
           (portType === "name"    && r.spec?.ports?.find((p: any) => p?.name === portRef))
         ) {
-          let portHighlight: Highlight = {
+          const portHighlight: Highlight = {
             ...getPositions(match, portRef),
             type: "reference",
             message: {
@@ -91,16 +91,16 @@ export function find(
           }
 
           if (portType === "number") {
-            let ports: string[] = r.spec?.ports?.map((p: any) => "" + p?.port) || [];
-            let portSuggestion: Highlight[] = getPortSimilarities(ports, 0.5);
+            const ports: string[] = r.spec?.ports?.map((p: any) => "" + p?.port) || [];
+            const portSuggestion: Highlight[] = getPortSimilarities(ports, 0.5);
             if (portSuggestion.length > 0) {
               return [nameHighlight, ...portSuggestion];
             }
           }
 
           if (portType === "name") {
-            let ports: string[] = r.spec?.ports?.map((p: any) => p?.name) || [];
-            let portSuggestion: Highlight[] = getPortSimilarities(ports, 0.8);
+            const ports: string[] = r.spec?.ports?.map((p: any) => p?.name) || [];
+            const portSuggestion: Highlight[] = getPortSimilarities(ports, 0.8);
             if (portSuggestion.length > 0) {
               return [nameHighlight, ...portSuggestion];
             }

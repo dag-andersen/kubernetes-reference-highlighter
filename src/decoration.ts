@@ -10,7 +10,7 @@ import {
 import { generateMessage, Message } from "./messages";
 import { Highlight, HighLightType } from "./types";
 
-let deco = window.createTextEditorDecorationType({
+const deco = window.createTextEditorDecorationType({
   after: {
     margin: "2em",
   },
@@ -32,7 +32,7 @@ export function highlightsToDecorations(
   highlights: Highlight[],
   shift: number
 ): DecorationOptions[] {
-  let decorations = highlights.map((highlight) => {
+  const decorations = highlights.map((highlight) => {
     return {
       position: doc.lineAt(doc.positionAt(highlight.start + shift)).range.end,
       highlight: highlight,
@@ -64,7 +64,7 @@ export function highlightsToDecorations(
     });
 
   return grouped.map((d) => {
-    let message = generateMessage(d.message);
+    const message = generateMessage(d.message);
     return getDecoration(message, d.highLightType, d.position);
   });
 }
@@ -74,26 +74,12 @@ export function getDecoration(
   icon: HighLightType,
   posIndex: Position
 ): DecorationOptions {
-  let i = "";
-  switch (icon) {
-    case "success":
-      i = "✅";
-      break;
-    case "error":
-      i = "❌";
-      break;
-    case "hint":
-      i = "🤷‍♂️";
-      break;
-    case "reference":
-      i = "🔗";
-      break;
-  }
+  const i = getEmoji(icon);
 
   const markdown = new MarkdownString(message);
   markdown.isTrusted = true;
 
-  let decoration: DecorationOptions = {
+  const decoration: DecorationOptions = {
     range: new Range(posIndex, posIndex),
     hoverMessage: markdown,
     renderOptions: {
@@ -104,4 +90,17 @@ export function getDecoration(
   };
 
   return decoration;
+}
+
+function getEmoji(highLightType: HighLightType) {
+  switch (highLightType) {
+    case "success":
+      return "✅";
+    case "error":
+      return "❌";
+    case "hint":
+      return "🤷‍♂️";
+    case "reference":
+      return "🔗";
+  }
 }

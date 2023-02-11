@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
     ].flat();
   };
 
-  let prefs = loadPreferences();
+  const prefs = loadPreferences();
 
   const enableClusterScanningCommand = vscode.commands.registerCommand(
     "kubernetes-reference-highlighter.enableClusterScanning",
@@ -206,8 +206,6 @@ export function getAllFileNamesInDirectory(dirPath: string) {
   const fs = require("fs");
   const path = require("path");
 
-  let files: string[] = [];
-
   function walkSync(dir: string, fileList: string[]) {
     const files = fs.readdirSync(dir);
     files.forEach((file: string) => {
@@ -221,7 +219,7 @@ export function getAllFileNamesInDirectory(dirPath: string) {
     return fileList;
   }
 
-  files = walkSync(dirPath, files).filter((file: string) => {
+  const files = walkSync(dirPath, []).filter((file: string) => {
     return file.endsWith(".yml") || file.endsWith(".yaml");
   });
 
@@ -262,11 +260,6 @@ function updateHighlighting(
 
   const fileText = doc.getText();
 
-  // if (fileText === lastDocumentChanged) {
-  //   return;
-  // }
-  // lastDocumentChanged = fileText;
-
   const split = "---";
 
   const fileTextSplitted = fileText.split(split);
@@ -284,7 +277,6 @@ function updateHighlighting(
               ...textToK8sResource(textSplit),
               where: { place: "workspace", path: fileName },
             };
-
           } catch (e) {
             currentIndex += textSplit.length + split.length;
             return [];
@@ -343,7 +335,7 @@ function updateHighlighting(
             );
           }
 
-          let decorations = highlightsToDecorations(doc, highlights, currentIndex);
+          const decorations = highlightsToDecorations(doc, highlights, currentIndex);
 
           currentIndex += textSplit.length + split.length;
           decorations.sort(

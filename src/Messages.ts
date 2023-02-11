@@ -25,7 +25,7 @@ export function generateMessage(mg: Message[]): string {
   } else if (mg.every((m) => "subType" in m)) {
     return generateSubItemFoundMessage(mg as SubItemFound[]);
   }
-  let mes = mg as DefaultMessage[];
+  const mes = mg as DefaultMessage[];
   return mes.map((m) => m.content).join("\\\n");
 }
 
@@ -100,7 +100,7 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
   }
 
   const { subType, mainType, subName, mainName } = mg[0];
-  let header = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\` in:`;
+  const header = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\` in:`;
   return mg.reduce(
     (acc, { pwd, fromWhere }) => acc + `\n- ${listRef(fromWhere, pwd)}`,
     header
@@ -127,7 +127,7 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
   }
 
   const { subType, subName, mainType, mainName } = mg[0];
-  let header = `🤷‍♂️ _${subType}_: \`${subName}\` not found in:`;
+  const header = `🤷‍♂️ _${subType}_: \`${subName}\` not found in:`;
   return mg.reduce(
     (acc, { pwd, fromWhere, suggestion }) =>
       acc + `\n- _${mainType}_: \`${mainName}\` ${listRef(fromWhere, pwd)}.\\\nDid you mean \`${suggestion}\`?`,

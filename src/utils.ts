@@ -7,9 +7,9 @@ import {
   window,
 } from "vscode";
 
-let log: string[] = [];
+const log: string[] = [];
 
-let deco = window.createTextEditorDecorationType({
+const deco = window.createTextEditorDecorationType({
   after: {
     margin: "2em",
   },
@@ -27,21 +27,14 @@ export function logText(input: any, line: number = 0) {
 
   log.push(format(input));
 
-  let end = editor.document.lineAt(new Position(line, 0)).range.end;
+  const end = editor.document.lineAt(new Position(line, 0)).range.end;
 
-  let message = "";
+  const message = log.join("\\\n");
 
-  log.forEach((element, index) => {
-    if (index > 0) {
-      message += "\\\n";
-    }
-    message += element;
-  });
-
-  let markdown = new MarkdownString(message);
+  const markdown = new MarkdownString(message);
   markdown.isTrusted = true;
 
-  let decoration: DecorationOptions = {
+  const decoration: DecorationOptions = {
     range: new vscode.Range(end, end),
     hoverMessage: markdown,
     renderOptions: {
