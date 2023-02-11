@@ -13,6 +13,9 @@ export type Message =
   | DefaultMessage;
 
 export function generateMessage(mg: Message[]): string {
+  if (mg.length === 0) {
+    return "Error";
+  }
   if (mg.every((m) => "type" in m)) {
     return generateFoundMessage(mg as ReferenceFound[]);
   } else if (mg.every((m) => "suggestion" in m && "subType" in m)) {
@@ -23,7 +26,7 @@ export function generateMessage(mg: Message[]): string {
     return generateSubItemFoundMessage(mg as SubItemFound[]);
   }
   let mes = mg as DefaultMessage[];
-  return mes.reduce((acc, m) => acc + m.content + "\\\n", "");
+  return mes.map((m) => m.content).join("\\\n");
 }
 
 type ReferenceFound = {
@@ -39,26 +42,15 @@ function generateFoundMessage(mg: ReferenceFound[]): string {
   }
   if (mg.length === 1) {
     const { type, name, pwd, fromWhere } = mg[0];
-    let message = `✅ Found ${type}: \`${name}\``;
-    if (fromWhere) {
-      message += ` ${individualRef(fromWhere, pwd)}`;
-    }
-    return message;
+    return `✅ Found ${type}: \`${name}\` ${individualRef(fromWhere, pwd)}`;
   }
 
   const type = mg[0].type;
   const name = mg[0].name;
 
-  let message = `✅ Found ${type}: \`${name}\``;
-  mg.forEach((mg, i) => {
-    if (i === 0) {
-      message += " in:";
-    }
-    message += "\n";
-    const { pwd, fromWhere } = mg;
-    if (fromWhere) {
-      message += `- ${listRef(fromWhere, pwd)}`;
-    }
+  let message = `✅ Found ${type}: \`${name}\` in:`;
+  mg.forEach(({ pwd, fromWhere }) => {
+    message += `\n- ${listRef(fromWhere, pwd)}`;
   });
   return message;
 }
@@ -77,21 +69,13 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
 
   if (mg.length === 1) {
     const { name, pwd, fromWhere, suggestion } = mg[0];
-    let message = `🤷‍♂️ \`${name}\` not found. Did you mean \`${suggestion}\`?`;
-    if (fromWhere) {
-      message += ` (From ${individualRef(fromWhere, pwd)})`;
-    }
-    return message;
+    return  `🤷‍♂️ \`${name}\` not found. Did you mean \`${suggestion}\`? (From ${individualRef(fromWhere, pwd)})`;
   }
 
   const { name } = mg[0];
   let message = `🤷‍♂️ \`${name}\` not found.`;
-  mg.forEach((mg, i) => {
-    message += "\n";
-    const { pwd, fromWhere, suggestion } = mg;
-    if (fromWhere) {
-      message += `- Did you mean \`${suggestion}\`? (From ${listRef(fromWhere, pwd)})`;
-    }
+  mg.forEach(({ pwd, fromWhere, suggestion }, i) => {
+    message += `\n- Did you mean \`${suggestion}\`? (From ${listRef(fromWhere, pwd)})`;
   });
   return message;
 }
@@ -104,30 +88,20 @@ type SubItemFound = {
   pwd: string;
   fromWhere: FromWhere;
 };
+
 function generateSubItemFoundMessage(mg: SubItemFound[]): string {
   if (mg.length === 0) {
     return "Error";
   }
   if (mg.length === 1) {
     const { subType, mainType, subName, mainName, pwd, fromWhere } = mg[0];
-    let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
-    if (fromWhere) {
-      message += ` ${individualRef(fromWhere, pwd)}`;
-    }
-    return message;
+    return `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\` ${individualRef(fromWhere, pwd)}`;
   }
 
   const { subType, mainType, subName, mainName } = mg[0];
-  let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\``;
-  mg.forEach((mg, i) => {
-    if (i === 0) {
-      message += " in:";
-    }
-    message += "\n";
-    const { pwd, fromWhere } = mg;
-    if (fromWhere) {
-      message += `- ${listRef(fromWhere, pwd)}`;
-    }
+  let message = `✅ Found ${subType}: \`${subName}\` in ${mainType}: \`${mainName}\` in:`;
+  mg.forEach(({ pwd, fromWhere }) => {
+    message += `\n- ${listRef(fromWhere, pwd)}`;
   });
   return message;
 }
@@ -148,21 +122,13 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
   }
   if (mg.length === 1) {
     const { subType, pwd, subName, mainType, fromWhere, suggestion, mainName } = mg[0];
-    let message = `🤷‍♂️ _${subType}_: \`${subName}\` not found in _${mainType}_: \`${mainName}\``;
-      message += ` ${individualRef(fromWhere, pwd)}`;
-    return message + `.\\\nDid you mean \`${suggestion}\`?`;
+    return `🤷‍♂️ _${subType}_: \`${subName}\` not found in _${mainType}_: \`${mainName}\` ${individualRef(fromWhere, pwd)}.\\\nDid you mean \`${suggestion}\`?`;
   }
 
   const { subType, subName, mainType, mainName } = mg[0];
-  let message = `🤷‍♂️ _${subType}_: \`${subName}\` not found`;
-  mg.forEach((mg, i) => {
-    if (i === 0) {
-      message += " in:";
-    }
-    message += "\n";
-    const { pwd, fromWhere, suggestion } = mg;
-      message += `- _${mainType}_: \`${mainName}\` ${listRef(fromWhere, pwd)}`;
-    message += `.\\\nDid you mean \`${suggestion}\`?`;
+  let message = `🤷‍♂️ _${subType}_: \`${subName}\` not found in:`;
+  mg.forEach(({ pwd, fromWhere, suggestion }) => {
+    message += `\n- _${mainType}_: \`${mainName}\` ${listRef(fromWhere, pwd)}.\\\nDid you mean \`${suggestion}\`?`;
   });
   return message;
 }
@@ -189,11 +155,11 @@ function individualRef(fromWhere: FromWhere, pwd: string): string {
   if (typeof fromWhere === "string") {
     return `in ${fromWhere}`;
   }
-  const { place, path } = fromWhere;
+  const { place } = fromWhere;
   if (place === "workspace") {
     return `in ${link(fromWhere, pwd)}`;
   }
-  if (place === "helm" || place === "kustomize") {
+  if (place === "kustomize" || place === "helm") {
     return `with _${capitalize(place)}_ at ${link(fromWhere, pwd)}`;
   }
   return "Error";

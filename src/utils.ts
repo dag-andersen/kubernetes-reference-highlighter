@@ -4,7 +4,6 @@ import {
   DecorationOptions,
   MarkdownString,
   Position,
-  Range,
   window,
 } from "vscode";
 
