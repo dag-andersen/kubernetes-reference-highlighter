@@ -155,7 +155,7 @@ function individualRef(fromWhere: FromWhere, pwd: string): string {
   const { place } = fromWhere;
   
   if (place === "cluster") {
-    return `in Cluster (_${(fromWhere as Cluster).context}_)`;
+    return `in Cluster (_${(fromWhere).context}_)`;
   }
   
   if (place === "workspace") {
@@ -171,7 +171,7 @@ function listRef(fromWhere: FromWhere, pwd: string): string {
   const { place } = fromWhere;
   
   if (place === "cluster") {
-    return `Cluster (_${(fromWhere as Cluster).context}_)`;
+    return `Cluster (_${fromWhere.context}_)`;
   }
   
   if (place === "kustomize" || place === "helm") {

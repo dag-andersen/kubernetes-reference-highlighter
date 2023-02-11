@@ -41,6 +41,7 @@ export function highlightsToDecorations(
 
   const grouped: Deco[] = [];
   decorations
+    .sort((a, b) => a.highlight.type > b.highlight.type ? 1 : -1)
     .sort((a, b) => b.position.line - a.position.line)
     .forEach((current, index) => {
       const previous = decorations[index - 1];
