@@ -8,11 +8,11 @@ import {
   TextDocument,
 } from "vscode";
 import { generateMessage, Message } from "./messages";
-import { Highlight, HighLightType } from "./types";
+import { Highlight, HighLightType } from "../types";
 
 const deco = window.createTextEditorDecorationType({
   after: {
-    margin: "2em",
+    margin: "0 0 0 0.5em",
   },
 });
 
@@ -69,7 +69,7 @@ export function highlightsToDecorations(
   });
 }
 
-export function getDecoration(
+function getDecoration(
   message: string,
   icon: HighLightType,
   posIndex: Position

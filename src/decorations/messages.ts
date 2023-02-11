@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { FromWhere, Local } from "./types";
+import { FromWhere, Local } from "../types";
 
 type DefaultMessage = {
   content: string;
