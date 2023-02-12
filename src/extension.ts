@@ -199,6 +199,10 @@ export function activate(context: vscode.ExtensionContext) {
 
   updateResources();
 
+  setInterval(() => {
+    clusterClient = cluster.getKubeClient();
+  }, 1000 * 15);
+
   console.log("Kubernetes Reference Highlighter activated");
 }
 
