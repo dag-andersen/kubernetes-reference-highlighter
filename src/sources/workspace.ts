@@ -1,10 +1,10 @@
-import { K8sResource } from "../types";
 import * as vscode from "vscode";
-import { getAllFileNamesInDirectory, textToK8sResource } from "../extension";
+import { K8sResource } from "../types";
+import { textToK8sResource } from "../extension";
+import { getAllFileNamesInDirectory } from "./util";
+import { readFileSync } from "fs";
 
-// get all kubernetes resource names in folder and subfolders
 export function getK8sResourceNamesInWorkspace(): K8sResource[] {
-  const fs = require("fs");
 
   const workspaceFolders =
     vscode.workspace.workspaceFolders &&
@@ -13,20 +13,27 @@ export function getK8sResourceNamesInWorkspace(): K8sResource[] {
   if (!workspaceFolders) {
     return [];
   }
-
+  
   const files = getAllFileNamesInDirectory(workspaceFolders);
+  const openFiles = vscode.workspace.textDocuments.filter(
+    (doc) => doc.fileName.endsWith(".yaml") || doc.fileName.endsWith(".yml")
+  );
 
-  return files.flatMap((file) => {
-    const fileText: string = fs.readFileSync(file, "utf8");
-    const split = fileText.split("---");
-    return split.flatMap((text) => {
+  const filesToScan = files.map((file) => {
+    // check if file exist in open files
+    const openFile = openFiles.find((openFile) => openFile.fileName === file);
+    return openFile ? { fileName: file, text: openFile.getText() } : { fileName: file, text: readFileSync(file, "utf8") };
+  });
+
+  return filesToScan.flatMap(({ fileName, text }) =>
+    text.split("---").flatMap((text) => {
       try {
         return {
           ...textToK8sResource(text),
-          where: { place: "workspace", path: file },
+          where: { place: "workspace", path: fileName },
         };
       } catch (e) {}
       return [];
-    });
-  });
+    })
+  );
 }

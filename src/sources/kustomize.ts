@@ -1,8 +1,8 @@
 import { Highlight, K8sResource } from "../types";
 import * as vscode from "vscode";
 import { textToK8sResource } from "../extension";
-import { getAllFileNamesInDirectory } from "../extension";
 import { format } from "util";
+import { getAllFileNamesInDirectory } from "./util";
 
 const kustomizeIsInstalled = isKustomizeInstalled();
 const kustomizeCommand = kustomizeIsInstalled

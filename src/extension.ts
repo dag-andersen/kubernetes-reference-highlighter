@@ -17,7 +17,6 @@ import { decorate, highlightsToDecorations } from "./decorations/decoration";
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  
   console.log(
     'Congratulations, extension "Kubernetes Reference Highlighter" is now active!'
   );
@@ -52,14 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage(
           `Cluster Scanning: ${prefs.clusterScanning ? "Enabled" : "Disabled"}`
         );
-        updateK8sResourcesFromCluster().then(() => {
-          updateResources();
-          updateHighlighting(
-            vscode.window.activeTextEditor,
-            prefs,
-            k8sResources
-          );
-        });
+        updateRemoteResources();
       } else {
         vscode.window.showErrorMessage(`Cluster Scanning: Not available`);
       }
@@ -80,7 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
         }`
       );
       updateK8sResourcesFromWorkspace();
-      updateResources();
+      updateLocalResources();
     }
   );
 
@@ -98,7 +90,7 @@ export function activate(context: vscode.ExtensionContext) {
         }`
       );
       updateK8sResourcesFromKustomize();
-      updateResources();
+      updateLocalResources();
     }
   );
 
@@ -117,7 +109,7 @@ export function activate(context: vscode.ExtensionContext) {
         `Helm Scanning: ${prefs.helmScanning ? "Enabled" : "Disabled"}`
       );
       updateK8sResourcesFromHelm;
-      updateResources();
+      updateLocalResources();
     }
   );
 
@@ -148,39 +140,41 @@ export function activate(context: vscode.ExtensionContext) {
     kubeResourcesCluster = clusterClient && prefs.clusterScanning ? await cluster.getClusterResources(clusterClient) : [];
   };
 
-  const updateResources = () => {
+  const updateLocalResources = () => {
     updateK8sResourcesFromWorkspace();
     updateK8sResourcesFromKustomize();
     updateK8sResourcesFromHelm();
 
     reloadK8sResources();
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
+  };
 
-    updateK8sResourcesFromCluster().then(() => {
-      reloadK8sResources();
-      updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
-    });
+  const updateRemoteResources = async () => {
+    await updateK8sResourcesFromCluster();
+    reloadK8sResources();
+    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
   };
 
   const onSave = vscode.workspace.onDidSaveTextDocument((doc) => {
     if (!doc.fileName.endsWith(".yaml") && !doc.fileName.endsWith(".yml")) {
       return;
     }
-    updateResources();
+    debounce();
   });
 
   const onOpen = vscode.workspace.onDidOpenTextDocument((doc) => {
-    reloadK8sResources();
+    debounce();
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
   });
-  
-  const onChange = vscode.workspace.onDidChangeTextDocument((event) =>
-    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources)
-  );
+
+  const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
+    debounce();
+    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
+  });
 
   const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor(
     (editor) => {
-      reloadK8sResources();
+      debounce();
       updateHighlighting(editor, prefs, k8sResources);
     }
   );
@@ -197,33 +191,42 @@ export function activate(context: vscode.ExtensionContext) {
     onOpen
   );
 
-  updateResources();
+  updateLocalResources();
+  updateRemoteResources();
 
-  console.log("Kubernetes Reference Highlighter activated");
-}
-
-export function getAllFileNamesInDirectory(dirPath: string) {
-  const fs = require("fs");
-  const path = require("path");
-
-  function walkSync(dir: string, fileList: string[]) {
-    const files = fs.readdirSync(dir);
-    files.forEach((file: string) => {
-      if (fs.statSync(path.join(dir, file)).isDirectory()) {
-        fileList = walkSync(path.join(dir, file), fileList);
-      } else {
-        fileList.push(path.join(dir, file));
+  // update loop for local resources
+  let readyForNewLocalRefresh = true;
+  let skipThisTime = false;
+  setInterval(() => {
+    if (readyForNewLocalRefresh) {
+      if (skipThisTime) {
+        skipThisTime = false;
+        return;
       }
-    });
+      updateLocalResources();
+      readyForNewLocalRefresh = false; 
+    }
+  }, 1000 * 3);
 
-    return fileList;
+  // Update loop for cluster resources
+  let readyForNewClusterRefresh = true;
+  setInterval(() => {
+    if (readyForNewClusterRefresh) {
+      updateRemoteResources();
+      readyForNewClusterRefresh = false;
+    }
+  }, 1000 * 15);
+
+  // Update loop for cluster client
+  setInterval(() => {
+    clusterClient = cluster.getKubeClient();
+  }, 1000 * 15);
+
+  function debounce() {
+    skipThisTime = true;
+    readyForNewLocalRefresh = true;
+    readyForNewClusterRefresh = true;
   }
-
-  const files = walkSync(dirPath, []).filter((file: string) => {
-    return file.endsWith(".yml") || file.endsWith(".yaml");
-  });
-
-  return files;
 }
 
 export function textToK8sResource(text: string) {
@@ -335,7 +338,11 @@ function updateHighlighting(
             );
           }
 
-          const decorations = highlightsToDecorations(doc, highlights, currentIndex);
+          const decorations = highlightsToDecorations(
+            doc,
+            highlights,
+            currentIndex
+          );
 
           currentIndex += textSplit.length + split.length;
           decorations.sort(
