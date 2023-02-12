@@ -102,5 +102,7 @@ function getEmoji(highLightType: HighLightType) {
       return "🤷‍♂️";
     case "reference":
       return "🔗";
+    case "dirty":
+      return "🧼";
   }
 }

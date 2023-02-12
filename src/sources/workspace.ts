@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { K8sResource } from "../types";
 import { textToK8sResource } from "../extension";
-import { logText } from "../utils";
 import { getAllFileNamesInDirectory } from "./util";
 import { readFileSync } from "fs";
 
@@ -28,7 +27,6 @@ export function getK8sResourceNamesInWorkspace(): K8sResource[] {
 
   return filesToScan.flatMap(({ fileName, text }) =>
     text.split("---").flatMap((text) => {
-      logText(fileName);
       try {
         return {
           ...textToK8sResource(text),
