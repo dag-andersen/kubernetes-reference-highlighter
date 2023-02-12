@@ -9,7 +9,7 @@ export type Local = {
   path: string;
 };
 
-export type HighLightType = "reference" | "hint" | "success" | "error" ;
+export type HighLightType = "reference" | "hint" | "success" | "error" | "dirty" ;
 
 export type Highlight = {
   start: number;

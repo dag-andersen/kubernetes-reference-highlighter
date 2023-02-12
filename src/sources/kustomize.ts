@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import { textToK8sResource } from "../extension";
 import { format } from "util";
 import { getAllFileNamesInDirectory } from "./util";
+import { execSync } from "child_process";
 
 const kustomizeIsInstalled = isKustomizeInstalled();
 const kustomizeCommand = kustomizeIsInstalled
@@ -88,6 +89,10 @@ export function verifyKustomizeBuild(
     return [];
   }
 
+  const isDirty = vscode.workspace.textDocuments.find(
+    (doc) => doc.fileName === filePath
+  )?.isDirty;
+
   const refType = "Kustomization";
 
   const regex = /kind: (Kustomization)/gm;
@@ -98,7 +103,16 @@ export function verifyKustomizeBuild(
 
     const path = filePath.substring(0, filePath.lastIndexOf("/"));
 
-    const execSync = require("child_process").execSync;
+    if (isDirty) {
+      return {
+        message: {
+          content: "🧼 File is dirty - Please save the file first",
+        },
+        type: "dirty",
+        start: start,
+      };
+    }
+
     let output: string = "";
 
     const success = (() => {
