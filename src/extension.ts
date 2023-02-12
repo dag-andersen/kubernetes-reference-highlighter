@@ -13,11 +13,11 @@ import { K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
+import { logText } from "./utils";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  
   console.log(
     'Congratulations, extension "Kubernetes Reference Highlighter" is now active!'
   );
@@ -52,14 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage(
           `Cluster Scanning: ${prefs.clusterScanning ? "Enabled" : "Disabled"}`
         );
-        updateK8sResourcesFromCluster().then(() => {
-          updateResources();
-          updateHighlighting(
-            vscode.window.activeTextEditor,
-            prefs,
-            k8sResources
-          );
-        });
+        updateRemoteResources();
       } else {
         vscode.window.showErrorMessage(`Cluster Scanning: Not available`);
       }
@@ -80,7 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
         }`
       );
       updateK8sResourcesFromWorkspace();
-      updateResources();
+      updateLocalResources();
     }
   );
 
@@ -98,7 +91,7 @@ export function activate(context: vscode.ExtensionContext) {
         }`
       );
       updateK8sResourcesFromKustomize();
-      updateResources();
+      updateLocalResources();
     }
   );
 
@@ -117,7 +110,7 @@ export function activate(context: vscode.ExtensionContext) {
         `Helm Scanning: ${prefs.helmScanning ? "Enabled" : "Disabled"}`
       );
       updateK8sResourcesFromHelm;
-      updateResources();
+      updateLocalResources();
     }
   );
 
@@ -148,39 +141,49 @@ export function activate(context: vscode.ExtensionContext) {
     kubeResourcesCluster = clusterClient && prefs.clusterScanning ? await cluster.getClusterResources(clusterClient) : [];
   };
 
-  const updateResources = () => {
+  const updateLocalResources = () => {
     updateK8sResourcesFromWorkspace();
     updateK8sResourcesFromKustomize();
     updateK8sResourcesFromHelm();
 
     reloadK8sResources();
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
+  };
 
-    updateK8sResourcesFromCluster().then(() => {
-      reloadK8sResources();
-      updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
-    });
+  const updateRemoteResources = async () => {
+    await updateK8sResourcesFromCluster();
+    reloadK8sResources();
+    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
   };
 
   const onSave = vscode.workspace.onDidSaveTextDocument((doc) => {
     if (!doc.fileName.endsWith(".yaml") && !doc.fileName.endsWith(".yml")) {
       return;
     }
-    updateResources();
+    skipThisTime = true;
+    readyForNewLocalRefresh = true;
+    readyForNewClusterRefresh = true;
   });
 
   const onOpen = vscode.workspace.onDidOpenTextDocument((doc) => {
-    reloadK8sResources();
+    skipThisTime = true;
+    readyForNewLocalRefresh = true;
+    readyForNewClusterRefresh = true;
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
   });
-  
-  const onChange = vscode.workspace.onDidChangeTextDocument((event) =>
-    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources)
-  );
+
+  const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
+    skipThisTime = true;
+    readyForNewLocalRefresh = true;
+    readyForNewClusterRefresh = true;
+    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
+  });
 
   const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor(
     (editor) => {
-      reloadK8sResources();
+      skipThisTime = true;
+      readyForNewLocalRefresh = true;
+      readyForNewClusterRefresh = true;
       updateHighlighting(editor, prefs, k8sResources);
     }
   );
@@ -197,13 +200,39 @@ export function activate(context: vscode.ExtensionContext) {
     onOpen
   );
 
-  updateResources();
+  updateLocalResources();
+  updateRemoteResources();
 
+  // update loop for local resources
+  let readyForNewLocalRefresh = true;
+  let skipThisTime = false;
+  setInterval(() => {
+    logText("update loop");
+    if (readyForNewLocalRefresh) {
+      if (skipThisTime) {
+        logText("skipping");
+        skipThisTime = false;
+        return;
+      }
+      logText("Triggering updateLocalResources");
+      updateLocalResources();
+      readyForNewLocalRefresh = false; 
+    }
+  }, 1000 * 2);
+
+  // Update loop for cluster resources
+  let readyForNewClusterRefresh = true;
+  setInterval(() => {
+    if (readyForNewClusterRefresh) {
+      updateRemoteResources();
+      readyForNewClusterRefresh = false;
+    }
+  }, 1000 * 15);
+
+  // Update loop for cluster client
   setInterval(() => {
     clusterClient = cluster.getKubeClient();
   }, 1000 * 15);
-
-  console.log("Kubernetes Reference Highlighter activated");
 }
 
 export function textToK8sResource(text: string) {
@@ -315,7 +344,11 @@ function updateHighlighting(
             );
           }
 
-          const decorations = highlightsToDecorations(doc, highlights, currentIndex);
+          const decorations = highlightsToDecorations(
+            doc,
+            highlights,
+            currentIndex
+          );
 
           currentIndex += textSplit.length + split.length;
           decorations.sort(
