@@ -206,30 +206,6 @@ export function activate(context: vscode.ExtensionContext) {
   console.log("Kubernetes Reference Highlighter activated");
 }
 
-export function getAllFileNamesInDirectory(dirPath: string) {
-  const fs = require("fs");
-  const path = require("path");
-
-  function walkSync(dir: string, fileList: string[]) {
-    const files = fs.readdirSync(dir);
-    files.forEach((file: string) => {
-      if (fs.statSync(path.join(dir, file)).isDirectory()) {
-        fileList = walkSync(path.join(dir, file), fileList);
-      } else {
-        fileList.push(path.join(dir, file));
-      }
-    });
-
-    return fileList;
-  }
-
-  const files = walkSync(dirPath, []).filter((file: string) => {
-    return file.endsWith(".yml") || file.endsWith(".yaml");
-  });
-
-  return files;
-}
-
 export function textToK8sResource(text: string) {
   const yml = parse(text);
   return {
