@@ -13,7 +13,6 @@ import { K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
-import { logText } from "./utils";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
@@ -160,30 +159,22 @@ export function activate(context: vscode.ExtensionContext) {
     if (!doc.fileName.endsWith(".yaml") && !doc.fileName.endsWith(".yml")) {
       return;
     }
-    skipThisTime = true;
-    readyForNewLocalRefresh = true;
-    readyForNewClusterRefresh = true;
+    debounce();
   });
 
   const onOpen = vscode.workspace.onDidOpenTextDocument((doc) => {
-    skipThisTime = true;
-    readyForNewLocalRefresh = true;
-    readyForNewClusterRefresh = true;
+    debounce();
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
   });
 
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
-    skipThisTime = true;
-    readyForNewLocalRefresh = true;
-    readyForNewClusterRefresh = true;
+    debounce();
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
   });
 
   const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor(
     (editor) => {
-      skipThisTime = true;
-      readyForNewLocalRefresh = true;
-      readyForNewClusterRefresh = true;
+      debounce();
       updateHighlighting(editor, prefs, k8sResources);
     }
   );
@@ -207,18 +198,15 @@ export function activate(context: vscode.ExtensionContext) {
   let readyForNewLocalRefresh = true;
   let skipThisTime = false;
   setInterval(() => {
-    logText("update loop");
     if (readyForNewLocalRefresh) {
       if (skipThisTime) {
-        logText("skipping");
         skipThisTime = false;
         return;
       }
-      logText("Triggering updateLocalResources");
       updateLocalResources();
       readyForNewLocalRefresh = false; 
     }
-  }, 1000 * 2);
+  }, 1000 * 3);
 
   // Update loop for cluster resources
   let readyForNewClusterRefresh = true;
@@ -233,6 +221,12 @@ export function activate(context: vscode.ExtensionContext) {
   setInterval(() => {
     clusterClient = cluster.getKubeClient();
   }, 1000 * 15);
+
+  function debounce() {
+    skipThisTime = true;
+    readyForNewLocalRefresh = true;
+    readyForNewClusterRefresh = true;
+  }
 }
 
 export function textToK8sResource(text: string) {
