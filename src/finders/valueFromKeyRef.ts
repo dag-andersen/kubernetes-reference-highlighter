@@ -62,7 +62,13 @@ export function find(
         const nameHighlight: Highlight = {
           start: start,
           type: "reference",
-          message: { type: refType, name, pwd, fromWhere: r.where },
+          message: {
+            type: "ReferenceFound",
+            targetType: refType,
+            targetName: name,
+            pwd,
+            fromWhere: r.where,
+          },
         };
 
         if (r.data[key]) {
@@ -70,6 +76,7 @@ export function find(
             ...getPositions(match, key),
             type: "reference",
             message: {
+              type: "SubItemFound",
               subType: "key",
               mainType: refType,
               subName: key,
@@ -92,6 +99,7 @@ export function find(
                   ...getPositions(match, key),
                   type: "hint",
                   message: {
+                    type: "SubItemNotFound",
                     subType: "key",
                     mainType: refType,
                     subName: key,

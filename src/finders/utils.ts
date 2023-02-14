@@ -27,11 +27,12 @@ export function getSimilarHighlights(
 ): Highlight[] {
   return similarity<K8sResource>(resources, name, (r) => r.metadata.name)
     .filter((r) => r.rating > 0.8)
-    .map((r) => {
+    .map((r): Highlight => {
       return {
         start: start,
         message: {
-          name: name,
+          type: "ReferenceNotFound",
+          targetName: name,
           suggestion: r.content.metadata.name,
           pwd,
           fromWhere: r.content.where,
