@@ -63,10 +63,11 @@ export function highlightsToDecorations(
       }
     });
 
-  return grouped.map((d) => {
-    const message = generateMessage(d.message);
-    return getDecoration(message, d.highLightType, d.position);
-  });
+  return grouped.map((d) => getDecoration(
+      generateMessage(d.message),
+      d.highLightType,
+      d.position
+    ));
 }
 
 function getDecoration(

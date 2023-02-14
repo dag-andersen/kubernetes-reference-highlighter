@@ -1,4 +1,4 @@
-import { V1Service, V1ServiceSpec } from "@kubernetes/client-node";
+import { V1Service } from "@kubernetes/client-node";
 import { K8sResource, Highlight } from "../types";
 import { logText } from "../utils";
 
@@ -21,14 +21,13 @@ export function find(
   }
 
   let match = list[0];
-  const start = (match.index || 0) + 1;
-  //logText(`match: ${JSON.stringify(match)}, stat: ${start}`);
 
-  const refType = "Service";
+  const start = (match.index || 0) + 1;
+
   let resource = thisResource as V1Service;
 
   const selector = resource.spec?.selector;
-  //logText(`hej: ${JSON.stringify(selector)}`);
+  
   if (!selector) {
     return [];
   }
@@ -36,30 +35,26 @@ export function find(
   return resources
     .flatMap((r) => {
       let labels = getPodLabels(r);
-      if (labels && haveSameData(selector, labels)) {
-        logText(`match!: ${JSON.stringify(labels)}`);
+      if (labels && compareLabels(selector, labels)) {
         return { resource: r, labels: labels };
       }
-      logText(`no match`);
       return [];
     })
     .flatMap((r) => {
-      const test: Highlight = {
+      return {
         start: start,
         type: "reference",
         message: {
-          type: refType,
-          name: r.resource.metadata.name,
+          targetName: r.resource.metadata.name,
+          targetType: r.resource.kind,
           pwd,
           fromWhere: r.resource.where,
         },
       };
-      logText(`Found: ${test.type}`);
-      return test;
     });
 }
 
-const haveSameData = function (
+const compareLabels = function (
   obj1: {
     [key: string]: string;
   },

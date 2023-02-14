@@ -10,6 +10,7 @@ export type Message =
   | ReferenceNotFound
   | ReferenceFound
   | SubItemFound
+  | SelectorFound
   | DefaultMessage;
 
 export function generateMessage(mg: Message[]): string {
@@ -24,9 +25,12 @@ export function generateMessage(mg: Message[]): string {
     return generateNotFoundMessage(mg as ReferenceNotFound[]);
   } else if (mg.every((m) => "subType" in m)) {
     return generateSubItemFoundMessage(mg as SubItemFound[]);
+  } else if (mg.every((m) => "targetName" in m)) {
+    return generateSelectorFoundMessage(mg as SelectorFound[]);
+  } else if (mg.every((m) => "content" in m)) {
+    return (mg as DefaultMessage[]).map((m) => m.content).join("\\\n");
   }
-  const mes = mg as DefaultMessage[];
-  return mes.map((m) => m.content).join("\\\n");
+  return "Error";
 }
 
 type ReferenceFound = {
@@ -131,6 +135,30 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
   return mg.reduce(
     (acc, { pwd, fromWhere, suggestion }) =>
       acc + `\n- ${i(mainType)}: ${c(mainName)} found ${individualRef(fromWhere, pwd)}.\\\nDid you mean ${i(subType)}: ${c(suggestion)}?`,
+    header
+  );
+}
+
+type SelectorFound = {
+  targetType: string;
+  targetName: string;
+  pwd: string;
+  fromWhere: FromWhere;
+};
+
+function generateSelectorFoundMessage(mg: SelectorFound[]): string {
+  if (mg.length === 0) {
+    return "Error";
+  }
+  if (mg.length === 1) {
+    const { targetType, targetName, pwd, fromWhere } = mg[0];
+    return `✅ Selector points to: ${i(targetType)}: ${c(targetName)} ${individualRef(fromWhere, pwd)}`;
+  }
+
+  const header = `✅ Points to:`;
+  return mg.reduce(
+    (acc, { targetType, targetName, pwd, fromWhere }) =>
+      acc + `\n- ${i(targetType)}: ${c(targetName)} ${listRef(fromWhere, pwd)}`,
     header
   );
 }
