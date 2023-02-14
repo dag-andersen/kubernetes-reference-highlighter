@@ -7,13 +7,13 @@ import * as kustomize from "./sources/kustomize";
 import * as helm from "./sources/helm";
 import * as valueFromKeyRef from "./finders/valueFromKeyRef";
 import * as ingress from "./finders/ingress";
-import * as service from "./finders/service";
+import * as serviceFreeText from "./finders/serviceFreeText";
+import * as serviceSelector from "./finders/serviceSelector";
 
 import { K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
-import { find } from "./finders/serviceport";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
@@ -287,13 +287,13 @@ function updateHighlighting(
             return [];
           }
 
-          const serviceHighlights = service.find(
+          const serviceHighlights = serviceFreeText.find(
             kubeResources,
             thisResource,
             fileName,
             textSplit
           );
-          const serviceportHighlights = find(
+          const serviceSelectorHighlights = serviceSelector.find(
             kubeResources,
             thisResource,
             fileName,
@@ -316,7 +316,7 @@ function updateHighlighting(
 
           const highlights = [
             ...serviceHighlights,
-            ...serviceportHighlights,
+            ...serviceSelectorHighlights,
             ...valueFromHighlights,
             ...ingressHighlights,
           ];
