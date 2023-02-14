@@ -13,6 +13,7 @@ import { K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
+import { find } from "./finders/serviceport";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
@@ -238,6 +239,7 @@ export function textToK8sResource(text: string) {
     metadata: {
       name: yml.metadata?.name,
       namespace: yml.metadata?.namespace,
+      labels: yml.metadata?.labels,
     },
   };
 }
@@ -291,6 +293,12 @@ function updateHighlighting(
             fileName,
             textSplit
           );
+          const serviceportHighlights = find(
+            kubeResources,
+            thisResource,
+            fileName,
+            textSplit
+          );
           const valueFromHighlights = valueFromKeyRef.find(
             kubeResources,
             thisResource,
@@ -308,6 +316,7 @@ function updateHighlighting(
 
           const highlights = [
             ...serviceHighlights,
+            ...serviceportHighlights,
             ...valueFromHighlights,
             ...ingressHighlights,
           ];

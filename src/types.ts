@@ -23,6 +23,7 @@ export type K8sResource = {
   metadata: {
     name: string;
     namespace: string;
+    labels: { [key: string]: string };
   };
   spec?: any;
   data?: any;
