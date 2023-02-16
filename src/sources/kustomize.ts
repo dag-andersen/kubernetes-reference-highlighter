@@ -106,6 +106,7 @@ export function verifyKustomizeBuild(
     if (isDirty) {
       return {
         message: {
+          type: "DefaultMessage",
           content: "🧼 File is dirty - Please save the file first",
         },
         type: "dirty",
@@ -129,9 +130,8 @@ export function verifyKustomizeBuild(
 
     return {
       message: {
-        content: success
-          ? "✅ Kustomize build succeeded"
-          : "❌ Kustomize build failed - " + output,
+        type: "DefaultMessage",
+        content: success ? "✅ Kustomize build succeeded" : "❌ Kustomize build failed - " + output,
       },
       type: success ? "success" : "error",
       start: start,

@@ -8,11 +8,16 @@ type DefaultMessage = {
 
 export type Message = SubItemNotFound | ReferenceNotFound | ReferenceFound | SubItemFound | SelectorFound | DefaultMessage;
 
-export function generateMessage(mg: Message[]): string {
+export type ExclusiveArray<T extends { type: string }> = {
+  [TType in T["type"]]: Array<T & { type: TType }>;
+}[T["type"]];
+
+export function generateMessage(mg: ExclusiveArray<Message>): string {
   if (mg.length === 0) {
     return "Error";
   }
 
+  /* eslint-disable @typescript-eslint/naming-convention */
   const myMap: Record<Message["type"], () => string> = {
     ReferenceFound: () => generateFoundMessage(mg as ReferenceFound[]),
     SubItemNotFound: () => generateSubItemNotFoundMessage(mg as SubItemNotFound[]),
