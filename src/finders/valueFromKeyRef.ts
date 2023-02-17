@@ -1,6 +1,12 @@
 import { K8sResource, Highlight } from "../types";
 import { getPositions, getSimilarHighlights, similarity } from "./utils";
 
+/*
+  TODO: configMapRef and secretRef are not supported yet
+  TODO: Added `_` to regex 
+  regex to object (?:[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:\.[a-z0-9](?:[-a-z0-9]*[a-z0-9])?)*)
+*/
+
 export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
@@ -23,7 +29,7 @@ export function find(
   }
 
   const regex =
-    /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:(name):\s*([a-zA-Z-]+)\s*(key):\s*([a-zA-Z-]+)|(key):\s*([a-zA-Z-]+)\s*(name):\s*([a-zA-Z-]+))/gm;
+    /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:(name):\s*([a-zA-Z-]+)\s*(key):\s*([a-zA-Z-_]+)|(key):\s*([a-zA-Z-_]+)\s*(name):\s*([a-zA-Z-]+))/gm;
 
   const matches = text.matchAll(regex);
 

@@ -47,6 +47,7 @@ export function find(
           message: { type: "ReferenceFound", targetType, targetName: name, pwd, fromWhere: r.where },
         };
 
+        // PORT REFERENCE
         if (
           (portType === "number" && r.spec?.ports?.find((p: any) => p?.port === parseInt(portRef))) ||
           (portType === "name" && r.spec?.ports?.find((p: any) => p?.name === portRef))

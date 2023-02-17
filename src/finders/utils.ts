@@ -14,9 +14,7 @@ export function similarity<T>(l: T[], name: string, f: (r: T) => string) {
   }
   var similarity = findBestMatch(name, l.map(f));
 
-  return l.map((r, b, _) => {
-    return { content: r, rating: similarity.ratings[b].rating };
-  });
+  return l.map((r, b, _) => ({ content: r, rating: similarity.ratings[b].rating }));
 }
 
 export function getSimilarHighlights(

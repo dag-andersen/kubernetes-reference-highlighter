@@ -6,7 +6,13 @@ type DefaultMessage = {
   content: string;
 };
 
-export type Message = SubItemNotFound | ReferenceNotFound | ReferenceFound | SubItemFound | SelectorFound | DefaultMessage;
+export type Message =
+  | SubItemNotFound
+  | ReferenceNotFound
+  | ReferenceFound
+  | SubItemFound
+  | SelectorFound
+  | DefaultMessage;
 
 export type ExclusiveArray<T extends { type: string }> = {
   [TType in T["type"]]: Array<T & { type: TType }>;
@@ -68,12 +74,12 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
   }
 
   if (mg.length === 1) {
-    const { targetName: name, pwd, fromWhere, suggestion } = mg[0];
-    return `🤷‍♂️ ${c(name)} not found. Did you mean ${c(suggestion)}? (From ${individualRef(fromWhere, pwd)})`;
+    const { targetName, pwd, fromWhere, suggestion } = mg[0];
+    return `🤷‍♂️ ${c(targetName)} not found. Did you mean ${c(suggestion)}? (From ${individualRef(fromWhere, pwd)})`;
   }
 
-  const { targetName: name } = mg[0];
-  const header = `🤷‍♂️ ${c(name)} not found.`;
+  const { targetName } = mg[0];
+  const header = `🤷‍♂️ ${c(targetName)} not found.`;
   return mg.reduce(
     (acc, { pwd, fromWhere, suggestion }) => acc + `\n- Did you mean ${c(suggestion)}? (From ${listRef(fromWhere, pwd)})`,
     header
@@ -154,9 +160,10 @@ function generateSelectorFoundMessage(mg: SelectorFound[]): string {
     return `✅ Selector points to: ${i(targetType)}: ${c(targetName)} ${individualRef(fromWhere, pwd)}`;
   }
 
-  const header = `✅ Points to:`;
+  const header = `✅ Selector points to:`;
   return mg.reduce(
-    (acc, { targetType, targetName, pwd, fromWhere }) => acc + `\n- ${i(targetType)}: ${c(targetName)} ${listRef(fromWhere, pwd)}`,
+    (acc, { targetType, targetName, pwd, fromWhere }) =>
+      acc + `\n- ${i(targetType)}: ${c(targetName)} ${listRef(fromWhere, pwd)}`,
     header
   );
 }
