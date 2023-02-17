@@ -9,6 +9,7 @@ export type Prefs = {
 };
 
 export function loadPreferences(): Prefs {
+  // prettier-ignore
   return {
     workSpaceScanning:  getConfigurationValue("enableWorkSpaceScanning")  ?? true,
     kustomizeScanning:  getConfigurationValue("enableKustomizeScanning")  ?? true,
@@ -18,14 +19,7 @@ export function loadPreferences(): Prefs {
   };
 }
 
-export function updateConfigurationKey(key: string, value: any) {
-  return vscode.workspace
-    .getConfiguration("kubernetesReferenceHighlighter")
-    .update(key, value, true);
-}
+export const updateConfigurationKey = (key: string, value: any) =>
+  vscode.workspace.getConfiguration("kubernetesReferenceHighlighter").update(key, value, true);
 
-export function getConfigurationValue(key: string) {
-  return vscode.workspace
-    .getConfiguration("kubernetesReferenceHighlighter")
-    .get<boolean>(key);
-}
+export const getConfigurationValue = (key: string) => vscode.workspace.getConfiguration("kubernetesReferenceHighlighter").get<boolean>(key);

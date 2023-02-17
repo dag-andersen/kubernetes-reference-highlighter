@@ -111,6 +111,7 @@ export function verifyHelmBuild(
     return {
       start,
       message: {
+        type: "DefaultMessage",
         content: success
           ? "✅ Helm build succeeded"
           : "❌ Helm build failed - " + output,
