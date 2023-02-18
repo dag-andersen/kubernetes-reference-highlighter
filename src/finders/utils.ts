@@ -14,9 +14,7 @@ export function similarity<T>(l: T[], name: string, f: (r: T) => string) {
   }
   var similarity = findBestMatch(name, l.map(f));
 
-  return l.map((r, b, _) => {
-    return { content: r, rating: similarity.ratings[b].rating };
-  });
+  return l.map((r, b, _) => ({ content: r, rating: similarity.ratings[b].rating }));
 }
 
 export function getSimilarHighlights(
@@ -27,11 +25,12 @@ export function getSimilarHighlights(
 ): Highlight[] {
   return similarity<K8sResource>(resources, name, (r) => r.metadata.name)
     .filter((r) => r.rating > 0.8)
-    .map((r) => {
+    .map((r): Highlight => {
       return {
         start: start,
         message: {
-          name: name,
+          type: "ReferenceNotFound",
+          targetName: name,
           suggestion: r.content.metadata.name,
           pwd,
           fromWhere: r.content.where,

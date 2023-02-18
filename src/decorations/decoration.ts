@@ -7,7 +7,7 @@ import {
   Position,
   TextDocument,
 } from "vscode";
-import { generateMessage, Message } from "./messages";
+import { ExclusiveArray, generateMessage, Message } from "./messages";
 import { Highlight, HighLightType } from "../types";
 
 const deco = window.createTextEditorDecorationType({
@@ -20,11 +20,11 @@ export function decorate(editor: TextEditor, decorations: DecorationOptions[]) {
   editor.setDecorations(deco, decorations);
 }
 
-type Deco = {
+type DecorationGroup = {
   ln: number;
-  position: Position;
-  message: Message[];
   highLightType: HighLightType;
+  position: Position;
+  message: ExclusiveArray<Message>;
 };
 
 export function highlightsToDecorations(
@@ -32,18 +32,15 @@ export function highlightsToDecorations(
   highlights: Highlight[],
   shift: number
 ): DecorationOptions[] {
-  const decorations = highlights.map((highlight) => {
-    return {
-      position: doc.lineAt(doc.positionAt(highlight.start + shift)).range.end,
-      highlight: highlight,
-    };
-  });
+  const decorations = highlights.map((highlight) => ({
+    position: doc.lineAt(doc.positionAt(highlight.start + shift)).range.end,
+    highlight: highlight,
+  }));
 
-  const grouped: Deco[] = [];
-  decorations
+  const grouped: DecorationGroup[] = decorations
     .sort((a, b) => a.highlight.type > b.highlight.type ? 1 : -1)
     .sort((a, b) => b.position.line - a.position.line)
-    .forEach((current, index) => {
+    .reduce((acc, current, index) => {
       const previous = decorations[index - 1];
       const message = current.highlight.message;
       const currentLineNumber = current.position.line;
@@ -52,21 +49,20 @@ export function highlightsToDecorations(
         previous.highlight.type === current.highlight.type &&
         previous.position.line === currentLineNumber
       ) {
-        grouped[grouped.length - 1].message.push(message);
+        // @ts-ignore
+        acc[acc.length - 1].message.push(message);
       } else {
-        grouped.push({
+        acc.push({
           ln: current.position.line,
           position: current.position,
-          message: [message],
+          message: [message] as ExclusiveArray<Message>,
           highLightType: current.highlight.type,
         });
       }
-    });
+      return acc;
+    }, [] as DecorationGroup[]);
 
-  return grouped.map((d) => {
-    const message = generateMessage(d.message);
-    return getDecoration(message, d.highLightType, d.position);
-  });
+  return grouped.map((d) => getDecoration(generateMessage(d.message), d.highLightType, d.position));
 }
 
 function getDecoration(
@@ -74,8 +70,6 @@ function getDecoration(
   icon: HighLightType,
   posIndex: Position
 ): DecorationOptions {
-  const i = getEmoji(icon);
-
   const markdown = new MarkdownString(message);
   markdown.isTrusted = true;
 
@@ -84,7 +78,7 @@ function getDecoration(
     hoverMessage: markdown,
     renderOptions: {
       after: {
-        contentText: i,
+        contentText: getEmoji(icon),
       },
     },
   };
@@ -93,16 +87,12 @@ function getDecoration(
 }
 
 function getEmoji(highLightType: HighLightType) {
-  switch (highLightType) {
-    case "success":
-      return "✅";
-    case "error":
-      return "❌";
-    case "hint":
-      return "🤷‍♂️";
-    case "reference":
-      return "🔗";
-    case "dirty":
-      return "🧼";
-  }
+  const toEmoji: Record<HighLightType, string> = {
+    "success": "✅",
+    "error": "❌",
+    "hint": "🤷‍♂️",
+    "reference": "🔗",
+    "dirty": "🧼",
+  };
+  return toEmoji[highLightType];
 }

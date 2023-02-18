@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { FromWhere, Local } from "../types";
 
 type DefaultMessage = {
+  type: "DefaultMessage";
   content: string;
 };
 
@@ -10,28 +11,35 @@ export type Message =
   | ReferenceNotFound
   | ReferenceFound
   | SubItemFound
+  | SelectorFound
   | DefaultMessage;
 
-export function generateMessage(mg: Message[]): string {
+export type ExclusiveArray<T extends { type: string }> = {
+  [TType in T["type"]]: Array<T & { type: TType }>;
+}[T["type"]];
+
+export function generateMessage(mg: ExclusiveArray<Message>): string {
   if (mg.length === 0) {
     return "Error";
   }
-  if (mg.every((m) => "type" in m)) {
-    return generateFoundMessage(mg as ReferenceFound[]);
-  } else if (mg.every((m) => "suggestion" in m && "subType" in m)) {
-    return generateSubItemNotFoundMessage(mg as SubItemNotFound[]);
-  } else if (mg.every((m) => "suggestion" in m)) {
-    return generateNotFoundMessage(mg as ReferenceNotFound[]);
-  } else if (mg.every((m) => "subType" in m)) {
-    return generateSubItemFoundMessage(mg as SubItemFound[]);
-  }
-  const mes = mg as DefaultMessage[];
-  return mes.map((m) => m.content).join("\\\n");
+
+  /* eslint-disable @typescript-eslint/naming-convention */
+  const myMap: Record<Message["type"], () => string> = {
+    ReferenceFound: () => generateFoundMessage(mg as ReferenceFound[]),
+    SubItemNotFound: () => generateSubItemNotFoundMessage(mg as SubItemNotFound[]),
+    ReferenceNotFound: () => generateNotFoundMessage(mg as ReferenceNotFound[]),
+    SubItemFound: () => generateSubItemFoundMessage(mg as SubItemFound[]),
+    SelectorFound: () => generateSelectorFoundMessage(mg as SelectorFound[]),
+    DefaultMessage: () => (mg as DefaultMessage[]).map((m) => m.content).join("\\\n"),
+  };
+
+  return myMap[mg[0].type]();
 }
 
 type ReferenceFound = {
-  type: string;
-  name: string;
+  type: "ReferenceFound";
+  targetType: string;
+  targetName: string;
   pwd: string;
   fromWhere: FromWhere;
 };
@@ -41,22 +49,20 @@ function generateFoundMessage(mg: ReferenceFound[]): string {
     return "Error";
   }
   if (mg.length === 1) {
-    const { type, name, pwd, fromWhere } = mg[0];
-    return `✅ Found ${i(type)}: ${c(name)} ${individualRef(fromWhere, pwd)}`;
+    const { targetType, targetName, pwd, fromWhere } = mg[0];
+    return `✅ Found ${i(targetType)}: ${c(targetName)} ${individualRef(fromWhere, pwd)}`;
   }
 
-  const type = mg[0].type;
-  const name = mg[0].name;
+  const type = mg[0].targetType;
+  const name = mg[0].targetName;
 
   const header = `✅ Found ${i(type)}: ${c(name)} in:`;
-  return mg.reduce(
-    (acc, { pwd, fromWhere }) => acc + `\n- ${listRef(fromWhere, pwd)}`,
-    header
-  );
+  return mg.reduce((acc, { pwd, fromWhere }) => acc + `\n- ${listRef(fromWhere, pwd)}`, header);
 }
 
 type ReferenceNotFound = {
-  name: string;
+  type: "ReferenceNotFound";
+  targetName: string;
   suggestion: string;
   pwd: string;
   fromWhere: FromWhere;
@@ -68,20 +74,20 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
   }
 
   if (mg.length === 1) {
-    const { name, pwd, fromWhere, suggestion } = mg[0];
-    return `🤷‍♂️ ${c(name)} not found. Did you mean ${c(suggestion)}? (From ${individualRef(fromWhere, pwd)})`;
+    const { targetName, pwd, fromWhere, suggestion } = mg[0];
+    return `🤷‍♂️ ${c(targetName)} not found. Did you mean ${c(suggestion)}? (From ${individualRef(fromWhere, pwd)})`;
   }
 
-  const { name } = mg[0];
-  const header = `🤷‍♂️ ${c(name)} not found.`;
+  const { targetName } = mg[0];
+  const header = `🤷‍♂️ ${c(targetName)} not found.`;
   return mg.reduce(
-    (acc, { pwd, fromWhere, suggestion }) =>
-      acc + `\n- Did you mean ${c(suggestion)}? (From ${listRef(fromWhere, pwd)})`,
+    (acc, { pwd, fromWhere, suggestion }) => acc + `\n- Did you mean ${c(suggestion)}? (From ${listRef(fromWhere, pwd)})`,
     header
   );
 }
 
 type SubItemFound = {
+  type: "SubItemFound";
   subType: string;
   mainType: string;
   subName: string;
@@ -94,6 +100,8 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
   if (mg.length === 0) {
     return "Error";
   }
+  // prettier-ignore
+
   if (mg.length === 1) {
     const { subType, mainType, subName, mainName, pwd, fromWhere } = mg[0];
     return `✅ Found ${i(subType)}: ${c(subName)} in ${i(mainType)}: ${c(mainName)} ${individualRef(fromWhere, pwd)}`;
@@ -101,13 +109,11 @@ function generateSubItemFoundMessage(mg: SubItemFound[]): string {
 
   const { subType, mainType, subName, mainName } = mg[0];
   const header = `✅ Found ${i(subType)}: ${c(subName)} in ${i(mainType)}: ${c(mainName)} in:`;
-  return mg.reduce(
-    (acc, { pwd, fromWhere }) => acc + `\n- ${listRef(fromWhere, pwd)}`,
-    header
-  );
+  return mg.reduce((acc, { pwd, fromWhere }) => acc + `\n- ${listRef(fromWhere, pwd)}`, header);
 }
 
 type SubItemNotFound = {
+  type: "SubItemNotFound";
   subType: string;
   mainType: string;
   subName: string;
@@ -123,14 +129,41 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
   }
   if (mg.length === 1) {
     const { subType, pwd, subName, mainType, fromWhere, suggestion, mainName } = mg[0];
+    // prettier-ignore
     return `🤷‍♂️ ${i(subType)}: ${c(subName)} not found in ${i(mainType)}: ${c(mainName)} ${individualRef(fromWhere, pwd)}.\\\nDid you mean ${i(subType)}: ${c(suggestion)}?`;
   }
 
   const { subType, subName, mainType, mainName } = mg[0];
   const header = `🤷‍♂️ ${i(subType)}: ${c(subName)} is ***not*** in:`;
   return mg.reduce(
+    // prettier-ignore
     (acc, { pwd, fromWhere, suggestion }) =>
       acc + `\n- ${i(mainType)}: ${c(mainName)} found ${individualRef(fromWhere, pwd)}.\\\nDid you mean ${i(subType)}: ${c(suggestion)}?`,
+    header
+  );
+}
+
+type SelectorFound = {
+  type: "SelectorFound";
+  targetType: string;
+  targetName: string;
+  pwd: string;
+  fromWhere: FromWhere;
+};
+
+function generateSelectorFoundMessage(mg: SelectorFound[]): string {
+  if (mg.length === 0) {
+    return "Error";
+  }
+  if (mg.length === 1) {
+    const { targetType, targetName, pwd, fromWhere } = mg[0];
+    return `✅ Selector points to: ${i(targetType)}: ${c(targetName)} ${individualRef(fromWhere, pwd)}`;
+  }
+
+  const header = `✅ Selector points to:`;
+  return mg.reduce(
+    (acc, { targetType, targetName, pwd, fromWhere }) =>
+      acc + `\n- ${i(targetType)}: ${c(targetName)} ${listRef(fromWhere, pwd)}`,
     header
   );
 }
@@ -138,14 +171,9 @@ function generateSubItemNotFoundMessage(mg: SubItemNotFound[]): string {
 function getRelativePath(path: string, pwd: string): string {
   const p = require("path");
   const fromFilePath = path;
-  const relativeFilePathFromRoot = vscode.workspace.asRelativePath(
-    fromFilePath || ""
-  );
+  const relativeFilePathFromRoot = vscode.workspace.asRelativePath(fromFilePath || "");
   const activeDirPath: string = p.dirname(pwd || "");
-  const relativePathFromActive: string = p.relative(
-    activeDirPath || "",
-    fromFilePath
-  );
+  const relativePathFromActive: string = p.relative(activeDirPath || "", fromFilePath);
   return relativeFilePathFromRoot.length < relativePathFromActive.length
     ? "/" + relativeFilePathFromRoot
     : relativePathFromActive.includes("/")

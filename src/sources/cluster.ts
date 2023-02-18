@@ -31,6 +31,7 @@ export async function getClusterResources(
           metadata: {
             name: r.metadata?.name || "",
             namespace: r.metadata?.namespace || "",
+            labels: r.metadata?.labels || {},
           },
           where: { place: "cluster", context: cc.context },
           spec: r.spec,
@@ -50,6 +51,7 @@ export async function getClusterResources(
           metadata: {
             name: r.metadata?.name || "",
             namespace: r.metadata?.namespace || "",
+            labels: r.metadata?.labels || {},
           },
           where: { place: "cluster", context: cc.context },
           data: r.data,
@@ -69,6 +71,7 @@ export async function getClusterResources(
           metadata: {
             name: r.metadata?.name || "",
             namespace: r.metadata?.namespace || "",
+            labels: r.metadata?.labels || {},
           },
           where: { place: "cluster", context: cc.context },
           data: r.data,

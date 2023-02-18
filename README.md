@@ -1,18 +1,19 @@
-#<img src="/images/icon.png" width="70" /> Kubernetes Reference Highlighter
+# <img src="/images/icon.png" width="70" /> Kubernetes Reference Highlighter
 
 ## Features
 
-- [Features](#features)
-  - [Suggestions](#suggestions)
-  - [Code Navigation](#code-navigation)
-  - [Reference Highlighting](#reference-highlighting)
-    - [Cluster Scanning](#cluster-scanning)
-    - [Workspace Scanning](#workspace-scanning)
-    - [Kustomize Scanning](#kustomize-scanning)
-    - [Helm Scanning](#helm-scanning)
-  - [Kustomize Build](#kustomize-build)
-  - [Helm Template](#helm-template)
-- [Issues and feature requests](#issues-and-feature-requests)
+- [ Kubernetes Reference Highlighter](#-kubernetes-reference-highlighter)
+  - [Features](#features)
+    - [Suggestions](#suggestions)
+    - [Code Navigation](#code-navigation)
+    - [Reference Highlighting](#reference-highlighting)
+      - [Cluster Scanning](#cluster-scanning)
+      - [Workspace Scanning](#workspace-scanning)
+      - [Kustomize Scanning](#kustomize-scanning)
+      - [Helm Scanning](#helm-scanning)
+    - [Kustomize Build](#kustomize-build)
+    - [Helm Template](#helm-template)
+  - [Issues and feature requests](#issues-and-feature-requests)
 
 ### Suggestions
 

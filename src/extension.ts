@@ -7,7 +7,8 @@ import * as kustomize from "./sources/kustomize";
 import * as helm from "./sources/helm";
 import * as valueFromKeyRef from "./finders/valueFromKeyRef";
 import * as ingress from "./finders/ingress";
-import * as service from "./finders/service";
+import * as serviceFreeText from "./finders/serviceFreeText";
+import * as serviceSelector from "./finders/serviceSelector";
 
 import { K8sResource } from "./types";
 import { parse } from "yaml";
@@ -238,6 +239,7 @@ export function textToK8sResource(text: string) {
     metadata: {
       name: yml.metadata?.name,
       namespace: yml.metadata?.namespace,
+      labels: yml.metadata?.labels,
     },
   };
 }
@@ -285,7 +287,13 @@ function updateHighlighting(
             return [];
           }
 
-          const serviceHighlights = service.find(
+          const serviceHighlights = serviceFreeText.find(
+            kubeResources,
+            thisResource,
+            fileName,
+            textSplit
+          );
+          const serviceSelectorHighlights = serviceSelector.find(
             kubeResources,
             thisResource,
             fileName,
@@ -308,6 +316,7 @@ function updateHighlighting(
 
           const highlights = [
             ...serviceHighlights,
+            ...serviceSelectorHighlights,
             ...valueFromHighlights,
             ...ingressHighlights,
           ];

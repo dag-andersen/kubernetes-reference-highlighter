@@ -23,12 +23,18 @@ export function find(
       const regex = new RegExp(`(?:"|".*[^a-zA-Z-])${name}(?:"|[^a-zA-Z-].*")`, "g");
       const matches = text.matchAll(regex);
 
-      return [...matches].map((match) => {
+      return [...matches].map((match): Highlight => {
         const start = (match.index || 0) + 1;
         return {
           start: start,
           type: "reference",
-          message: { type: refType, name, pwd, fromWhere: r.where },
+          message: {
+            type: "ReferenceFound",
+            targetType: refType,
+            targetName: name,
+            pwd,
+            fromWhere: r.where,
+          },
         };
       });
     });
