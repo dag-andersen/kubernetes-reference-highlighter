@@ -29,7 +29,7 @@ export function find(
   }
 
   const regex =
-    /valueFrom:\s*([a-zA-Z]+)KeyRef:\s*(?:(name):\s*([a-zA-Z-]+)\s*(key):\s*([a-zA-Z-_]+)|(key):\s*([a-zA-Z-_]+)\s*(name):\s*([a-zA-Z-]+))/gm;
+    /valueFrom:\s*([a-z0-9A-Z]+)KeyRef:\s*(?:(name):\s*([a-z0-9A-Z-]+)\s*(key):\s*([a-z0-9A-Z-_]+)|(key):\s*([a-z0-9A-Z-_]+)\s*(name):\s*([a-z0-9A-Z-]+))/gm;
 
   const matches = text.matchAll(regex);
 
