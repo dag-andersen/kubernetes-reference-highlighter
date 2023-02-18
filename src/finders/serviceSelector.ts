@@ -1,7 +1,12 @@
 import { V1Service } from "@kubernetes/client-node";
 import { K8sResource, Highlight } from "../types";
 
-export function find(resources: K8sResource[], thisResource: K8sResource, pwd: string, text: string): Highlight[] {
+export function find(
+  resources: K8sResource[],
+  thisResource: K8sResource,
+  pwd: string,
+  text: string
+): Highlight[] {
   if (thisResource.kind !== "Service") {
     return [];
   }
@@ -27,9 +32,10 @@ export function find(resources: K8sResource[], thisResource: K8sResource, pwd: s
   }
 
   return resources
+    .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
     .flatMap((r) => {
       let labels = getPodLabels(r);
-      if (labels && compareLabels(selector, labels)) {
+      if (labels && isSubset(selector, labels)) {
         return { resource: r, labels: labels };
       }
       return [];
@@ -49,21 +55,15 @@ export function find(resources: K8sResource[], thisResource: K8sResource, pwd: s
     );
 }
 
-const compareLabels = function (
-  obj1: {
+const isSubset = function (
+  a: {
     [key: string]: string;
   },
-  obj2: {
+  b: {
     [key: string]: string;
   }
 ) {
-  const obj1Length = Object.keys(obj1).length;
-  const obj2Length = Object.keys(obj2).length;
-
-  if (obj1Length === obj2Length) {
-    return Object.keys(obj1).every((key) => obj2.hasOwnProperty(key) && obj2[key] === obj1[key]);
-  }
-  return false;
+  return Object.keys(a).every((key) => b.hasOwnProperty(key) && b[key] === a[key]);
 };
 
 function getPodLabels(resource: K8sResource):
@@ -74,11 +74,14 @@ function getPodLabels(resource: K8sResource):
   switch (resource.kind) {
     case "Pod":
       return resource.metadata.labels || undefined;
+    case "Job":
     case "ReplicaSet":
     case "Deployment":
     case "StatefulSet":
     case "DaemonSet":
-      return resource.spec?.selector?.matchLabels || undefined;
+      return resource.spec?.template?.metadata?.labels || undefined;
+    case "CronJob":
+      return resource.spec?.jobTemplate?.spec?.template?.metadata?.labels || undefined;
     default:
       return undefined;
   }
