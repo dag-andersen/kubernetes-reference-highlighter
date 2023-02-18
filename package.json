@@ -69,7 +69,7 @@
         },
         "kubernetesReferenceHighlighter.enableCorrectionHints": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Kubernetes Reference Highlighter: Reference Correction Hints enabled"
         }
       }

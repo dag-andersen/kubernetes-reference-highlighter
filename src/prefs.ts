@@ -15,7 +15,7 @@ export function loadPreferences(): Prefs {
     kustomizeScanning:  getConfigurationValue("enableKustomizeScanning")  ?? true,
     helmScanning:       getConfigurationValue("enableHelmScanning")       ?? true,
     clusterScanning:    getConfigurationValue("enableClusterScanning")    ?? true,
-    hints:              getConfigurationValue("enableCorrectionHints")    ?? false,
+    hints:              getConfigurationValue("enableCorrectionHints")    ?? true,
   };
 }
 
