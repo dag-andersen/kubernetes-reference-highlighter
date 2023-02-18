@@ -24,7 +24,7 @@ export function find(
           ? r.metadata.name
           : `${r.metadata.name}.${r.metadata.namespace}`;
 
-      const regex = new RegExp(`(?:"|".*[^a-z0-9A-Z-])${name}(?:"|[^a-z0-9A-Z-].*")`, "g");
+      const regex = new RegExp(`(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${name}(?::(\\d{1,5}))?(?:"|\\s+.*")`, "g");
       const matches = text.matchAll(regex);
 
       return [...matches].map((match): Highlight => {
