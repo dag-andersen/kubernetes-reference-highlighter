@@ -1,9 +1,5 @@
 import { K8sResource, Highlight } from "../types";
 
-/*
-  TODO: fix that it is matching on http://prod.system1-service.default:5000 even though prod does not exist
-*/
-
 export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
@@ -19,12 +15,22 @@ export function find(
   return resources
     .filter((r) => r.kind === refType)
     .flatMap((r) => {
-      const name =
-        thisResource.metadata.namespace === r.metadata.namespace
-          ? r.metadata.name
-          : `${r.metadata.name}.${r.metadata.namespace}`;
+      const { name, regexName } = r.metadata.namespace 
+        ? thisResource.metadata.namespace === r.metadata.namespace
+          ? {
+              name: r.metadata.name,
+              regexName: `(?:${r.metadata.name}|${r.metadata.name}\.${r.metadata.namespace}(?:\.svc|\.svc\.cluster|\.svc\.cluster\.local)?)`,
+            }
+          : {
+              name: `${r.metadata.name}\.${r.metadata.namespace}`,
+              regexName: `${r.metadata.name}\.${r.metadata.namespace}(?:\.svc|\.svc\.cluster|\.svc\.cluster\.local)?`,
+            }
+        : {
+            name: r.metadata.name,
+            regexName: r.metadata.name,
+          };
 
-      const regex = new RegExp(`(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${name}(?::(\\d{1,5}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`, "g");
+      const regex = new RegExp(`(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,5}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`, "g");
       const matches = text.matchAll(regex);
 
       return [...matches].map((match): Highlight => {
