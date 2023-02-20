@@ -26,8 +26,8 @@ export function getKubeClient(): ClusterClient | undefined {
 export async function getClusterResources(cc: ClusterClient): Promise<K8sResource[]> {
   const service: Promise<K8sResource[]> = cc.coreV1Api
     .listServiceForAllNamespaces()
-    .then((res) => {
-      return res.body.items.map(
+    .then((res) =>
+      res.body.items.map(
         (r): K8sResource => ({
           kind: "Service",
           metadata: {
@@ -38,14 +38,14 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
           where: { place: "cluster", context: cc.context },
           spec: r.spec,
         })
-      );
-    })
+      )
+    )
     .catch((_a) => []);
 
   const secret: Promise<K8sResource[]> = cc.coreV1Api
     .listSecretForAllNamespaces()
-    .then((res) => {
-      return res.body.items.map(
+    .then((res) =>
+      res.body.items.map(
         (r): K8sResource => ({
           kind: "Secret",
           metadata: {
@@ -56,14 +56,14 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
           where: { place: "cluster", context: cc.context },
           data: r.data,
         })
-      );
-    })
+      )
+    )
     .catch((_a) => []);
 
   const configMap: Promise<K8sResource[]> = cc.coreV1Api
     .listConfigMapForAllNamespaces()
-    .then((res) => {
-      return res.body.items.map(
+    .then((res) =>
+      res.body.items.map(
         (r): K8sResource => ({
           kind: "ConfigMap",
           metadata: {
@@ -74,14 +74,14 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
           where: { place: "cluster", context: cc.context },
           data: r.data,
         })
-      );
-    })
+      )
+    )
     .catch((_a) => []);
 
   const deployments: Promise<K8sResource[]> = cc.appsApi
     .listDeploymentForAllNamespaces()
-    .then((res) => {
-      return res.body.items.map(
+    .then((res) =>
+      res.body.items.map(
         (r): K8sResource => ({
           kind: "Deployment",
           metadata: {
@@ -92,14 +92,14 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
           where: { place: "cluster", context: cc.context },
           spec: r.spec,
         })
-      );
-    })
+      )
+    )
     .catch((_a) => []);
 
   const statefulSets: Promise<K8sResource[]> = cc.appsApi
     .listStatefulSetForAllNamespaces()
-    .then((res) => {
-      return res.body.items.map(
+    .then((res) =>
+      res.body.items.map(
         (r): K8sResource => ({
           kind: "StatefulSet",
           metadata: {
@@ -110,14 +110,14 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
           where: { place: "cluster", context: cc.context },
           spec: r.spec,
         })
-      );
-    })
+      )
+    )
     .catch((_a) => []);
 
   const daemonSets: Promise<K8sResource[]> = cc.appsApi
     .listDaemonSetForAllNamespaces()
-    .then((res) => {
-      return res.body.items.map(
+    .then((res) =>
+      res.body.items.map(
         (r): K8sResource => ({
           kind: "DaemonSet",
           metadata: {
@@ -128,14 +128,14 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
           where: { place: "cluster", context: cc.context },
           spec: r.spec,
         })
-      );
-    })
+      )
+    )
     .catch((_a) => []);
 
   const cronJobs: Promise<K8sResource[]> = cc.batchV1Api
     .listCronJobForAllNamespaces()
-    .then((res) => {
-      return res.body.items.map(
+    .then((res) =>
+      res.body.items.map(
         (r): K8sResource => ({
           kind: "CronJob",
           metadata: {
@@ -146,8 +146,8 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
           where: { place: "cluster", context: cc.context },
           spec: r.spec,
         })
-      );
-    })
+      )
+    )
     .catch((_a) => []);
 
   return Promise.all([service, secret, configMap, deployments, statefulSets, daemonSets, cronJobs])
