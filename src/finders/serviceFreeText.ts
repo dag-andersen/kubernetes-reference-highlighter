@@ -14,6 +14,7 @@ export function find(
 
   return resources
     .filter((r) => r.kind === refType)
+    .filter((r) => r.metadata.namespace || !!!thisResource.metadata.namespace)
     .flatMap((r) => {
       const { name, regexName } = r.metadata.namespace 
         ? thisResource.metadata.namespace === r.metadata.namespace
