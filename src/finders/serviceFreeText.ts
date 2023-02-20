@@ -14,13 +14,24 @@ export function find(
 
   return resources
     .filter((r) => r.kind === refType)
+    .filter((r) => r.metadata.namespace || !!!thisResource.metadata.namespace)
     .flatMap((r) => {
-      const name =
-        thisResource.metadata.namespace === r.metadata.namespace
-          ? r.metadata.name
-          : `${r.metadata.name}.${r.metadata.namespace}`;
+      const { name, regexName } = r.metadata.namespace 
+        ? thisResource.metadata.namespace === r.metadata.namespace
+          ? {
+              name: r.metadata.name,
+              regexName: `(?:${r.metadata.name}|${r.metadata.name}\.${r.metadata.namespace}(?:\.svc|\.svc\.cluster|\.svc\.cluster\.local)?)`,
+            }
+          : {
+              name: `${r.metadata.name}\.${r.metadata.namespace}`,
+              regexName: `${r.metadata.name}\.${r.metadata.namespace}(?:\.svc|\.svc\.cluster|\.svc\.cluster\.local)?`,
+            }
+        : {
+            name: r.metadata.name,
+            regexName: r.metadata.name,
+          };
 
-      const regex = new RegExp(`(?:"|".*[^a-zA-Z-])${name}(?:"|[^a-zA-Z-].*")`, "g");
+      const regex = new RegExp(`(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,5}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`, "g");
       const matches = text.matchAll(regex);
 
       return [...matches].map((match): Highlight => {

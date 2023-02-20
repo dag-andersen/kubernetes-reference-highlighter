@@ -14,7 +14,7 @@ export function find(
 
   const targetType = "Service";
   const regex =
-    /service:\s*(?:name:\s*([a-zA-Z-]+)\s*port:\s*(number|name):\s*(\d+|[a-zA-Z-]+)|port:\s*(number|name):\s*(\d+|[a-zA-Z-]+)\s*name:\s*([a-zA-Z-]+))/gm;
+    /service:\s*(?:name:\s*([a-z0-9A-Z-]+)\s*port:\s*(number|name):\s*(\d+|[a-z0-9A-Z-]+)|port:\s*(number|name):\s*(\d+|[a-z0-9A-Z-]+)\s*name:\s*([a-z0-9A-Z-]+))/gm;
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {

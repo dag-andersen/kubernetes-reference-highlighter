@@ -6,6 +6,10 @@ export type ClusterClient = {
   context: string;
 };
 
+/*
+  TODO: scan deployments, statefulsets, daemonsets, etc.
+*/
+
 export function getKubeClient(): ClusterClient | undefined {
   try {
     const kc = new KubeConfig();
