@@ -77,7 +77,7 @@ export function find(
           },
         };
 
-        if (r.data[key]) {
+        if (r.data && r.data[key]) {
           const keyHighlight: Highlight = {
             ...getPositions(match, key),
             type: "reference",
