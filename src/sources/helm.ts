@@ -84,6 +84,8 @@ export function verifyHelmBuild(
     return [];
   }
 
+  // TODO: check if dirty
+
   const regex = /name:\s*([a-zA-Z-]+)/gm;
   const matches = text.matchAll(regex);
 
@@ -111,10 +113,8 @@ export function verifyHelmBuild(
     return {
       start,
       message: {
-        type: "DefaultMessage",
-        content: success
-          ? "✅ Helm build succeeded"
-          : "❌ Helm build failed - " + output,
+        type: "PlainText",
+        content: success ? "✅ Helm build succeeded" : "❌ Helm build failed - " + output,
       },
       type: success ? "success" : "error",
     };

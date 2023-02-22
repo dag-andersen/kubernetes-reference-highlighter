@@ -1,18 +1,14 @@
 import * as vscode from "vscode";
 import { FromWhere, Local } from "../types";
 
-type DefaultMessage = {
-  type: "DefaultMessage";
-  content: string;
-};
-
 export type Message =
   | SubItemNotFound
   | ReferenceNotFound
   | ReferenceFound
   | SubItemFound
   | SelectorFound
-  | DefaultMessage;
+  | ServiceFreeTextFound
+  | PlainText;
 
 export type ExclusiveArray<T extends { type: string }> = {
   [TType in T["type"]]: Array<T & { type: TType }>;
@@ -30,11 +26,17 @@ export function generateMessage(mg: ExclusiveArray<Message>): string {
     ReferenceNotFound: () => generateNotFoundMessage(mg as ReferenceNotFound[]),
     SubItemFound: () => generateSubItemFoundMessage(mg as SubItemFound[]),
     SelectorFound: () => generateSelectorFoundMessage(mg as SelectorFound[]),
-    DefaultMessage: () => (mg as DefaultMessage[]).map((m) => m.content).join("\\\n"),
+    ServiceFreeTextFound: () => generateServiceFreeTextFoundMessage(mg as ServiceFreeTextFound[]),
+    PlainText: () => (mg as PlainText[]).map((m) => m.content).join("\\\n"),
   };
 
   return myMap[mg[0].type]();
 }
+
+type PlainText = {
+  type: "PlainText";
+  content: string;
+};
 
 type ReferenceFound = {
   type: "ReferenceFound";
@@ -166,6 +168,36 @@ function generateSelectorFoundMessage(mg: SelectorFound[]): string {
       acc + `\n- ${i(targetType)}: ${c(targetName)} ${listRef(fromWhere, pwd)}`,
     header
   );
+}
+
+type ServiceFreeTextFound = {
+  type: "ServiceFreeTextFound";
+  targetType?: string;
+  targetName: string;
+  targetPort?: string;
+  pwd: string;
+  fromWhere: FromWhere;
+};
+
+function generateServiceFreeTextFoundMessage(mg: ServiceFreeTextFound[]): string {
+  if (mg.length === 0) {
+    return "Error";
+  }
+  if (mg.length === 1) {
+    const { targetType, targetName, targetPort, pwd, fromWhere } = mg[0];
+    const type = targetType ?? "Service";
+    const port = targetPort ? `with _port_:${targetPort}` : "";
+    return `✅ Found ${i(type)}: ${c(targetName)} ${individualRef(fromWhere, pwd)} ${port}`;
+  }
+
+  const type = mg[0].targetType ?? "Service";
+  const name = mg[0].targetName;
+
+  const header = `✅ Found ${i(type)}: ${c(name)} in:`;
+  return mg.reduce((acc, { targetName, targetPort, pwd, fromWhere }) => {
+    const port = targetPort ? `with _port_:${targetPort}` : "";
+    return acc + `\n- ${i(type)}: ${c(targetName)} ${listRef(fromWhere, pwd)} ${port}`;
+  }, header);
 }
 
 function getRelativePath(path: string, pwd: string): string {
