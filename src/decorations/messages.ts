@@ -1,11 +1,6 @@
 import * as vscode from "vscode";
 import { FromWhere, Local } from "../types";
 
-type DefaultMessage = {
-  type: "DefaultMessage";
-  content: string;
-};
-
 export type Message =
   | SubItemNotFound
   | ReferenceNotFound
@@ -13,7 +8,7 @@ export type Message =
   | SubItemFound
   | SelectorFound
   | ServiceFreeTextFound
-  | DefaultMessage;
+  | PlainText;
 
 export type ExclusiveArray<T extends { type: string }> = {
   [TType in T["type"]]: Array<T & { type: TType }>;
@@ -32,11 +27,16 @@ export function generateMessage(mg: ExclusiveArray<Message>): string {
     SubItemFound: () => generateSubItemFoundMessage(mg as SubItemFound[]),
     SelectorFound: () => generateSelectorFoundMessage(mg as SelectorFound[]),
     ServiceFreeTextFound: () => generateServiceFreeTextFoundMessage(mg as ServiceFreeTextFound[]),
-    DefaultMessage: () => (mg as DefaultMessage[]).map((m) => m.content).join("\\\n"),
+    PlainText: () => (mg as PlainText[]).map((m) => m.content).join("\\\n"),
   };
 
   return myMap[mg[0].type]();
 }
+
+type PlainText = {
+  type: "PlainText";
+  content: string;
+};
 
 type ReferenceFound = {
   type: "ReferenceFound";
