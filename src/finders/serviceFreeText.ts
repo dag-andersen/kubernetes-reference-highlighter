@@ -42,7 +42,7 @@ export function find(
       return [...matches].flatMap((match) => {
         const port = match[1];
         const start = (match.index || 0) + 1;
-        const portFound = resource.spec?.ports?.find((p) => p?.port === parseInt(port))
+        const portFound = port && resource.spec?.ports?.find((p) => p?.port === parseInt(port))
           ? true
           : false;
 
@@ -58,7 +58,7 @@ export function find(
           },
         };
 
-        if (!portFound && enableCorrectionHints) {
+        if (port && !portFound && enableCorrectionHints) {
           const ports = resource.spec?.ports?.map((p) => p?.port.toString());
           if (ports) {
             const portSuggestion: Highlight[] = similarity<string>(ports, port, (a) => a)
