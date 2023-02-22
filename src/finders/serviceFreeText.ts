@@ -1,3 +1,4 @@
+import { V1Service } from "@kubernetes/client-node";
 import { K8sResource, Highlight } from "../types";
 
 export function find(
@@ -31,18 +32,23 @@ export function find(
             regexName: r.metadata.name,
           };
 
-      const regex = new RegExp(`(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,5}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`, "g");
+      const regex = new RegExp(`(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,20}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`, "g");
       const matches = text.matchAll(regex);
 
-      return [...matches].map((match): Highlight => {
+      let resource = r as V1Service;
+
+      return [...matches].map((match) => {
+        const port = match[1];
+        const portFound = resource.spec?.ports?.find((p: any) => p?.port === parseInt(port)) ? true : false;
+
         const start = (match.index || 0) + 1;
         return {
           start: start,
           type: "reference",
           message: {
-            type: "ReferenceFound",
-            targetType: refType,
+            type: "ServiceFreeTextFound",
             targetName: name,
+            targetPort: portFound ? port : undefined,
             pwd,
             fromWhere: r.where,
           },

@@ -12,6 +12,7 @@ export type Message =
   | ReferenceFound
   | SubItemFound
   | SelectorFound
+  | ServiceFreeTextFound
   | DefaultMessage;
 
 export type ExclusiveArray<T extends { type: string }> = {
@@ -30,6 +31,7 @@ export function generateMessage(mg: ExclusiveArray<Message>): string {
     ReferenceNotFound: () => generateNotFoundMessage(mg as ReferenceNotFound[]),
     SubItemFound: () => generateSubItemFoundMessage(mg as SubItemFound[]),
     SelectorFound: () => generateSelectorFoundMessage(mg as SelectorFound[]),
+    ServiceFreeTextFound: () => generateServiceFreeTextFoundMessage(mg as ServiceFreeTextFound[]),
     DefaultMessage: () => (mg as DefaultMessage[]).map((m) => m.content).join("\\\n"),
   };
 
@@ -166,6 +168,36 @@ function generateSelectorFoundMessage(mg: SelectorFound[]): string {
       acc + `\n- ${i(targetType)}: ${c(targetName)} ${listRef(fromWhere, pwd)}`,
     header
   );
+}
+
+type ServiceFreeTextFound = {
+  type: "ServiceFreeTextFound";
+  targetType?: string;
+  targetName: string;
+  targetPort?: string;
+  pwd: string;
+  fromWhere: FromWhere;
+};
+
+function generateServiceFreeTextFoundMessage(mg: ServiceFreeTextFound[]): string {
+  if (mg.length === 0) {
+    return "Error";
+  }
+  if (mg.length === 1) {
+    const { targetType, targetName, targetPort, pwd, fromWhere } = mg[0];
+    const type = targetType ?? "Service";
+    const port = targetPort ? `with _port_:${targetPort}` : "";
+    return `✅ Found ${i(type)}: ${c(targetName)} ${individualRef(fromWhere, pwd)} ${port}`;
+  }
+
+  const type = mg[0].targetType ?? "Service";
+  const name = mg[0].targetName;
+
+  const header = `✅ Found ${i(type)}: ${c(name)} in:`;
+  return mg.reduce((acc, { targetName, targetPort, pwd, fromWhere }) => {
+    const port = targetPort ? `with _port_:${targetPort}` : "";
+    return acc + `\n- ${i(type)}: ${c(targetName)} ${listRef(fromWhere, pwd)} ${port}`;
+  }, header);
 }
 
 function getRelativePath(path: string, pwd: string): string {
