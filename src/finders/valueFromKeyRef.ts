@@ -100,8 +100,7 @@ export function find(
           if (keys.length > 0) {
             const keySuggestion: Highlight[] = similarity<string>(keys, key, (a) => a)
               .filter((a) => a.rating > 0.8)
-              .map((a) => {
-                return {
+              .map((a) => ({
                   ...getPositions(match, key),
                   type: "hint",
                   message: {
@@ -114,8 +113,7 @@ export function find(
                     pwd,
                     fromWhere: r.where,
                   },
-                };
-              });
+                }));
             return [nameHighlight, ...keySuggestion];
           }
         }
