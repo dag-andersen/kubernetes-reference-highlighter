@@ -1,11 +1,13 @@
 import { V1Service } from "@kubernetes/client-node";
 import { K8sResource, Highlight } from "../types";
+import { similarity } from "./utils";
 
 export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
   pwd: string,
-  text: string
+  text: string,
+  enableCorrectionHints: boolean
 ): Highlight[] {
   if (thisResource.kind === "Ingress" || thisResource.kind === "Service") {
     return [];
@@ -17,7 +19,7 @@ export function find(
     .filter((r) => r.kind === refType)
     .filter((r) => r.metadata.namespace || !!!thisResource.metadata.namespace)
     .flatMap((r) => {
-      const { name, regexName } = r.metadata.namespace 
+      const { name, regexName } = r.metadata.namespace
         ? thisResource.metadata.namespace === r.metadata.namespace
           ? {
               name: r.metadata.name,
@@ -37,12 +39,14 @@ export function find(
 
       let resource = r as V1Service;
 
-      return [...matches].map((match) => {
+      return [...matches].flatMap((match) => {
         const port = match[1];
-        const portFound = resource.spec?.ports?.find((p: any) => p?.port === parseInt(port)) ? true : false;
-
         const start = (match.index || 0) + 1;
-        return {
+        const portFound = resource.spec?.ports?.find((p) => p?.port === parseInt(port))
+          ? true
+          : false;
+
+        const serviceHighlight: Highlight = {
           start: start,
           type: "reference",
           message: {
@@ -53,6 +57,31 @@ export function find(
             fromWhere: r.where,
           },
         };
+
+        if (!portFound && enableCorrectionHints) {
+          const ports = resource.spec?.ports?.map((p) => p?.port.toString());
+          if (ports) {
+            const portSuggestion: Highlight[] = similarity<string>(ports, port, (a) => a)
+              .filter((a) => a.rating > 0.2)
+              .map((a) => ({
+                start: start,
+                type: "hint",
+                message: {
+                  type: "SubItemNotFound",
+                  subType: "Port",
+                  mainType: refType,
+                  subName: port,
+                  mainName: name,
+                  suggestion: a.content,
+                  pwd,
+                  fromWhere: r.where,
+                },
+              }));
+            return [serviceHighlight, ...portSuggestion];
+          }
+        }
+
+        return serviceHighlight;
       });
     });
 }

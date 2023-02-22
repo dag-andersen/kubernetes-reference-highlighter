@@ -291,7 +291,8 @@ function updateHighlighting(
             kubeResources,
             thisResource,
             fileName,
-            textSplit
+            textSplit,
+            prefs.hints
           );
           const serviceSelectorHighlights = serviceSelector.find(
             kubeResources,
