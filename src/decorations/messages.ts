@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { FromWhere, Local } from "../types";
+import { FromWhere } from "../types";
 
 export type Message =
   | SubItemNotFound
@@ -217,7 +217,7 @@ function individualRef(fromWhere: FromWhere, pwd: string): string {
   const { place } = fromWhere;
 
   if (place === "cluster") {
-    return `in Cluster (${c(fromWhere.context)})`;
+    return `in Cluster (${c(fromWhere.path)})`;
   }
 
   if (place === "workspace") {
@@ -233,7 +233,7 @@ function listRef(fromWhere: FromWhere, pwd: string): string {
   const { place } = fromWhere;
 
   if (place === "cluster") {
-    return `Cluster (${i(fromWhere.context)})`;
+    return `Cluster (${i(fromWhere.path)})`;
   }
 
   if (place === "kustomize" || place === "helm") {
@@ -243,7 +243,7 @@ function listRef(fromWhere: FromWhere, pwd: string): string {
   return link(fromWhere, pwd);
 }
 
-function link(local: Local, pwd: string): string {
+function link(local: FromWhere, pwd: string): string {
   const { place, path } = local;
 
   if (place === "kustomize" || place === "helm") {

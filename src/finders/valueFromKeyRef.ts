@@ -68,6 +68,7 @@ export function find(
         const nameHighlight: Highlight = {
           start: start,
           type: "reference",
+          originalSource: r.where,
           message: {
             type: "ReferenceFound",
             targetType: refType,
@@ -81,6 +82,7 @@ export function find(
           const keyHighlight: Highlight = {
             ...getPositions(match, key),
             type: "reference",
+            originalSource: r.where,
             message: {
               type: "SubItemFound",
               subType: "key",
@@ -103,6 +105,7 @@ export function find(
               .map((a) => ({
                   ...getPositions(match, key),
                   type: "hint",
+                  originalSource: r.where,
                   message: {
                     type: "SubItemNotFound",
                     subType: "key",

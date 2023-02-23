@@ -2,7 +2,7 @@ import { Highlight, K8sResource } from "../types";
 import * as vscode from "vscode";
 import { textToK8sResource } from "../extension";
 import { format } from "util";
-import { getAllFileNamesInDirectory } from "./util";
+import { getAllYamlFileNamesInDirectory } from "./util";
 import { execSync } from "child_process";
 
 const kustomizeIsInstalled = isKustomizeInstalled();
@@ -19,17 +19,7 @@ export function getKustomizeResources(): K8sResource[] {
 }
 
 function getKustomizationPathsInWorkspace(): string[] {
-  const workspaceFolders =
-    vscode.workspace.workspaceFolders &&
-    vscode.workspace.workspaceFolders[0].uri.fsPath;
-
-  if (!workspaceFolders) {
-    return [];
-  }
-
-  const kustomizationFiles = getAllFileNamesInDirectory(
-    workspaceFolders
-  ).filter(
+  const kustomizationFiles = getAllYamlFileNamesInDirectory().filter(
     (file) =>
       file.endsWith("kustomization.yml") || file.endsWith("kustomization.yaml")
   );

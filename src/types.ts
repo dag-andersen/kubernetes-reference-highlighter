@@ -1,11 +1,7 @@
 import { Message } from "./decorations/messages";
 
-export type FromWhere = Cluster | Local;
-
-export type Cluster = { place: "cluster", context: string };
-
-export type Local = {
-  place: "workspace" | "kustomize" | "helm";
+export type FromWhere = {
+  place: "workspace" | "kustomize" | "helm" | "cluster";
   path: string;
 };
 
@@ -15,6 +11,7 @@ export type Highlight = {
   start: number;
   message: Message;
   type: HighLightType;
+  originalSource?: FromWhere;
 };
 
 // define basic type

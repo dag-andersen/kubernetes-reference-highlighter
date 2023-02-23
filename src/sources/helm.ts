@@ -2,7 +2,7 @@ import { Highlight, K8sResource } from "../types";
 import * as vscode from "vscode";
 import { textToK8sResource } from "../extension";
 import { format } from "util";
-import { getAllFileNamesInDirectory } from "./util";
+import { getAllYamlFileNamesInDirectory } from "./util";
 
 const helmCommand = "helm template";
 
@@ -32,15 +32,7 @@ export function isHelmInstalled(): boolean {
 }
 
 function getHelmPathsInWorkspace(): string[] {
-  const workspaceFolders =
-    vscode.workspace.workspaceFolders &&
-    vscode.workspace.workspaceFolders[0].uri.fsPath;
-
-  if (!workspaceFolders) {
-    return [];
-  }
-
-  const helmChartFiles = getAllFileNamesInDirectory(workspaceFolders).filter(
+  const helmChartFiles = getAllYamlFileNamesInDirectory().filter(
     (file) => file.endsWith("Chart.yml") || file.endsWith("Chart.yaml")
   );
 

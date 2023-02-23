@@ -9,11 +9,16 @@ import * as valueFromKeyRef from "./finders/valueFromKeyRef";
 import * as ingress from "./finders/ingress";
 import * as serviceFreeText from "./finders/serviceFreeText";
 import * as serviceSelector from "./finders/serviceSelector";
+import * as name from "./finders/name";
 
 import { Highlight, K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
+import { getAllYamlFileNamesInDirectory, getAllYamlFilesInVsCodeWorkspace } from "./sources/util";
+import { logText } from "./utils";
+import { IncomingReference, LookupIncomingReferences, testtesttest } from "./sources/workspace";
+import { Message } from "./decorations/messages";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
@@ -28,6 +33,8 @@ export function activate(context: vscode.ExtensionContext) {
   let kubeResourcesHelm: K8sResource[] = [];
 
   let k8sResources: K8sResource[] = [];
+
+  let lookup: LookupIncomingReferences = {};
 
   const reloadK8sResources = () => {
     k8sResources = [
@@ -108,12 +115,14 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(
         `Reference Correction Hints: ${prefs.hints ? "Enabled" : "Disabled"}`
       );
+
+      lookup = testtesttest(k8sResources, prefs);
     }
   );
 
   const updateK8sResourcesFromWorkspace = () => {
     kubeResourcesWorkspace = prefs.workSpaceScanning
-      ? workspace.getK8sResourceNamesInWorkspace()
+      ? workspace.getK8sResourcesInWorkspace()
       : [];
   };
 
@@ -138,13 +147,13 @@ export function activate(context: vscode.ExtensionContext) {
     updateK8sResourcesFromHelm();
 
     reloadK8sResources();
-    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
+    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   };
 
   const updateRemoteResources = async () => {
     await updateK8sResourcesFromCluster();
     reloadK8sResources();
-    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
+    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   };
 
   const onSave = vscode.workspace.onDidSaveTextDocument((doc) => {
@@ -156,17 +165,17 @@ export function activate(context: vscode.ExtensionContext) {
 
   const onOpen = vscode.workspace.onDidOpenTextDocument((doc) => {
     debounce();
-    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
+    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   });
 
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
     debounce();
-    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
+    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   });
 
   const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => {
     debounce();
-    updateHighlighting(editor, prefs, k8sResources);
+    updateHighlighting(editor, prefs, k8sResources, lookup);
   });
 
   context.subscriptions.push(
@@ -239,7 +248,8 @@ export function deactivate() {}
 function updateHighlighting(
   editor: vscode.TextEditor | undefined,
   prefs: Prefs,
-  kubeResources: K8sResource[]
+  kubeResources: K8sResource[],
+  lookupIncomingReferences: LookupIncomingReferences,
 ) {
   const doc = editor?.document;
 
@@ -264,7 +274,20 @@ function updateHighlighting(
   }
 
   const decorations = fileText.split(split).flatMap((textSplit) => {
-    const highlights = getHighlights(kubeResources, fileName, textSplit, prefs, currentIndex);
+    let thisResource = workspace.textToWorkspaceK8sResource(textSplit, fileName);
+    if (!thisResource) {
+      currentIndex += textSplit.length + split.length;
+      return [];
+    }
+    const highlights = getHighlights(
+      thisResource,
+      kubeResources,
+      lookupIncomingReferences[fileName] ?? [],
+      fileName,
+      textSplit,
+      prefs,
+      currentIndex
+    );
     const decorations = highlightsToDecorations(doc, highlights, currentIndex).sort(
       (a, b) =>
         (a.renderOptions?.after?.contentText?.length ?? 0) -
@@ -277,30 +300,21 @@ function updateHighlighting(
   decorate(editor, decorations);
 }
 
-function getHighlights(
+export function getHighlights(
+  thisResource: K8sResource,
   kubeResources: K8sResource[],
+  incomingReferences: IncomingReference[],
   fileName: string,
   textSplit: string,
   prefs: Prefs,
-  currentIndex: number
+  currentIndex: number,
 ): Highlight[] {
-  let thisResource: K8sResource;
-
-  try {
-    thisResource = {
-      ...textToK8sResource(textSplit),
-      where: { place: "workspace", path: fileName },
-    };
-  } catch (e) {
-    return [];
-  }
-
   const serviceHighlights = serviceFreeText.find(
     kubeResources,
     thisResource,
     fileName,
     textSplit,
-    prefs.hints
+    prefs.hints,
   );
   const serviceSelectorHighlights = serviceSelector.find(
     kubeResources,
@@ -320,14 +334,16 @@ function getHighlights(
     thisResource,
     fileName,
     textSplit,
-    prefs.hints
+    prefs.hints,
   );
+  const incomingHighlights = name.find(incomingReferences, thisResource, textSplit);
 
   const highlights = [
     ...serviceHighlights,
     ...serviceSelectorHighlights,
     ...valueFromHighlights,
     ...ingressHighlights,
+    ...incomingHighlights,
   ];
 
   if (

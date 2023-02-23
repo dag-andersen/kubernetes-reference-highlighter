@@ -6,7 +6,7 @@ export function find(
   thisResource: K8sResource,
   pwd: string,
   text: string,
-  enableCorrectionHints: boolean
+  enableCorrectionHints: boolean,
 ): Highlight[] {
   if (thisResource.kind !== "Ingress") {
     return [];
@@ -43,8 +43,15 @@ export function find(
       return exactMatches.flatMap((r) => {
         const nameHighlight: Highlight = {
           start: start,
+          originalSource: r.where,
           type: "reference",
-          message: { type: "ReferenceFound", targetType, targetName: name, pwd, fromWhere: r.where },
+          message: {
+            type: "ReferenceFound",
+            targetType,
+            targetName: name,
+            pwd,
+            fromWhere: r.where,
+          },
         };
 
         // PORT REFERENCE
@@ -55,6 +62,7 @@ export function find(
           const portHighlight: Highlight = {
             ...getPositions(match, portRef),
             type: "reference",
+            originalSource: r.where,
             message: {
               type: "SubItemFound",
               subType: "port",
@@ -75,6 +83,7 @@ export function find(
               .map((a) => ({
                 ...getPositions(match, portRef),
                 type: "hint",
+                originalSource: r.where,
                 message: {
                   type: "SubItemNotFound",
                   subType: "port",

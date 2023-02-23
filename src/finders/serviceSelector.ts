@@ -44,6 +44,7 @@ export function find(
       (r): Highlight => ({
         start: start,
         type: "reference",
+        originalSource: r.resource.where,
         message: {
           type: "ReferenceFound",
           targetName: r.resource.metadata.name,

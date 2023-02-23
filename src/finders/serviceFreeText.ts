@@ -7,7 +7,7 @@ export function find(
   thisResource: K8sResource,
   pwd: string,
   text: string,
-  enableCorrectionHints: boolean
+  enableCorrectionHints: boolean,
 ): Highlight[] {
   if (thisResource.kind === "Ingress" || thisResource.kind === "Service") {
     return [];
@@ -42,6 +42,7 @@ export function find(
       return [...matches].flatMap((match) => {
         const port = match[1];
         const start = (match.index || 0) + 1;
+
         const portFound = port && resource.spec?.ports?.find((p) => p?.port === parseInt(port))
           ? true
           : false;
@@ -49,6 +50,7 @@ export function find(
         const serviceHighlight: Highlight = {
           start: start,
           type: "reference",
+          originalSource: r.where,
           message: {
             type: "ServiceFreeTextFound",
             targetName: name,
@@ -66,6 +68,7 @@ export function find(
               .map((a) => ({
                 start: start,
                 type: "hint",
+                originalSource: r.where,
                 message: {
                   type: "SubItemNotFound",
                   subType: "Port",

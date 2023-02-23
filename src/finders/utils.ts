@@ -36,6 +36,7 @@ export function getSimilarHighlights(
           fromWhere: r.content.where,
         },
         type: "hint",
+        originalSource: r.content.where,
       };
     });
 }
