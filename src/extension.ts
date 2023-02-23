@@ -10,7 +10,7 @@ import * as ingress from "./finders/ingress";
 import * as serviceFreeText from "./finders/serviceFreeText";
 import * as serviceSelector from "./finders/serviceSelector";
 
-import { K8sResource } from "./types";
+import { Highlight, K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
@@ -18,9 +18,7 @@ import { decorate, highlightsToDecorations } from "./decorations/decoration";
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  console.log(
-    'Congratulations, extension "Kubernetes Reference Highlighter" is now active!'
-  );
+  console.log('Congratulations, extension "Kubernetes Reference Highlighter" is now active!');
 
   let clusterClient = cluster.getKubeClient();
 
@@ -63,14 +61,9 @@ export function activate(context: vscode.ExtensionContext) {
     "kubernetes-reference-highlighter.enableWorkSpaceScanning",
     () => {
       prefs.workSpaceScanning = !prefs.workSpaceScanning;
-      updateConfigurationKey(
-        "enableWorkSpaceScanning",
-        prefs.workSpaceScanning
-      );
+      updateConfigurationKey("enableWorkSpaceScanning", prefs.workSpaceScanning);
       vscode.window.showInformationMessage(
-        `WorkSpace Scanning: ${
-          prefs.workSpaceScanning ? "Enabled" : "Disabled"
-        }`
+        `WorkSpace Scanning: ${prefs.workSpaceScanning ? "Enabled" : "Disabled"}`
       );
       updateK8sResourcesFromWorkspace();
       updateLocalResources();
@@ -81,14 +74,9 @@ export function activate(context: vscode.ExtensionContext) {
     "kubernetes-reference-highlighter.enableKustomizeScanning",
     () => {
       prefs.kustomizeScanning = !prefs.kustomizeScanning;
-      updateConfigurationKey(
-        "enableKustomizeScanning",
-        prefs.kustomizeScanning
-      );
+      updateConfigurationKey("enableKustomizeScanning", prefs.kustomizeScanning);
       vscode.window.showInformationMessage(
-        `Kustomize Scanning: ${
-          prefs.kustomizeScanning ? "Enabled" : "Disabled"
-        }`
+        `Kustomize Scanning: ${prefs.kustomizeScanning ? "Enabled" : "Disabled"}`
       );
       updateK8sResourcesFromKustomize();
       updateLocalResources();
@@ -99,9 +87,7 @@ export function activate(context: vscode.ExtensionContext) {
     "kubernetes-reference-highlighter.enableHelmScanning",
     () => {
       if (!helm.isHelmInstalled) {
-        vscode.window.showErrorMessage(
-          "Helm is not installed. Please install it first."
-        );
+        vscode.window.showErrorMessage("Helm is not installed. Please install it first.");
         return;
       }
       prefs.helmScanning = !prefs.helmScanning;
@@ -126,7 +112,9 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const updateK8sResourcesFromWorkspace = () => {
-    kubeResourcesWorkspace = prefs.workSpaceScanning ? workspace.getK8sResourceNamesInWorkspace() : [];
+    kubeResourcesWorkspace = prefs.workSpaceScanning
+      ? workspace.getK8sResourceNamesInWorkspace()
+      : [];
   };
 
   const updateK8sResourcesFromKustomize = () => {
@@ -138,7 +126,10 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   const updateK8sResourcesFromCluster = async () => {
-    kubeResourcesCluster = clusterClient && prefs.clusterScanning ? await cluster.getClusterResources(clusterClient) : [];
+    kubeResourcesCluster =
+      clusterClient && prefs.clusterScanning
+        ? await cluster.getClusterResources(clusterClient)
+        : [];
   };
 
   const updateLocalResources = () => {
@@ -173,12 +164,10 @@ export function activate(context: vscode.ExtensionContext) {
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources);
   });
 
-  const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor(
-    (editor) => {
-      debounce();
-      updateHighlighting(editor, prefs, k8sResources);
-    }
-  );
+  const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => {
+    debounce();
+    updateHighlighting(editor, prefs, k8sResources);
+  });
 
   context.subscriptions.push(
     enableClusterScanningCommand,
@@ -205,7 +194,7 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
       updateLocalResources();
-      readyForNewLocalRefresh = false; 
+      readyForNewLocalRefresh = false;
     }
   }, 1000 * 3);
 
@@ -267,101 +256,92 @@ function updateHighlighting(
 
   const split = "---";
 
-  const fileTextSplitted = fileText.split(split);
-
   let currentIndex = 0;
 
-  const decorationsCombined =
-    kubeResources.length === 0
-      ? []
-      : fileTextSplitted.flatMap((textSplit) => {
-          let thisResource: K8sResource;
+  if (kubeResources.length === 0) {
+    decorate(editor, []);
+    return;
+  }
 
-          try {
-            thisResource = {
-              ...textToK8sResource(textSplit),
-              where: { place: "workspace", path: fileName },
-            };
-          } catch (e) {
-            currentIndex += textSplit.length + split.length;
-            return [];
-          }
+  const decorations = fileText.split(split).flatMap((textSplit) => {
+    const highlights = getHighlights(kubeResources, fileName, textSplit, prefs, currentIndex);
+    const decorations = highlightsToDecorations(doc, highlights, currentIndex).sort(
+      (a, b) =>
+        (a.renderOptions?.after?.contentText?.length ?? 0) -
+        (b.renderOptions?.after?.contentText?.length ?? 0)
+    );
+    currentIndex += textSplit.length + split.length;
+    return decorations;
+  });
 
-          const serviceHighlights = serviceFreeText.find(
-            kubeResources,
-            thisResource,
-            fileName,
-            textSplit,
-            prefs.hints
-          );
-          const serviceSelectorHighlights = serviceSelector.find(
-            kubeResources,
-            thisResource,
-            fileName,
-            textSplit
-          );
-          const valueFromHighlights = valueFromKeyRef.find(
-            kubeResources,
-            thisResource,
-            fileName,
-            textSplit,
-            prefs.hints
-          );
-          const ingressHighlights = ingress.find(
-            kubeResources,
-            thisResource,
-            fileName,
-            textSplit,
-            prefs.hints
-          );
+  decorate(editor, decorations);
+}
 
-          const highlights = [
-            ...serviceHighlights,
-            ...serviceSelectorHighlights,
-            ...valueFromHighlights,
-            ...ingressHighlights,
-          ];
+function getHighlights(
+  kubeResources: K8sResource[],
+  fileName: string,
+  textSplit: string,
+  prefs: Prefs,
+  currentIndex: number
+): Highlight[] {
+  let thisResource: K8sResource;
 
-          if (
-            prefs.kustomizeScanning &&
-            (fileName.endsWith("kustomization.yaml") ||
-              fileName.endsWith("kustomization.yml"))
-          ) {
-            highlights.push(
-              ...kustomize.verifyKustomizeBuild(
-                thisResource,
-                textSplit,
-                fileName,
-                currentIndex
-              )
-            );
-          }
+  try {
+    thisResource = {
+      ...textToK8sResource(textSplit),
+      where: { place: "workspace", path: fileName },
+    };
+  } catch (e) {
+    return [];
+  }
 
-          if (prefs.helmScanning && fileName.endsWith("Chart.yaml")) {
-            highlights.push(
-              ...helm.verifyHelmBuild(
-                thisResource,
-                textSplit,
-                fileName,
-                currentIndex
-              )
-            );
-          }
+  const serviceHighlights = serviceFreeText.find(
+    kubeResources,
+    thisResource,
+    fileName,
+    textSplit,
+    prefs.hints
+  );
+  const serviceSelectorHighlights = serviceSelector.find(
+    kubeResources,
+    thisResource,
+    fileName,
+    textSplit
+  );
+  const valueFromHighlights = valueFromKeyRef.find(
+    kubeResources,
+    thisResource,
+    fileName,
+    textSplit,
+    prefs.hints
+  );
+  const ingressHighlights = ingress.find(
+    kubeResources,
+    thisResource,
+    fileName,
+    textSplit,
+    prefs.hints
+  );
 
-          const decorations = highlightsToDecorations(
-            doc,
-            highlights,
-            currentIndex
-          );
+  const highlights = [
+    ...serviceHighlights,
+    ...serviceSelectorHighlights,
+    ...valueFromHighlights,
+    ...ingressHighlights,
+  ];
 
-          currentIndex += textSplit.length + split.length;
-          decorations.sort(
-            (a, b) =>
-              (a.renderOptions?.after?.contentText?.length ?? 0) -
-              (b.renderOptions?.after?.contentText?.length ?? 0)
-          );
-          return decorations;
-        });
+  if (
+    prefs.kustomizeScanning &&
+    (fileName.endsWith("kustomization.yaml") || fileName.endsWith("kustomization.yml"))
+  ) {
+    highlights.push(
+      ...kustomize.verifyKustomizeBuild(thisResource, textSplit, fileName, currentIndex)
+    );
+  }
 
-  decorate(editor, decorationsCombined);
+  if (prefs.helmScanning && fileName.endsWith("Chart.yaml")) {
+    highlights.push(...helm.verifyHelmBuild(thisResource, textSplit, fileName, currentIndex));
+  }
+
+  return highlights;
 }

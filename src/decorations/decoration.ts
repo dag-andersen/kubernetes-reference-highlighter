@@ -32,6 +32,11 @@ export function highlightsToDecorations(
   highlights: Highlight[],
   shift: number
 ): DecorationOptions[] {
+
+  if (highlights.length === 0) {
+    return [];
+  }
+
   const decorations = highlights.map((highlight) => ({
     position: doc.lineAt(doc.positionAt(highlight.start + shift)).range.end,
     highlight: highlight,
