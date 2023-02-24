@@ -42,6 +42,10 @@
       {
         "command": "kubernetes-reference-highlighter.enableCorrectionHints",
         "title": "Kubernetes Reference Highlighter: Toggle Reference Correction Hints"
+      },
+      {
+        "command": "kubernetes-reference-highlighter.showDependencyDiagram",
+        "title": "Kubernetes Reference Highlighter: Show Dependency Diagram"
       }
     ],
     "configuration": {

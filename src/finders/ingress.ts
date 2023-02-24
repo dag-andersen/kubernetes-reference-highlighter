@@ -44,7 +44,6 @@ export function find(
     if (exactMatches.length > 0) {
       return exactMatches.flatMap((r) => {
         if (onlyReferences) {
-          logText("only ref");
           const highlight: Highlight = {
             start: start,
             type: "reference",
@@ -53,7 +52,7 @@ export function find(
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
               sourceType: thisResource.kind,
-              ln: start,
+              charIndex: start,
               pwd,
               fromWhere: thisResource.where,
             },

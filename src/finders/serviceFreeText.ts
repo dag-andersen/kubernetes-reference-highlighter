@@ -49,7 +49,6 @@ export function find(
         const start = (match.index || 0) + 1;
 
         if (onlyReferences) {
-          logText("only ref");
           const highlight: Highlight = {
             start: start,
             type: "reference",
@@ -58,7 +57,7 @@ export function find(
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
               sourceType: thisResource.kind,
-              ln: start,
+              charIndex: start,
               pwd,
               fromWhere: thisResource.where,
             },

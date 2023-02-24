@@ -16,7 +16,7 @@ export function find(
     return [];
   }
 
-  let regex = new RegExp(`  name:\\s*${thisResource.metadata.name}`, `g`);
+  let regex = new RegExp(`  name:\\s*${name}`, `g`);
   let matches = text.matchAll(regex);
   let list = [...matches];
 
@@ -28,12 +28,14 @@ export function find(
 
   const start = (match.index || 0) + 1;
 
-  return incomingReference.flatMap(
-    (r): Highlight => ({
-      start: start,
-      type: "reference",
-      source: thisResource, // this is wrong
-      message: r.message,
-    })
-  );
+  return incomingReference
+    .filter((r) => r.definition.metadata.name === name)
+    .flatMap(
+      (r): Highlight => ({
+        start: start,
+        type: "reference",
+        source: thisResource, // this is wrong?
+        message: r.message,
+      })
+    );
 }

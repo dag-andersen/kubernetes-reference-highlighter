@@ -15,7 +15,7 @@ export type ExclusiveArray<T extends { type: string }> = {
   [TType in T["type"]]: Array<T & { type: TType }>;
 }[T["type"]];
 
-export function generateMessage(mg: ExclusiveArray<Message>): string {
+export function generateMessage(mg: ExclusiveArray<Message>, doc: vscode.TextDocument): string {
   if (mg.length === 0) {
     return "Error";
   }
@@ -28,7 +28,7 @@ export function generateMessage(mg: ExclusiveArray<Message>): string {
     SubItemFound: () => generateSubItemFoundMessage(mg as SubItemFound[]),
     SelectorFound: () => generateSelectorFoundMessage(mg as SelectorFound[]),
     ServiceFreeTextFound: () => generateServiceFreeTextFoundMessage(mg as ServiceFreeTextFound[]),
-    ReferencedBy: () => generateReferencedByMessage(mg as ReferencedBy[]),
+    ReferencedBy: () => generateReferencedByMessage(mg as ReferencedBy[], doc),
     PlainText: () => (mg as PlainText[]).map((m) => m.content).join("\\\n"),
   };
 
@@ -79,13 +79,17 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
 
   if (mg.length === 1) {
     const { targetName, pwd, fromWhere, suggestion } = mg[0];
-    return `🤷‍♂️ ${c(targetName)} not found. Did you mean ${c(suggestion)}? (From ${individualRef(fromWhere, pwd)})`;
+    return `🤷‍♂️ ${c(targetName)} not found. Did you mean ${c(suggestion)}? (From ${individualRef(
+      fromWhere,
+      pwd
+    )})`;
   }
 
   const { targetName } = mg[0];
   const header = `🤷‍♂️ ${c(targetName)} not found.`;
   return mg.reduce(
-    (acc, { pwd, fromWhere, suggestion }) => acc + `\n- Did you mean ${c(suggestion)}? (From ${listRef(fromWhere, pwd)})`,
+    (acc, { pwd, fromWhere, suggestion }) =>
+      acc + `\n- Did you mean ${c(suggestion)}? (From ${listRef(fromWhere, pwd)})`,
     header
   );
 }
@@ -161,7 +165,10 @@ function generateSelectorFoundMessage(mg: SelectorFound[]): string {
   }
   if (mg.length === 1) {
     const { targetType, targetName, pwd, fromWhere } = mg[0];
-    return `✅ Selector points to: ${i(targetType)}: ${c(targetName)} ${individualRef(fromWhere, pwd)}`;
+    return `✅ Selector points to: ${i(targetType)}: ${c(targetName)} ${individualRef(
+      fromWhere,
+      pwd
+    )}`;
   }
 
   const header = `✅ Selector points to:`;
@@ -206,26 +213,32 @@ export type ReferencedBy = {
   type: "ReferencedBy";
   sourceType: string;
   sourceName: string;
-  ln: number;
+  charIndex: number;
   pwd: string;
   fromWhere: FromWhere;
 };
 
-function generateReferencedByMessage(mg: ReferencedBy[]): string {
+function generateReferencedByMessage(mg: ReferencedBy[], doc: vscode.TextDocument): string {
   if (mg.length === 0) {
     return "Error";
   }
+
+  const line = (number: number) => doc.lineAt(doc.positionAt(number)).range.end.line;
+
   if (mg.length === 1) {
-    const { sourceType, sourceName, ln, pwd, fromWhere } = mg[0];
-    return `🔗 Referenced by ${i(sourceType)}: ${c(sourceName)} ${individualRef(fromWhere, pwd)} on line ${ln}`;
+    const { sourceType, sourceName, charIndex, pwd, fromWhere } = mg[0];
+    return `🔗 Referenced by ${i(sourceType)}: ${c(sourceName)} ${individualRef(
+      fromWhere,
+      pwd
+    )} on line ${line(charIndex)}`;
   }
 
-  const type = mg[0].sourceType;
-  const name = mg[0].sourceName;
-
-  const header = `🔗 Referenced by ${i(type)}: ${c(name)} in:`;
-  return mg.reduce((acc, { pwd, fromWhere, ln }) => {
-    return acc + `\n- ${i(type)}: ${c(name)} ${listRef(fromWhere, pwd)} on line ${ln}`;
+  const header = `🔗 Referenced by:`;
+  return mg.reduce((acc, { sourceType, sourceName, pwd, fromWhere, charIndex }) => {
+    return (
+      acc +
+      `\n- ${i(sourceType)}: ${c(sourceName)} ${listRef(fromWhere, pwd)} on line ${line(charIndex)}`
+    );
   }, header);
 }
 

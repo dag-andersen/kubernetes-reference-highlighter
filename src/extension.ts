@@ -17,7 +17,7 @@ import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
 import { getAllYamlFileNamesInDirectory, getAllYamlFilesInVsCodeWorkspace } from "./sources/util";
 import { logText } from "./utils";
-import { IncomingReference, LookupIncomingReferences, testtesttest } from "./sources/workspace";
+import { IncomingReference, LookupIncomingReferences, getLookupIncomingReferences } from "./sources/workspace";
 import { Message } from "./decorations/messages";
 
 // This method is called when the extension is activated
@@ -115,10 +115,16 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(
         `Reference Correction Hints: ${prefs.hints ? "Enabled" : "Disabled"}`
       );
-
-      lookup = testtesttest(k8sResources, prefs);
     }
   );
+
+    const showDependencyDiagramCommand = vscode.commands.registerCommand(
+      "kubernetes-reference-highlighter.showDependencyDiagram",
+      () => {
+        lookup = getLookupIncomingReferences(k8sResources, prefs);
+        workspace.showMermaid(workspace.getMermaid(lookup));
+      }
+    );
 
   const updateK8sResourcesFromWorkspace = () => {
     kubeResourcesWorkspace = prefs.workSpaceScanning
@@ -182,6 +188,7 @@ export function activate(context: vscode.ExtensionContext) {
     enableClusterScanningCommand,
     enableWorkSpaceScanningCommand,
     enableKustomizeScanningCommand,
+    showDependencyDiagramCommand,
     onTextEditorChange,
     enableHelmScanningCommand,
     enableCorrectionHintsCommand,

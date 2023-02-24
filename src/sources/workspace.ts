@@ -3,9 +3,9 @@ import { getHighlights, textToK8sResource } from "../extension";
 import { getAllYamlFilesInVsCodeWorkspace } from "./util";
 import { Prefs } from "../prefs";
 import { logText } from "../utils";
-import { resourceLimits } from "worker_threads";
 import { Message, ReferencedBy } from "../decorations/messages";
 import * as vscode from "vscode";
+import { lookup } from "dns";
 
 export function getK8sResourcesInWorkspace(): K8sResource[] {
   return getAllYamlFilesInVsCodeWorkspace().flatMap(({ fileName, text }) =>
@@ -26,45 +26,26 @@ export function textToWorkspaceK8sResource(
   return undefined;
 }
 
-export function testtesttest(kubeResources: K8sResource[], prefs: Prefs): LookupIncomingReferences {
-  let refToSource: LookupIncomingReferences = {};
+export function getLookupIncomingReferences(kubeResources: K8sResource[], prefs: Prefs): LookupIncomingReferences {
+  let lookup: LookupIncomingReferences = {};
   const files = getAllYamlFilesInVsCodeWorkspace();
   files.forEach(({ text, fileName }) => {
-    getReferencesFromFile(text, kubeResources, fileName, prefs, 0).forEach((ref) => {
-      const { thisResource, source, message } = ref;
-      if (refToSource[source.where.path]) {
-        refToSource[source.where.path].push({
-          source: source,
-          resource: thisResource,
-          message: message,
-        });
-      } else {
-        refToSource[source.where.path] = [
-          { source: source, resource: thisResource, message: message },
-        ];
+    getReferencesFromFile(text, kubeResources, fileName, prefs, 0).forEach(
+      ({ ref, definition, message }) => {
+        if (lookup[definition.where.path]) {
+          lookup[definition.where.path].push({
+            definition: definition,
+            ref: ref,
+            message: message,
+          });
+        } else {
+          lookup[definition.where.path] = [{ definition: definition, ref: ref, message: message }];
+        }
       }
-    });
+    );
   });
 
-  // loop over record
-  let string = "```mermaid\ngraph LR;";
-  for (const [pathToFile, value] of Object.entries(refToSource)) {
-    string += value
-      .map(({ source, resource, message }) => {
-        const m = message as ReferencedBy;
-        return (
-          `\n subgraph ${toPath(source.where.path)}; ${source.metadata.name}; end;` +
-          `\n subgraph ${toPath(resource.where.path)}; ${resource.metadata.name}; end;` +
-          ` ${resource.metadata.name} --> ${source.metadata.name};`
-        );
-      })
-      .join("");
-  }
-  string += "\n```";
-  writeToFile(string);
-  logText(string);
-
-  return refToSource;
+  return lookup;
 }
 
 const toPath = (path: string) => vscode.workspace.asRelativePath(path || "");
@@ -72,8 +53,8 @@ const toPath = (path: string) => vscode.workspace.asRelativePath(path || "");
 export type LookupIncomingReferences = Record<string, IncomingReference[]>;
 
 export type IncomingReference = {
-  resource: K8sResource; // delete this???
-  source: K8sResource;
+  ref: K8sResource; // delete this???
+  definition: K8sResource;
   message: Message;
 };
 
@@ -84,8 +65,8 @@ function getReferencesFromFile(
   prefs: Prefs,
   currentIndex: number
 ): {
-  thisResource: K8sResource;
-  source: K8sResource;
+  ref: K8sResource;
+  definition: K8sResource;
   message: Message;
 }[] {
   const split = "---";
@@ -112,19 +93,47 @@ function getReferencesFromFile(
     })
     .flatMap((h) =>
       h.highlights.map((hh) => ({
-        thisResource: h.thisResource,
-        source: hh.source,
+        ref: h.thisResource,
+        definition: hh.source,
         message: hh.message,
       }))
     );
 }
 
-function writeToFile(text: string) {
-  const fs = require("fs");
-  fs.writeFile("/Users/dag/CodeProjects/kubernetes-reference-highlighter/test.md", text, function (err: any) {
-    if (err) {
-      return logText(err);
-    }
-    logText("The file was saved!");
+export function getMermaid(lookup: LookupIncomingReferences) {
+  let string = "graph LR;";
+  for (const incomingReference of Object.values(lookup)) {
+    string += incomingReference
+      .map(({ definition, ref, message }) => {
+        const m = message as ReferencedBy;
+        return (
+          `\n subgraph ${toPath(definition.where.path)}; ${definition.metadata.name}; end;` +
+          `\n subgraph ${toPath(ref.where.path)}; ${ref.metadata.name}; end;` +
+          `\n ${ref.metadata.name} --> ${definition.metadata.name};`
+        );
+      })
+      .join("");
+  }
+  return string;
+}
+
+export function showMermaid(text: string) {
+  const webview = vscode.window.createWebviewPanel("test", "test", vscode.ViewColumn.Two, {
+    enableScripts: true,
   });
+  webview.webview.html = `
+  <!DOCTYPE html>
+<html lang="en">
+
+<body>
+    <pre class="mermaid">
+  ${text}
+    </pre>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    </script>
+</body>
+
+</html>
+  `;
 }

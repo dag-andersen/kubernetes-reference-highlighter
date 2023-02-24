@@ -67,7 +67,7 @@ export function highlightsToDecorations(
       return acc;
     }, [] as DecorationGroup[]);
 
-  return grouped.map((d) => getDecoration(generateMessage(d.message), d.highLightType, d.position));
+  return grouped.map((d) => getDecoration(generateMessage(d.message, doc), d.highLightType, d.position));
 }
 
 function getDecoration(
