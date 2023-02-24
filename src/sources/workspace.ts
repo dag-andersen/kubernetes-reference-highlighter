@@ -4,7 +4,8 @@ import { getAllYamlFilesInVsCodeWorkspace } from "./util";
 import { Prefs } from "../prefs";
 import { logText } from "../utils";
 import { resourceLimits } from "worker_threads";
-import { Message } from "../decorations/messages";
+import { Message, ReferencedBy } from "../decorations/messages";
+import * as vscode from "vscode";
 
 export function getK8sResourcesInWorkspace(): K8sResource[] {
   return getAllYamlFilesInVsCodeWorkspace().flatMap(({ fileName, text }) =>
@@ -30,27 +31,49 @@ export function testtesttest(kubeResources: K8sResource[], prefs: Prefs): Lookup
   const files = getAllYamlFilesInVsCodeWorkspace();
   files.forEach(({ text, fileName }) => {
     getReferencesFromFile(text, kubeResources, fileName, prefs, 0).forEach((ref) => {
-      const { thisResource, path, message } = ref;
-      if (refToSource[path]) {
-        refToSource[path].push({ resource: thisResource, message: message });
+      const { thisResource, source, message } = ref;
+      if (refToSource[source.where.path]) {
+        refToSource[source.where.path].push({
+          source: source,
+          resource: thisResource,
+          message: message,
+        });
       } else {
-        refToSource[path] = [{ resource: thisResource, message: message }];
+        refToSource[source.where.path] = [
+          { source: source, resource: thisResource, message: message },
+        ];
       }
     });
   });
 
   // loop over record
-  for (const [key, value] of Object.entries(refToSource)) {
-    logText(`${key}: ${value.map((v) => v.resource.metadata.name).join(", ")}`);
+  let string = "```mermaid\ngraph LR;";
+  for (const [pathToFile, value] of Object.entries(refToSource)) {
+    string += value
+      .map(({ source, resource, message }) => {
+        const m = message as ReferencedBy;
+        return (
+          `\n subgraph ${toPath(source.where.path)}; ${source.metadata.name}; end;` +
+          `\n subgraph ${toPath(resource.where.path)}; ${resource.metadata.name}; end;` +
+          ` ${resource.metadata.name} --> ${source.metadata.name};`
+        );
+      })
+      .join("");
   }
+  string += "\n```";
+  writeToFile(string);
+  logText(string);
 
   return refToSource;
 }
 
+const toPath = (path: string) => vscode.workspace.asRelativePath(path || "");
+
 export type LookupIncomingReferences = Record<string, IncomingReference[]>;
 
 export type IncomingReference = {
-  resource: K8sResource;
+  resource: K8sResource; // delete this???
+  source: K8sResource;
   message: Message;
 };
 
@@ -62,7 +85,7 @@ function getReferencesFromFile(
   currentIndex: number
 ): {
   thisResource: K8sResource;
-  path: string;
+  source: K8sResource;
   message: Message;
 }[] {
   const split = "---";
@@ -88,10 +111,20 @@ function getReferencesFromFile(
       return { thisResource, highlights };
     })
     .flatMap((h) =>
-      h.highlights.flatMap((hh) =>
-        hh.source.path
-          ? { thisResource: h.thisResource, path: hh.source?.path, message: hh.message }
-          : []
-      )
+      h.highlights.map((hh) => ({
+        thisResource: h.thisResource,
+        source: hh.source,
+        message: hh.message,
+      }))
     );
+}
+
+function writeToFile(text: string) {
+  const fs = require("fs");
+  fs.writeFile("/Users/dag/CodeProjects/kubernetes-reference-highlighter/test.md", text, function (err: any) {
+    if (err) {
+      return logText(err);
+    }
+    logText("The file was saved!");
+  });
 }

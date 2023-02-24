@@ -342,15 +342,18 @@ export function getHighlights(
     prefs.hints,
     onlyReferences
   );
-  const incomingHighlights = name.find(incomingReferences, thisResource, textSplit);
-
+  
   const highlights = [
     ...serviceHighlights,
     ...serviceSelectorHighlights,
     ...valueFromHighlights,
     ...ingressHighlights,
-    ...incomingHighlights,
   ];
+  
+  if (!onlyReferences) {
+    const incomingHighlights = name.find(incomingReferences, thisResource, textSplit);
+    highlights.push(...incomingHighlights);
+  }
 
   if (
     prefs.kustomizeScanning &&
