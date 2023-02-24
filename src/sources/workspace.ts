@@ -26,29 +26,32 @@ export function textToWorkspaceK8sResource(
   return undefined;
 }
 
-export function getLookupIncomingReferences(kubeResources: K8sResource[], prefs: Prefs): LookupIncomingReferences {
-  let lookup: LookupIncomingReferences = {};
-  const files = getAllYamlFilesInVsCodeWorkspace();
-  files.forEach(({ text, fileName }) => {
-    getReferencesFromFile(text, kubeResources, fileName, prefs, 0).forEach(
-      ({ ref, definition, message }) => {
-        if (lookup[definition.where.path]) {
-          lookup[definition.where.path].push({
-            definition: definition,
-            ref: ref,
-            message: message,
-          });
-        } else {
-          lookup[definition.where.path] = [{ definition: definition, ref: ref, message: message }];
-        }
-      }
-    );
-  });
-
-  return lookup;
+export function getLookupIncomingReferences(
+  kubeResources: K8sResource[],
+  prefs: Prefs
+): LookupIncomingReferences {
+  return getAllYamlFilesInVsCodeWorkspace().reduce(
+    (acc, { text, fileName }) =>
+      getReferencesFromFile(text, kubeResources, fileName, prefs, 0).reduce(
+        (acc, { definition, message, ref }) => {
+          if (acc[definition.where.path]) {
+            acc[definition.where.path].push({
+              definition: definition,
+              ref: ref,
+              message: message,
+            });
+          } else {
+            acc[definition.where.path] = [{ definition: definition, ref: ref, message: message }];
+          }
+          return acc;
+        },
+        acc
+      ),
+    {} as LookupIncomingReferences
+  );
 }
 
-const toPath = (path: string) => vscode.workspace.asRelativePath(path || "");
+export const toPath = (path: string) => vscode.workspace.asRelativePath(path || "");
 
 export type LookupIncomingReferences = Record<string, IncomingReference[]>;
 
@@ -84,7 +87,7 @@ function getReferencesFromFile(
         [],
         fileName,
         textSplit,
-        prefs,
+        { } as Prefs,
         currentIndex,
         true
       );
@@ -98,42 +101,4 @@ function getReferencesFromFile(
         message: hh.message,
       }))
     );
-}
-
-export function getMermaid(lookup: LookupIncomingReferences) {
-  let string = "graph LR;";
-  for (const incomingReference of Object.values(lookup)) {
-    string += incomingReference
-      .map(({ definition, ref, message }) => {
-        const m = message as ReferencedBy;
-        return (
-          `\n subgraph ${toPath(definition.where.path)}; ${definition.metadata.name}; end;` +
-          `\n subgraph ${toPath(ref.where.path)}; ${ref.metadata.name}; end;` +
-          `\n ${ref.metadata.name} --> ${definition.metadata.name};`
-        );
-      })
-      .join("");
-  }
-  return string;
-}
-
-export function showMermaid(text: string) {
-  const webview = vscode.window.createWebviewPanel("test", "test", vscode.ViewColumn.Two, {
-    enableScripts: true,
-  });
-  webview.webview.html = `
-  <!DOCTYPE html>
-<html lang="en">
-
-<body>
-    <pre class="mermaid">
-  ${text}
-    </pre>
-    <script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    </script>
-</body>
-
-</html>
-  `;
 }
