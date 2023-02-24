@@ -206,7 +206,7 @@ type ReferencedBy = {
   type: "ReferencedBy";
   sourceType: string;
   sourceName: string;
-  ln: number;
+  charIndex: number;
   pwd: string;
   fromWhere: FromWhere;
 };
@@ -215,17 +215,32 @@ function generateReferencedByMessage(mg: ReferencedBy[]): string {
   if (mg.length === 0) {
     return "Error";
   }
+
+  const line = (number: number, file: string) => {
+    const doc = vscode.workspace.textDocuments.find((doc) => doc.fileName === file);
+    if (!doc) {
+      return "unknown";
+    }
+    return doc.positionAt(number).line + 1;
+  };
+
   if (mg.length === 1) {
-    const { sourceType, sourceName, ln, pwd, fromWhere } = mg[0];
-    return `🔗 Referenced by ${i(sourceType)}: ${c(sourceName)} ${individualRef(fromWhere, pwd)} on line ${ln}`;
+    const { sourceType, sourceName, charIndex, pwd, fromWhere } = mg[0];
+    return `🔗 Referenced by ${i(sourceType)}: ${c(sourceName)} ${individualRef(
+      fromWhere,
+      pwd
+    )} on line ${line(charIndex, fromWhere.path)}`;
   }
 
-  const type = mg[0].sourceType;
-  const name = mg[0].sourceName;
-
-  const header = `🔗 Referenced by ${i(type)}: ${c(name)} in:`;
-  return mg.reduce((acc, { pwd, fromWhere, ln }) => {
-    return acc + `\n- ${i(type)}: ${c(name)} ${listRef(fromWhere, pwd)} on line ${ln}`;
+  const header = `🔗 Referenced by:`;
+  return mg.reduce((acc, { sourceType, sourceName, pwd, fromWhere, charIndex }) => {
+    return (
+      acc +
+      `\n- ${i(sourceType)}: ${c(sourceName)} ${listRef(fromWhere, pwd)} on line ${line(
+        charIndex,
+        fromWhere.path
+      )}`
+    );
   }, header);
 }
 

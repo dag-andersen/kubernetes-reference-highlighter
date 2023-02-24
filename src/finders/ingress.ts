@@ -53,7 +53,7 @@ export function find(
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
               sourceType: thisResource.kind,
-              ln: start,
+              charIndex: start,
               pwd,
               fromWhere: thisResource.where,
             },
