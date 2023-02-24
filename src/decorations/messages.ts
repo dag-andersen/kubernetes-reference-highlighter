@@ -15,7 +15,7 @@ export type ExclusiveArray<T extends { type: string }> = {
   [TType in T["type"]]: Array<T & { type: TType }>;
 }[T["type"]];
 
-export function generateMessage(mg: ExclusiveArray<Message>, doc: vscode.TextDocument): string {
+export function generateMessage(mg: ExclusiveArray<Message>): string {
   if (mg.length === 0) {
     return "Error";
   }
@@ -28,7 +28,7 @@ export function generateMessage(mg: ExclusiveArray<Message>, doc: vscode.TextDoc
     SubItemFound: () => generateSubItemFoundMessage(mg as SubItemFound[]),
     SelectorFound: () => generateSelectorFoundMessage(mg as SelectorFound[]),
     ServiceFreeTextFound: () => generateServiceFreeTextFoundMessage(mg as ServiceFreeTextFound[]),
-    ReferencedBy: () => generateReferencedByMessage(mg as ReferencedBy[], doc),
+    ReferencedBy: () => generateReferencedByMessage(mg as ReferencedBy[]),
     PlainText: () => (mg as PlainText[]).map((m) => m.content).join("\\\n"),
   };
 
@@ -218,26 +218,35 @@ export type ReferencedBy = {
   fromWhere: FromWhere;
 };
 
-function generateReferencedByMessage(mg: ReferencedBy[], doc: vscode.TextDocument): string {
+function generateReferencedByMessage(mg: ReferencedBy[]): string {
   if (mg.length === 0) {
     return "Error";
   }
 
-  const line = (number: number) => doc.lineAt(doc.positionAt(number)).range.end.line;
+  const line = (number: number, file: string) => {
+    const doc = vscode.workspace.textDocuments.find((doc) => doc.fileName === file);
+    if (!doc) {
+      return "unknown";
+    }
+    return doc.positionAt(number).line + 1;
+  };
 
   if (mg.length === 1) {
     const { sourceType, sourceName, charIndex, pwd, fromWhere } = mg[0];
     return `🔗 Referenced by ${i(sourceType)}: ${c(sourceName)} ${individualRef(
       fromWhere,
       pwd
-    )} on line ${line(charIndex)}`;
+    )} on line ${line(charIndex, fromWhere.path)}`;
   }
 
   const header = `🔗 Referenced by:`;
   return mg.reduce((acc, { sourceType, sourceName, pwd, fromWhere, charIndex }) => {
     return (
       acc +
-      `\n- ${i(sourceType)}: ${c(sourceName)} ${listRef(fromWhere, pwd)} on line ${line(charIndex)}`
+      `\n- ${i(sourceType)}: ${c(sourceName)} ${listRef(fromWhere, pwd)} on line ${line(
+        charIndex,
+        fromWhere.path
+      )}`
     );
   }, header);
 }
