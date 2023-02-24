@@ -18,6 +18,7 @@ export function similarity<T>(l: T[], name: string, f: (r: T) => string) {
 }
 
 export function getSimilarHighlights(
+  thisResource: K8sResource,
   resources: K8sResource[],
   name: string,
   start: number,
@@ -27,6 +28,7 @@ export function getSimilarHighlights(
     .filter((r) => r.rating > 0.8)
     .map((r): Highlight => {
       return {
+        source: thisResource.where,
         start: start,
         message: {
           type: "ReferenceNotFound",
@@ -36,7 +38,6 @@ export function getSimilarHighlights(
           fromWhere: r.content.where,
         },
         type: "hint",
-        originalSource: r.content.where,
       };
     });
 }

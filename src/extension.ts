@@ -286,7 +286,8 @@ function updateHighlighting(
       fileName,
       textSplit,
       prefs,
-      currentIndex
+      currentIndex,
+      false,
     );
     const decorations = highlightsToDecorations(doc, highlights, currentIndex).sort(
       (a, b) =>
@@ -308,6 +309,7 @@ export function getHighlights(
   textSplit: string,
   prefs: Prefs,
   currentIndex: number,
+  onlyReferences: boolean
 ): Highlight[] {
   const serviceHighlights = serviceFreeText.find(
     kubeResources,
@@ -315,19 +317,22 @@ export function getHighlights(
     fileName,
     textSplit,
     prefs.hints,
+    onlyReferences
   );
   const serviceSelectorHighlights = serviceSelector.find(
     kubeResources,
     thisResource,
     fileName,
-    textSplit
+    textSplit,
+    onlyReferences
   );
   const valueFromHighlights = valueFromKeyRef.find(
     kubeResources,
     thisResource,
     fileName,
     textSplit,
-    prefs.hints
+    prefs.hints,
+    onlyReferences
   );
   const ingressHighlights = ingress.find(
     kubeResources,
@@ -335,6 +340,7 @@ export function getHighlights(
     fileName,
     textSplit,
     prefs.hints,
+    onlyReferences
   );
   const incomingHighlights = name.find(incomingReferences, thisResource, textSplit);
 

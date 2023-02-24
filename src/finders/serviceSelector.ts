@@ -5,7 +5,8 @@ export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
   pwd: string,
-  text: string
+  text: string,
+  onlyReferences: boolean
 ): Highlight[] {
   if (thisResource.kind !== "Service") {
     return [];
@@ -41,18 +42,33 @@ export function find(
       return [];
     })
     .flatMap(
-      (r): Highlight => ({
-        start: start,
-        type: "reference",
-        originalSource: r.resource.where,
-        message: {
-          type: "ReferenceFound",
-          targetName: r.resource.metadata.name,
-          targetType: r.resource.kind,
-          pwd,
-          fromWhere: r.resource.where,
-        },
-      })
+      (r): Highlight =>
+        onlyReferences
+          ? {
+              start: start,
+              type: "reference",
+              source: r.resource.where,
+              message: {
+                type: "ReferencedBy",
+                sourceName: thisResource.metadata.name,
+                sourceType: thisResource.kind,
+                ln: start,
+                pwd,
+                fromWhere: thisResource.where,
+              },
+            }
+          : {
+              start: start,
+              type: "reference",
+              source: thisResource.where,
+              message: {
+                type: "ReferenceFound",
+                targetName: r.resource.metadata.name,
+                targetType: r.resource.kind,
+                pwd,
+                fromWhere: r.resource.where,
+              },
+            }
     );
 }
 

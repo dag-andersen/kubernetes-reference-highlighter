@@ -1,7 +1,5 @@
 import { IncomingReference } from "../sources/workspace";
 import { K8sResource, Highlight } from "../types";
-import { logText } from "../utils";
-import { getPositions, getSimilarHighlights, similarity } from "./utils";
 
 export function find(
   incomingReference: IncomingReference[],
@@ -34,7 +32,7 @@ export function find(
     (r): Highlight => ({
       start: start,
       type: "reference",
-      originalSource: r.resource.where,
+      source: thisResource.where, // this is wrong
       message: r.message,
     })
   );

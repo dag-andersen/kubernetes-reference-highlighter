@@ -81,15 +81,16 @@ function getReferencesFromFile(
         fileName,
         textSplit,
         prefs,
-        currentIndex
+        currentIndex,
+        true
       );
       currentIndex += textSplit.length + split.length;
       return { thisResource, highlights };
     })
     .flatMap((h) =>
       h.highlights.flatMap((hh) =>
-        hh.originalSource?.path
-          ? { thisResource: h.thisResource, path: hh.originalSource?.path, message: hh.message }
+        hh.source.path
+          ? { thisResource: h.thisResource, path: hh.source?.path, message: hh.message }
           : []
       )
     );

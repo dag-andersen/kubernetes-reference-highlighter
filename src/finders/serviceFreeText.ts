@@ -1,5 +1,6 @@
 import { V1Service } from "@kubernetes/client-node";
 import { K8sResource, Highlight } from "../types";
+import { logText } from "../utils";
 import { similarity } from "./utils";
 
 export function find(
@@ -8,6 +9,7 @@ export function find(
   pwd: string,
   text: string,
   enableCorrectionHints: boolean,
+  onlyReferences: boolean
 ): Highlight[] {
   if (thisResource.kind === "Ingress" || thisResource.kind === "Service") {
     return [];
@@ -34,7 +36,10 @@ export function find(
             regexName: r.metadata.name,
           };
 
-      const regex = new RegExp(`(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,20}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`, "g");
+      const regex = new RegExp(
+        `(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,20}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`,
+        "g"
+      );
       const matches = text.matchAll(regex);
 
       let resource = r as V1Service;
@@ -43,14 +48,31 @@ export function find(
         const port = match[1];
         const start = (match.index || 0) + 1;
 
-        const portFound = port && resource.spec?.ports?.find((p) => p?.port === parseInt(port))
-          ? true
-          : false;
+        if (onlyReferences) {
+          logText("only ref");
+          const highlight: Highlight = {
+            start: start,
+            type: "reference",
+            source: r.where,
+            message: {
+              type: "ReferencedBy",
+              sourceName: thisResource.metadata.name,
+              sourceType: thisResource.kind,
+              ln: start,
+              pwd,
+              fromWhere: thisResource.where,
+            },
+          };
+          return [highlight];
+        }
+
+        const portFound =
+          port && resource.spec?.ports?.find((p) => p?.port === parseInt(port)) ? true : false;
 
         const serviceHighlight: Highlight = {
           start: start,
           type: "reference",
-          originalSource: r.where,
+          source: thisResource.where,
           message: {
             type: "ServiceFreeTextFound",
             targetName: name,
@@ -68,7 +90,7 @@ export function find(
               .map((a) => ({
                 start: start,
                 type: "hint",
-                originalSource: r.where,
+                source: thisResource.where,
                 message: {
                   type: "SubItemNotFound",
                   subType: "Port",

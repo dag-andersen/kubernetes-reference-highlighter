@@ -11,7 +11,7 @@ export type Highlight = {
   start: number;
   message: Message;
   type: HighLightType;
-  originalSource?: FromWhere;
+  source: FromWhere;
 };
 
 // define basic type

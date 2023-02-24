@@ -1,4 +1,5 @@
 import { K8sResource, Highlight } from "../types";
+import { logText } from "../utils";
 import { getPositions, getSimilarHighlights, similarity } from "./utils";
 
 export function find(
@@ -7,6 +8,7 @@ export function find(
   pwd: string,
   text: string,
   enableCorrectionHints: boolean,
+  onlyReferences: boolean
 ): Highlight[] {
   if (thisResource.kind !== "Ingress") {
     return [];
@@ -41,9 +43,27 @@ export function find(
     var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
     if (exactMatches.length > 0) {
       return exactMatches.flatMap((r) => {
+        if (onlyReferences) {
+          logText("only ref");
+          const highlight: Highlight = {
+            start: start,
+            type: "reference",
+            source: r.where,
+            message: {
+              type: "ReferencedBy",
+              sourceName: thisResource.metadata.name,
+              sourceType: thisResource.kind,
+              ln: start,
+              pwd,
+              fromWhere: thisResource.where,
+            },
+          };
+          return [highlight];
+        }
+
         const nameHighlight: Highlight = {
           start: start,
-          originalSource: r.where,
+          source: r.where,
           type: "reference",
           message: {
             type: "ReferenceFound",
@@ -56,13 +76,14 @@ export function find(
 
         // PORT REFERENCE
         if (
-          (portType === "number" && r.spec?.ports?.find((p: any) => p?.port === parseInt(portRef))) ||
+          (portType === "number" &&
+            r.spec?.ports?.find((p: any) => p?.port === parseInt(portRef))) ||
           (portType === "name" && r.spec?.ports?.find((p: any) => p?.name === portRef))
         ) {
           const portHighlight: Highlight = {
             ...getPositions(match, portRef),
             type: "reference",
-            originalSource: r.where,
+            source: r.where,
             message: {
               type: "SubItemFound",
               subType: "port",
@@ -83,7 +104,7 @@ export function find(
               .map((a) => ({
                 ...getPositions(match, portRef),
                 type: "hint",
-                originalSource: r.where,
+                source: thisResource.where,
                 message: {
                   type: "SubItemNotFound",
                   subType: "port",
@@ -117,7 +138,7 @@ export function find(
         return nameHighlight;
       });
     } else {
-      return enableCorrectionHints ? getSimilarHighlights(resourcesScoped, name, start, pwd) : [];
+      return enableCorrectionHints ? getSimilarHighlights(thisResource, resourcesScoped, name, start, pwd) : [];
     }
   });
 }

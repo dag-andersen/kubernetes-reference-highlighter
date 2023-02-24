@@ -8,6 +8,7 @@ export type Message =
   | SubItemFound
   | SelectorFound
   | ServiceFreeTextFound
+  | ReferencedBy
   | PlainText;
 
 export type ExclusiveArray<T extends { type: string }> = {
@@ -27,6 +28,7 @@ export function generateMessage(mg: ExclusiveArray<Message>): string {
     SubItemFound: () => generateSubItemFoundMessage(mg as SubItemFound[]),
     SelectorFound: () => generateSelectorFoundMessage(mg as SelectorFound[]),
     ServiceFreeTextFound: () => generateServiceFreeTextFoundMessage(mg as ServiceFreeTextFound[]),
+    ReferencedBy: () => generateReferencedByMessage(mg as ReferencedBy[]),
     PlainText: () => (mg as PlainText[]).map((m) => m.content).join("\\\n"),
   };
 
@@ -197,6 +199,33 @@ function generateServiceFreeTextFoundMessage(mg: ServiceFreeTextFound[]): string
   return mg.reduce((acc, { targetName, targetPort, pwd, fromWhere }) => {
     const port = targetPort ? `with _port_:${targetPort}` : "";
     return acc + `\n- ${i(type)}: ${c(targetName)} ${listRef(fromWhere, pwd)} ${port}`;
+  }, header);
+}
+
+type ReferencedBy = {
+  type: "ReferencedBy";
+  sourceType: string;
+  sourceName: string;
+  ln: number;
+  pwd: string;
+  fromWhere: FromWhere;
+};
+
+function generateReferencedByMessage(mg: ReferencedBy[]): string {
+  if (mg.length === 0) {
+    return "Error";
+  }
+  if (mg.length === 1) {
+    const { sourceType, sourceName, ln, pwd, fromWhere } = mg[0];
+    return `🔗 Referenced by ${i(sourceType)}: ${c(sourceName)} ${individualRef(fromWhere, pwd)} on line ${ln}`;
+  }
+
+  const type = mg[0].sourceType;
+  const name = mg[0].sourceName;
+
+  const header = `🔗 Referenced by ${i(type)}: ${c(name)} in:`;
+  return mg.reduce((acc, { pwd, fromWhere, ln }) => {
+    return acc + `\n- ${i(type)}: ${c(name)} ${listRef(fromWhere, pwd)} on line ${ln}`;
   }, header);
 }
 

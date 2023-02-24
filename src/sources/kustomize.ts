@@ -99,6 +99,7 @@ export function verifyKustomizeBuild(
           type: "PlainText",
           content: "🧼 File is dirty - Please save the file first",
         },
+        source: thisResource.where,
         type: "dirty",
         start: start,
       };
@@ -123,6 +124,7 @@ export function verifyKustomizeBuild(
         type: "PlainText",
         content: success ? "✅ Kustomize build succeeded" : "❌ Kustomize build failed - " + output,
       },
+      source: thisResource.where,
       type: success ? "success" : "error",
       start: start,
     };
