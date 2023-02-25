@@ -162,6 +162,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   const updateIncomingReferences = () => {
     lookup = prefs.incomingReferences ? getLookupIncomingReferences(k8sResources) : {};
+    mermaid.updateMermaid(lookup, k8sResources);
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   };
 

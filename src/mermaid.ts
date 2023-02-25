@@ -20,7 +20,7 @@ export function showMermaid(lookup: LookupIncomingReferences, k8sResources: K8sR
 }
 
 export function updateMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[]) {
-  if (!webview) {
+  if (!webview || !webview?.visible) {
     return;
   }
 
