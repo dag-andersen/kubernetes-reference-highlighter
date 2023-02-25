@@ -2,8 +2,6 @@ import { K8sResource } from "../types";
 import { getHighlights, textToK8sResource } from "../extension";
 import { getAllYamlFilesInVsCodeWorkspace } from "./util";
 import { Prefs } from "../prefs";
-import { logText } from "../utils";
-import { resourceLimits } from "worker_threads";
 import { Message } from "../decorations/messages";
 
 export function getK8sResourcesInWorkspace(): K8sResource[] {
@@ -25,11 +23,11 @@ export function textToWorkspaceK8sResource(
   return undefined;
 }
 
-export function testtesttest(kubeResources: K8sResource[], prefs: Prefs): LookupIncomingReferences {
+export function getLookupIncomingReferences(kubeResources: K8sResource[]): LookupIncomingReferences {
   let refToSource: LookupIncomingReferences = {};
   const files = getAllYamlFilesInVsCodeWorkspace();
   files.forEach(({ text, fileName }) => {
-    getReferencesFromFile(text, kubeResources, fileName, prefs, 0).forEach((ref) => {
+    getReferencesFromFile(text, kubeResources, fileName, 0).forEach((ref) => {
       const { thisResource, path, message } = ref;
       if (refToSource[path]) {
         refToSource[path].push({ resource: thisResource, message: message });
@@ -38,11 +36,6 @@ export function testtesttest(kubeResources: K8sResource[], prefs: Prefs): Lookup
       }
     });
   });
-
-  // loop over record
-  for (const [key, value] of Object.entries(refToSource)) {
-    logText(`${key}: ${value.map((v) => v.resource.metadata.name).join(", ")}`);
-  }
 
   return refToSource;
 }
@@ -58,7 +51,6 @@ function getReferencesFromFile(
   text: string,
   kubeResources: K8sResource[],
   fileName: string,
-  prefs: Prefs,
   currentIndex: number
 ): {
   thisResource: K8sResource;
@@ -80,7 +72,7 @@ function getReferencesFromFile(
         [],
         fileName,
         textSplit,
-        prefs,
+        { } as Prefs,
         currentIndex,
         true
       );

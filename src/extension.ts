@@ -15,10 +15,8 @@ import { Highlight, K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
-import { getAllYamlFileNamesInDirectory, getAllYamlFilesInVsCodeWorkspace } from "./sources/util";
 import { logText } from "./utils";
-import { IncomingReference, LookupIncomingReferences, testtesttest } from "./sources/workspace";
-import { Message } from "./decorations/messages";
+import { IncomingReference, LookupIncomingReferences, getLookupIncomingReferences } from "./sources/workspace";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
@@ -115,8 +113,6 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(
         `Reference Correction Hints: ${prefs.hints ? "Enabled" : "Disabled"}`
       );
-
-      lookup = testtesttest(k8sResources, prefs);
     }
   );
 
@@ -141,6 +137,11 @@ export function activate(context: vscode.ExtensionContext) {
         : [];
   };
 
+  const updateIncomingReferences = () => {
+    lookup = getLookupIncomingReferences(k8sResources);
+    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
+  };
+
   const updateLocalResources = () => {
     updateK8sResourcesFromWorkspace();
     updateK8sResourcesFromKustomize();
@@ -160,21 +161,22 @@ export function activate(context: vscode.ExtensionContext) {
     if (!doc.fileName.endsWith(".yaml") && !doc.fileName.endsWith(".yml")) {
       return;
     }
-    debounce();
+    readyForNewClusterRefresh = true;
+    readyForNewLocalRefresh = true;
+    readyForIncomingRefresh = true;
+    skipNewLocalRefresh = true;
   });
 
-  const onOpen = vscode.workspace.onDidOpenTextDocument((doc) => {
-    debounce();
+  const onChange = vscode.workspace.onDidChangeTextDocument((event) => { // keystrokes
+    readyForNewClusterRefresh = true;
+    readyForNewLocalRefresh = true;
+    skipNewLocalRefresh = true;
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   });
 
-  const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
-    debounce();
-    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
-  });
-
-  const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => {
-    debounce();
+  const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => { // active file change
+    skipIncomingRefresh = true;
+    readyForIncomingRefresh = true;
     updateHighlighting(editor, prefs, k8sResources, lookup);
   });
 
@@ -187,7 +189,6 @@ export function activate(context: vscode.ExtensionContext) {
     enableCorrectionHintsCommand,
     onSave,
     onChange,
-    onOpen
   );
 
   updateLocalResources();
@@ -195,15 +196,29 @@ export function activate(context: vscode.ExtensionContext) {
 
   // update loop for local resources
   let readyForNewLocalRefresh = true;
-  let skipThisTime = false;
+  let skipNewLocalRefresh = false;
   setInterval(() => {
     if (readyForNewLocalRefresh) {
-      if (skipThisTime) {
-        skipThisTime = false;
+      if (skipNewLocalRefresh) {
+        skipNewLocalRefresh = false;
         return;
       }
       updateLocalResources();
       readyForNewLocalRefresh = false;
+    }
+  }, 1000 * 3);
+
+  // Update loop for incoming references
+  let readyForIncomingRefresh = true;
+  let skipIncomingRefresh = false;
+  setInterval(() => {
+    if (readyForIncomingRefresh) {
+      if (skipIncomingRefresh) {
+        skipIncomingRefresh = false;
+        return;
+      }
+      updateIncomingReferences();
+      readyForIncomingRefresh = false;
     }
   }, 1000 * 3);
 
@@ -220,12 +235,6 @@ export function activate(context: vscode.ExtensionContext) {
   setInterval(() => {
     clusterClient = cluster.getKubeClient();
   }, 1000 * 15);
-
-  function debounce() {
-    skipThisTime = true;
-    readyForNewLocalRefresh = true;
-    readyForNewClusterRefresh = true;
-  }
 }
 
 export function textToK8sResource(text: string) {

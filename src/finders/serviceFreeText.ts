@@ -1,6 +1,5 @@
 import { V1Service } from "@kubernetes/client-node";
 import { K8sResource, Highlight } from "../types";
-import { logText } from "../utils";
 import { similarity } from "./utils";
 
 export function find(
@@ -49,7 +48,6 @@ export function find(
         const start = (match.index || 0) + 1;
 
         if (onlyReferences) {
-          logText("only ref");
           const highlight: Highlight = {
             start: start,
             type: "reference",

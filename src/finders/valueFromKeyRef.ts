@@ -1,5 +1,4 @@
 import { K8sResource, Highlight } from "../types";
-import { logText } from "../utils";
 import { getPositions, getSimilarHighlights, similarity } from "./utils";
 
 /*
@@ -69,7 +68,6 @@ export function find(
       
       return exactMatches.flatMap((r) => {
         if (onlyReferences) {
-          logText("only ref");
           const highlight: Highlight = {
             start: start,
             type: "reference",
