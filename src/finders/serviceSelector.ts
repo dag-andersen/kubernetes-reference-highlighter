@@ -4,7 +4,6 @@ import { K8sResource, Highlight } from "../types";
 export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
-  pwd: string,
   text: string,
   onlyReferences: boolean
 ): Highlight[] {
@@ -52,7 +51,8 @@ export function find(
                 type: "ReferencedBy",
                 sourceName: thisResource.metadata.name,
                 sourceType: thisResource.kind,
-                pwd,
+                charIndex: start,
+                pwd: r.resource.where.path,
                 fromWhere: thisResource.where,
               },
             }
@@ -64,7 +64,7 @@ export function find(
                 type: "ReferenceFound",
                 targetName: r.resource.metadata.name,
                 targetType: r.resource.kind,
-                pwd,
+                pwd: thisResource.where.path,
                 fromWhere: r.resource.where,
               },
             }

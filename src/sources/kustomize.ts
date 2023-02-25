@@ -72,12 +72,13 @@ function isKustomizeInstalled(): boolean {
 export function verifyKustomizeBuild(
   thisResource: K8sResource,
   text: string,
-  filePath: string,
   shift: number
 ): Highlight[] {
   if (thisResource.kind !== "Kustomization") {
     return [];
   }
+
+  const filePath = thisResource.where.path;
 
   const isDirty = vscode.workspace.textDocuments.find(
     (doc) => doc.fileName === filePath

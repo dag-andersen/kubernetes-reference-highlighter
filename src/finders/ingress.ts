@@ -4,7 +4,6 @@ import { getPositions, getSimilarHighlights, similarity } from "./utils";
 export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
-  pwd: string,
   text: string,
   enableCorrectionHints: boolean,
   onlyReferences: boolean
@@ -51,7 +50,8 @@ export function find(
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
               sourceType: thisResource.kind,
-              pwd,
+              charIndex: start,
+              pwd: r.where.path,
               fromWhere: thisResource.where,
             },
           };
@@ -66,7 +66,7 @@ export function find(
             type: "ReferenceFound",
             targetType,
             targetName: name,
-            pwd,
+            pwd: thisResource.where.path,
             fromWhere: r.where,
           },
         };
@@ -86,7 +86,7 @@ export function find(
               mainType: targetType,
               subName: portRef,
               mainName: name,
-              pwd,
+              pwd: thisResource.where.path,
               fromWhere: r.where,
             },
           };
@@ -108,7 +108,7 @@ export function find(
                   subName: portRef,
                   mainName: name,
                   suggestion: a.content,
-                  pwd,
+                  pwd: thisResource.where.path,
                   fromWhere: r.where,
                 },
               }));
@@ -134,7 +134,9 @@ export function find(
         return nameHighlight;
       });
     } else {
-      return enableCorrectionHints ? getSimilarHighlights(resourcesScoped, name, start, pwd) : [];
+      return enableCorrectionHints
+        ? getSimilarHighlights(resourcesScoped, name, start, thisResource.where.path)
+        : [];
     }
   });
 }

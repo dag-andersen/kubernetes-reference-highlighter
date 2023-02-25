@@ -303,7 +303,6 @@ function updateHighlighting(
       thisResource,
       kubeResources,
       lookupIncomingReferences[fileName] ?? [],
-      fileName,
       textSplit,
       prefs,
       currentIndex,
@@ -325,7 +324,6 @@ export function getHighlights(
   thisResource: K8sResource,
   kubeResources: K8sResource[],
   incomingReferences: IncomingReference[],
-  fileName: string,
   textSplit: string,
   prefs: Prefs,
   currentIndex: number,
@@ -334,7 +332,6 @@ export function getHighlights(
   const serviceHighlights = serviceFreeText.find(
     kubeResources,
     thisResource,
-    fileName,
     textSplit,
     prefs.hints,
     onlyReferences
@@ -342,14 +339,12 @@ export function getHighlights(
   const serviceSelectorHighlights = serviceSelector.find(
     kubeResources,
     thisResource,
-    fileName,
     textSplit,
     onlyReferences
   );
   const valueFromHighlights = valueFromKeyRef.find(
     kubeResources,
     thisResource,
-    fileName,
     textSplit,
     prefs.hints,
     onlyReferences
@@ -357,7 +352,6 @@ export function getHighlights(
   const ingressHighlights = ingress.find(
     kubeResources,
     thisResource,
-    fileName,
     textSplit,
     prefs.hints,
     onlyReferences
@@ -372,17 +366,19 @@ export function getHighlights(
     ...incomingHighlights,
   ];
 
+  const fileName = thisResource.where.path;
+
   if (
     prefs.kustomizeScanning &&
     (fileName.endsWith("kustomization.yaml") || fileName.endsWith("kustomization.yml"))
   ) {
     highlights.push(
-      ...kustomize.verifyKustomizeBuild(thisResource, textSplit, fileName, currentIndex)
+      ...kustomize.verifyKustomizeBuild(thisResource, textSplit, currentIndex)
     );
   }
 
   if (prefs.helmScanning && fileName.endsWith("Chart.yaml")) {
-    highlights.push(...helm.verifyHelmBuild(thisResource, textSplit, fileName, currentIndex));
+    highlights.push(...helm.verifyHelmBuild(thisResource, textSplit, currentIndex));
   }
 
   return highlights;

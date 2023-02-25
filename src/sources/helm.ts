@@ -68,13 +68,14 @@ function helmBuild(file: string): K8sResource[] {
 export function verifyHelmBuild(
   thisResource: K8sResource,
   text: string,
-  filePath: string,
   shift: number
 ): Highlight[] {
   // check if thisResource.kind is null or undefined
   if (thisResource.kind) {
     return [];
   }
+
+  const filePath = thisResource.where.path;
 
   // TODO: check if dirty
 

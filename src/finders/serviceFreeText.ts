@@ -5,7 +5,6 @@ import { similarity } from "./utils";
 export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
-  pwd: string,
   text: string,
   enableCorrectionHints: boolean,
   onlyReferences: boolean
@@ -53,7 +52,8 @@ export function find(
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
               sourceType: thisResource.kind,
-              pwd,
+              charIndex: start,
+              pwd: r.where.path,
               fromWhere: thisResource.where,
             },
           };
@@ -71,7 +71,7 @@ export function find(
             type: "ServiceFreeTextFound",
             targetName: name,
             targetPort: portFound ? port : undefined,
-            pwd,
+            pwd: thisResource.where.path,
             fromWhere: r.where,
           },
         };
@@ -92,7 +92,7 @@ export function find(
                   subName: port,
                   mainName: name,
                   suggestion: a.content,
-                  pwd,
+                  pwd: thisResource.where.path,
                   fromWhere: r.where,
                 },
               }));

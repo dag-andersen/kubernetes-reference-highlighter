@@ -69,7 +69,6 @@ function getReferencesFromFile(
         thisResource,
         kubeResources,
         [],
-        fileName,
         textSplit,
         {} as Prefs,
         currentIndex,
