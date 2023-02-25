@@ -2,10 +2,8 @@ import { K8sResource } from "../types";
 import { getHighlights, textToK8sResource } from "../extension";
 import { getAllYamlFilesInVsCodeWorkspace } from "./util";
 import { Prefs } from "../prefs";
-import { logText } from "../utils";
-import { Message, ReferencedBy } from "../decorations/messages";
+import { Message } from "../decorations/messages";
 import * as vscode from "vscode";
-import { lookup } from "dns";
 
 export function getK8sResourcesInWorkspace(): K8sResource[] {
   return getAllYamlFilesInVsCodeWorkspace().flatMap(({ fileName, text }) =>
@@ -28,11 +26,10 @@ export function textToWorkspaceK8sResource(
 
 export function getLookupIncomingReferences(
   kubeResources: K8sResource[],
-  prefs: Prefs
 ): LookupIncomingReferences {
   return getAllYamlFilesInVsCodeWorkspace().reduce(
     (acc, { text, fileName }) =>
-      getReferencesFromFile(text, kubeResources, fileName, prefs, 0).reduce(
+      getReferencesFromFile(text, kubeResources, fileName, 0).reduce(
         (acc, { definition, message, ref }) => {
           if (acc[definition.where.path]) {
             acc[definition.where.path].push({
@@ -65,7 +62,6 @@ function getReferencesFromFile(
   text: string,
   kubeResources: K8sResource[],
   fileName: string,
-  prefs: Prefs,
   currentIndex: number
 ): {
   ref: K8sResource;

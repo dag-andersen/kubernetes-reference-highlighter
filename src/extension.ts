@@ -2,7 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 import * as workspace from "./sources/workspace";
-import * as getMermaid from "./mermaid";
+import * as mermaid from "./mermaid";
 import * as cluster from "./sources/cluster";
 import * as kustomize from "./sources/kustomize";
 import * as helm from "./sources/helm";
@@ -122,8 +122,8 @@ export function activate(context: vscode.ExtensionContext) {
     const showDependencyDiagramCommand = vscode.commands.registerCommand(
       "kubernetes-reference-highlighter.showDependencyDiagram",
       () => {
-        lookup = getLookupIncomingReferences(k8sResources, prefs);
-        getMermaid.showMermaid(getMermaid.getMermaid(lookup, k8sResources));
+        lookup = getLookupIncomingReferences(k8sResources);
+        mermaid.showMermaid(lookup, k8sResources);
       }
     );
 
