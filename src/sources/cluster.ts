@@ -35,7 +35,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
             namespace: r.metadata?.namespace || "",
             labels: r.metadata?.labels || {},
           },
-          where: { place: "cluster", context: cc.context },
+          where: { place: "cluster", path: cc.context },
           spec: r.spec,
         })
       )
@@ -53,7 +53,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
             namespace: r.metadata?.namespace || "",
             labels: r.metadata?.labels || {},
           },
-          where: { place: "cluster", context: cc.context },
+          where: { place: "cluster", path: cc.context },
           data: r.data,
         })
       )
@@ -71,7 +71,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
             namespace: r.metadata?.namespace || "",
             labels: r.metadata?.labels || {},
           },
-          where: { place: "cluster", context: cc.context },
+          where: { place: "cluster", path: cc.context },
           data: r.data,
         })
       )
@@ -89,7 +89,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
             namespace: r.metadata?.namespace || "",
             labels: r.metadata?.labels || {},
           },
-          where: { place: "cluster", context: cc.context },
+          where: { place: "cluster", path: cc.context },
           spec: r.spec,
         })
       )
@@ -107,7 +107,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
             namespace: r.metadata?.namespace || "",
             labels: r.metadata?.labels || {},
           },
-          where: { place: "cluster", context: cc.context },
+          where: { place: "cluster", path: cc.context },
           spec: r.spec,
         })
       )
@@ -125,7 +125,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
             namespace: r.metadata?.namespace || "",
             labels: r.metadata?.labels || {},
           },
-          where: { place: "cluster", context: cc.context },
+          where: { place: "cluster", path: cc.context },
           spec: r.spec,
         })
       )
@@ -143,7 +143,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
             namespace: r.metadata?.namespace || "",
             labels: r.metadata?.labels || {},
           },
-          where: { place: "cluster", context: cc.context },
+          where: { place: "cluster", path: cc.context },
           spec: r.spec,
         })
       )

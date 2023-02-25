@@ -32,16 +32,21 @@ export function highlightsToDecorations(
   highlights: Highlight[],
   shift: number
 ): DecorationOptions[] {
-  const decorations = highlights.map((highlight) => ({
+
+  if (highlights.length === 0) {
+    return [];
+  }
+
+  const highlightsWithPosition = highlights.map((highlight) => ({
     position: doc.lineAt(doc.positionAt(highlight.start + shift)).range.end,
     highlight: highlight,
   }));
 
-  const grouped: DecorationGroup[] = decorations
+  const grouped: DecorationGroup[] = highlightsWithPosition
     .sort((a, b) => a.highlight.type > b.highlight.type ? 1 : -1)
     .sort((a, b) => b.position.line - a.position.line)
     .reduce((acc, current, index) => {
-      const previous = decorations[index - 1];
+      const previous = highlightsWithPosition[index - 1];
       const message = current.highlight.message;
       const currentLineNumber = current.position.line;
       if (

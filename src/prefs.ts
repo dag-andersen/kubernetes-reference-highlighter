@@ -6,6 +6,7 @@ export type Prefs = {
   helmScanning: boolean;
   clusterScanning: boolean;
   hints: boolean;
+  incomingReferences: boolean;
 };
 
 export function loadPreferences(): Prefs {
@@ -16,6 +17,7 @@ export function loadPreferences(): Prefs {
     helmScanning:       getConfigurationValue("enableHelmScanning")       ?? true,
     clusterScanning:    getConfigurationValue("enableClusterScanning")    ?? true,
     hints:              getConfigurationValue("enableCorrectionHints")    ?? true,
+    incomingReferences: getConfigurationValue("enableIncomingReferences") ?? false,
   };
 }
 

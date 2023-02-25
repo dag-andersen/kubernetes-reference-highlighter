@@ -6,7 +6,8 @@ export function find(
   thisResource: K8sResource,
   pwd: string,
   text: string,
-  enableCorrectionHints: boolean
+  enableCorrectionHints: boolean,
+  onlyReferences: boolean
 ): Highlight[] {
   if (thisResource.kind !== "Ingress") {
     return [];
@@ -41,20 +42,44 @@ export function find(
     var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
     if (exactMatches.length > 0) {
       return exactMatches.flatMap((r) => {
+        if (onlyReferences) {
+          const highlight: Highlight = {
+            start: start,
+            type: "reference",
+            definition: r,
+            message: {
+              type: "ReferencedBy",
+              sourceName: thisResource.metadata.name,
+              sourceType: thisResource.kind,
+              pwd,
+              fromWhere: thisResource.where,
+            },
+          };
+          return [highlight];
+        }
+
         const nameHighlight: Highlight = {
           start: start,
+          definition: r,
           type: "reference",
-          message: { type: "ReferenceFound", targetType, targetName: name, pwd, fromWhere: r.where },
+          message: {
+            type: "ReferenceFound",
+            targetType,
+            targetName: name,
+            pwd,
+            fromWhere: r.where,
+          },
         };
 
         // PORT REFERENCE
         if (
           (portType === "number" && r.spec?.ports?.find((p: any) => p?.port === parseInt(portRef))) ||
-          (portType === "name" && r.spec?.ports?.find((p: any) => p?.name === portRef))
+          (portType === "name"   && r.spec?.ports?.find((p: any) => p?.name === portRef))
         ) {
           const portHighlight: Highlight = {
             ...getPositions(match, portRef),
             type: "reference",
+            definition: r,
             message: {
               type: "SubItemFound",
               subType: "port",
@@ -75,6 +100,7 @@ export function find(
               .map((a) => ({
                 ...getPositions(match, portRef),
                 type: "hint",
+                definition: r,
                 message: {
                   type: "SubItemNotFound",
                   subType: "port",

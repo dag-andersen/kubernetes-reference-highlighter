@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { FromWhere, Local } from "../types";
+import { FromWhere } from "../types";
 
 export type Message =
   | SubItemNotFound
@@ -8,6 +8,7 @@ export type Message =
   | SubItemFound
   | SelectorFound
   | ServiceFreeTextFound
+  | ReferencedBy
   | PlainText;
 
 export type ExclusiveArray<T extends { type: string }> = {
@@ -27,6 +28,7 @@ export function generateMessage(mg: ExclusiveArray<Message>): string {
     SubItemFound: () => generateSubItemFoundMessage(mg as SubItemFound[]),
     SelectorFound: () => generateSelectorFoundMessage(mg as SelectorFound[]),
     ServiceFreeTextFound: () => generateServiceFreeTextFoundMessage(mg as ServiceFreeTextFound[]),
+    ReferencedBy: () => generateReferencedByMessage(mg as ReferencedBy[]),
     PlainText: () => (mg as PlainText[]).map((m) => m.content).join("\\\n"),
   };
 
@@ -200,6 +202,36 @@ function generateServiceFreeTextFoundMessage(mg: ServiceFreeTextFound[]): string
   }, header);
 }
 
+type ReferencedBy = {
+  type: "ReferencedBy";
+  sourceType: string;
+  sourceName: string;
+  pwd: string;
+  fromWhere: FromWhere;
+};
+
+function generateReferencedByMessage(mg: ReferencedBy[]): string {
+  if (mg.length === 0) {
+    return "Error";
+  }
+
+  if (mg.length === 1) {
+    const { sourceType, sourceName, pwd, fromWhere } = mg[0];
+    return `🔗 Referenced by ${i(sourceType)}: ${c(sourceName)} ${individualRef(
+      fromWhere,
+      pwd
+    )}`;
+  }
+
+  const header = `🔗 Referenced by:`;
+  return mg.reduce((acc, { sourceType, sourceName, pwd, fromWhere }) => {
+    return (
+      acc +
+      `\n- ${i(sourceType)}: ${c(sourceName)} ${listRef(fromWhere, pwd)}`
+    );
+  }, header);
+}
+
 function getRelativePath(path: string, pwd: string): string {
   const p = require("path");
   const fromFilePath = path;
@@ -217,7 +249,7 @@ function individualRef(fromWhere: FromWhere, pwd: string): string {
   const { place } = fromWhere;
 
   if (place === "cluster") {
-    return `in Cluster (${c(fromWhere.context)})`;
+    return `in Cluster (${c(fromWhere.path)})`;
   }
 
   if (place === "workspace") {
@@ -233,7 +265,7 @@ function listRef(fromWhere: FromWhere, pwd: string): string {
   const { place } = fromWhere;
 
   if (place === "cluster") {
-    return `Cluster (${i(fromWhere.context)})`;
+    return `Cluster (${i(fromWhere.path)})`;
   }
 
   if (place === "kustomize" || place === "helm") {
@@ -243,7 +275,7 @@ function listRef(fromWhere: FromWhere, pwd: string): string {
   return link(fromWhere, pwd);
 }
 
-function link(local: Local, pwd: string): string {
+function link(local: FromWhere, pwd: string): string {
   const { place, path } = local;
 
   if (place === "kustomize" || place === "helm") {

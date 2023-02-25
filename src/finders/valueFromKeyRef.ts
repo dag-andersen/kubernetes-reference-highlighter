@@ -12,7 +12,8 @@ export function find(
   thisResource: K8sResource,
   pwd: string,
   text: string,
-  enableCorrectionHints: boolean
+  enableCorrectionHints: boolean,
+  onlyReferences: boolean
 ): Highlight[] {
   switch (thisResource.kind) {
     case "Deployment":
@@ -64,10 +65,28 @@ export function find(
 
     var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
     if (exactMatches.length > 0) {
+      
       return exactMatches.flatMap((r) => {
+        if (onlyReferences) {
+          const highlight: Highlight = {
+            start: start,
+            type: "reference",
+            definition: r,
+            message: {
+              type: "ReferencedBy",
+              sourceName: thisResource.metadata.name,
+              sourceType: thisResource.kind,
+              pwd,
+              fromWhere: thisResource.where,
+            },
+          };
+          return [highlight];
+        }
+
         const nameHighlight: Highlight = {
           start: start,
           type: "reference",
+          definition: r,
           message: {
             type: "ReferenceFound",
             targetType: refType,
@@ -81,6 +100,7 @@ export function find(
           const keyHighlight: Highlight = {
             ...getPositions(match, key),
             type: "reference",
+            definition: r,
             message: {
               type: "SubItemFound",
               subType: "key",
@@ -93,7 +113,7 @@ export function find(
           };
           return [nameHighlight, keyHighlight];
         }
-        
+
         if (enableCorrectionHints) {
           const keys = Object.keys(r.data);
 
@@ -101,19 +121,20 @@ export function find(
             const keySuggestion: Highlight[] = similarity<string>(keys, key, (a) => a)
               .filter((a) => a.rating > 0.8)
               .map((a) => ({
-                  ...getPositions(match, key),
-                  type: "hint",
-                  message: {
-                    type: "SubItemNotFound",
-                    subType: "key",
-                    mainType: refType,
-                    subName: key,
-                    mainName: name,
-                    suggestion: a.content,
-                    pwd,
-                    fromWhere: r.where,
-                  },
-                }));
+                ...getPositions(match, key),
+                type: "hint",
+                definition: r,
+                message: {
+                  type: "SubItemNotFound",
+                  subType: "key",
+                  mainType: refType,
+                  subName: key,
+                  mainName: name,
+                  suggestion: a.content,
+                  pwd,
+                  fromWhere: r.where,
+                },
+              }));
             return [nameHighlight, ...keySuggestion];
           }
         }
@@ -121,9 +142,7 @@ export function find(
         return nameHighlight;
       });
     } else {
-      return enableCorrectionHints
-        ? getSimilarHighlights(resourcesScoped, name, start, pwd)
-        : [];
+      return enableCorrectionHints ? getSimilarHighlights(resourcesScoped, name, start, pwd) : [];
     }
   });
 }
