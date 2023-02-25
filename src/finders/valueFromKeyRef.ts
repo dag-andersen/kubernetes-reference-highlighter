@@ -1,5 +1,4 @@
 import { K8sResource, Highlight } from "../types";
-import { logText } from "../utils";
 import { getPositions, getSimilarHighlights, similarity } from "./utils";
 
 /*
@@ -88,7 +87,7 @@ export function find(
         const nameHighlight: Highlight = {
           start: start,
           type: "reference",
-          source: thisResource,
+          source: r,
           message: {
             type: "ReferenceFound",
             targetType: refType,
@@ -125,7 +124,7 @@ export function find(
               .map((a) => ({
                 ...getPositions(match, key),
                 type: "hint",
-                source: thisResource,
+                source: r,
                 message: {
                   type: "SubItemNotFound",
                   subType: "key",

@@ -63,11 +63,7 @@ function getReferencesFromFile(
   kubeResources: K8sResource[],
   fileName: string,
   currentIndex: number
-): {
-  ref: K8sResource;
-  definition: K8sResource;
-  message: Message;
-}[] {
+): IncomingReference[] {
   const split = "---";
   return text
     .split(split)

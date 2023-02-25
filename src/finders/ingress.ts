@@ -1,5 +1,4 @@
 import { K8sResource, Highlight } from "../types";
-import { logText } from "../utils";
 import { getPositions, getSimilarHighlights, similarity } from "./utils";
 
 export function find(
@@ -103,7 +102,7 @@ export function find(
               .map((a) => ({
                 ...getPositions(match, portRef),
                 type: "hint",
-                source: thisResource,
+                source: r,
                 message: {
                   type: "SubItemNotFound",
                   subType: "port",

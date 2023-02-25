@@ -3,7 +3,7 @@
   "displayName": "Kubernetes Reference Highlighter",
   "publisher": "dag-andersen",
   "description": "",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -44,6 +44,10 @@
         "title": "Kubernetes Reference Highlighter: Toggle Reference Correction Hints"
       },
       {
+        "command": "kubernetes-reference-highlighter.enableIncomingReferences",
+        "title": "Kubernetes Reference Highlighter: Toggle Reference from source to target"
+      },
+      {
         "command": "kubernetes-reference-highlighter.showDependencyDiagram",
         "title": "Kubernetes Reference Highlighter: Show Dependency Diagram"
       }
@@ -75,6 +79,11 @@
           "type": "boolean",
           "default": true,
           "description": "Kubernetes Reference Highlighter: Reference Correction Hints enabled"
+        },
+        "kubernetesReferenceHighlighter.enableIncomingReferences": {
+          "type": "boolean",
+          "default": false,
+          "description": "Kubernetes Reference Highlighter: Reference from source to target enabled"
         }
       }
     }

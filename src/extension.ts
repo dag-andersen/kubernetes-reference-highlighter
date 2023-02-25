@@ -119,6 +119,19 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  const enableIncomingReferencesCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.enableIncomingReferences",
+    () => {
+      prefs.incomingReferences = !prefs.incomingReferences;
+      updateConfigurationKey("enableIncomingReferences", prefs.incomingReferences);
+      vscode.window.showInformationMessage(
+        `Incoming reference highlighting: ${prefs.incomingReferences ? "Enabled" : "Disabled"}`
+      );
+      skipIncomingRefresh = true;
+      readyForIncomingRefresh = true;
+    }
+  );
+
     const showDependencyDiagramCommand = vscode.commands.registerCommand(
       "kubernetes-reference-highlighter.showDependencyDiagram",
       () => {
@@ -148,6 +161,11 @@ export function activate(context: vscode.ExtensionContext) {
         : [];
   };
 
+  const updateIncomingReferences = () => {
+    lookup = getLookupIncomingReferences(k8sResources);
+    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
+  };
+
   const updateLocalResources = () => {
     updateK8sResourcesFromWorkspace();
     updateK8sResourcesFromKustomize();
@@ -167,21 +185,22 @@ export function activate(context: vscode.ExtensionContext) {
     if (!doc.fileName.endsWith(".yaml") && !doc.fileName.endsWith(".yml")) {
       return;
     }
-    debounce();
+    readyForNewClusterRefresh = true;
+    readyForNewLocalRefresh = true;
+    readyForIncomingRefresh = true;
+    skipNewLocalRefresh = true;
   });
 
-  const onOpen = vscode.workspace.onDidOpenTextDocument((doc) => {
-    debounce();
+  const onChange = vscode.workspace.onDidChangeTextDocument((event) => { // keystrokes
+    readyForNewClusterRefresh = true;
+    readyForNewLocalRefresh = true;
+    skipNewLocalRefresh = true;
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   });
 
-  const onChange = vscode.workspace.onDidChangeTextDocument((event) => {
-    debounce();
-    updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
-  });
-
-  const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => {
-    debounce();
+  const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => { // active file change
+    skipIncomingRefresh = true;
+    readyForIncomingRefresh = true;
     updateHighlighting(editor, prefs, k8sResources, lookup);
   });
 
@@ -193,9 +212,10 @@ export function activate(context: vscode.ExtensionContext) {
     onTextEditorChange,
     enableHelmScanningCommand,
     enableCorrectionHintsCommand,
+    enableIncomingReferencesCommand,
+    onTextEditorChange,
     onSave,
     onChange,
-    onOpen
   );
 
   updateLocalResources();
@@ -203,15 +223,28 @@ export function activate(context: vscode.ExtensionContext) {
 
   // update loop for local resources
   let readyForNewLocalRefresh = true;
-  let skipThisTime = false;
+  let skipNewLocalRefresh = false;
+
+  // Update loop for incoming references
+  let readyForIncomingRefresh = true;
+  let skipIncomingRefresh = false;
+
   setInterval(() => {
     if (readyForNewLocalRefresh) {
-      if (skipThisTime) {
-        skipThisTime = false;
-        return;
+      if (skipNewLocalRefresh) {
+        skipNewLocalRefresh = false;
+      } else {
+        updateLocalResources();
+        readyForNewLocalRefresh = false;
       }
-      updateLocalResources();
-      readyForNewLocalRefresh = false;
+    }
+    if (readyForIncomingRefresh && prefs.incomingReferences) {
+      if (skipIncomingRefresh) {
+        skipIncomingRefresh = false;
+      } else {
+        updateIncomingReferences();
+        readyForIncomingRefresh = false;
+      }
     }
   }, 1000 * 3);
 
@@ -228,12 +261,6 @@ export function activate(context: vscode.ExtensionContext) {
   setInterval(() => {
     clusterClient = cluster.getKubeClient();
   }, 1000 * 15);
-
-  function debounce() {
-    skipThisTime = true;
-    readyForNewLocalRefresh = true;
-    readyForNewClusterRefresh = true;
-  }
 }
 
 export function textToK8sResource(text: string) {

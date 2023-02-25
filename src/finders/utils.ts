@@ -28,7 +28,7 @@ export function getSimilarHighlights(
     .filter((r) => r.rating > 0.8)
     .map((r): Highlight => {
       return {
-        source: thisResource,
+        source: r.content,
         start: start,
         message: {
           type: "ReferenceNotFound",

@@ -1,6 +1,5 @@
 import { V1Service } from "@kubernetes/client-node";
 import { K8sResource, Highlight } from "../types";
-import { logText } from "../utils";
 import { similarity } from "./utils";
 
 export function find(
@@ -71,7 +70,7 @@ export function find(
         const serviceHighlight: Highlight = {
           start: start,
           type: "reference",
-          source: thisResource,
+          source: r,
           message: {
             type: "ServiceFreeTextFound",
             targetName: name,
@@ -89,7 +88,7 @@ export function find(
               .map((a) => ({
                 start: start,
                 type: "hint",
-                source: thisResource,
+                source: r,
                 message: {
                   type: "SubItemNotFound",
                   subType: "Port",
