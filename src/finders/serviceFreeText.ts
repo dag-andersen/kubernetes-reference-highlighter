@@ -35,10 +35,7 @@ export function find(
             regexName: r.metadata.name,
           };
 
-      const regex = new RegExp(
-        `(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,20}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`,
-        "g"
-      );
+      const regex = new RegExp(`(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,20}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`, "g");
       const matches = text.matchAll(regex);
 
       let resource = r as V1Service;
@@ -56,7 +53,6 @@ export function find(
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
               sourceType: thisResource.kind,
-              charIndex: start,
               pwd,
               fromWhere: thisResource.where,
             },

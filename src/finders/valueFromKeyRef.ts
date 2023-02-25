@@ -76,7 +76,6 @@ export function find(
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
               sourceType: thisResource.kind,
-              charIndex: start,
               pwd,
               fromWhere: thisResource.where,
             },
@@ -143,7 +142,7 @@ export function find(
         return nameHighlight;
       });
     } else {
-      return enableCorrectionHints ? getSimilarHighlights(thisResource, resourcesScoped, name, start, pwd) : [];
+      return enableCorrectionHints ? getSimilarHighlights(resourcesScoped, name, start, pwd) : [];
     }
   });
 }

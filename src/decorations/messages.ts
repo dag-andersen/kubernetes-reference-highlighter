@@ -79,17 +79,13 @@ function generateNotFoundMessage(mg: ReferenceNotFound[]): string {
 
   if (mg.length === 1) {
     const { targetName, pwd, fromWhere, suggestion } = mg[0];
-    return `🤷‍♂️ ${c(targetName)} not found. Did you mean ${c(suggestion)}? (From ${individualRef(
-      fromWhere,
-      pwd
-    )})`;
+    return `🤷‍♂️ ${c(targetName)} not found. Did you mean ${c(suggestion)}? (From ${individualRef(fromWhere, pwd)})`;
   }
 
   const { targetName } = mg[0];
   const header = `🤷‍♂️ ${c(targetName)} not found.`;
   return mg.reduce(
-    (acc, { pwd, fromWhere, suggestion }) =>
-      acc + `\n- Did you mean ${c(suggestion)}? (From ${listRef(fromWhere, pwd)})`,
+    (acc, { pwd, fromWhere, suggestion }) => acc + `\n- Did you mean ${c(suggestion)}? (From ${listRef(fromWhere, pwd)})`,
     header
   );
 }
@@ -165,10 +161,7 @@ function generateSelectorFoundMessage(mg: SelectorFound[]): string {
   }
   if (mg.length === 1) {
     const { targetType, targetName, pwd, fromWhere } = mg[0];
-    return `✅ Selector points to: ${i(targetType)}: ${c(targetName)} ${individualRef(
-      fromWhere,
-      pwd
-    )}`;
+    return `✅ Selector points to: ${i(targetType)}: ${c(targetName)} ${individualRef(fromWhere, pwd)}`;
   }
 
   const header = `✅ Selector points to:`;
@@ -213,7 +206,6 @@ export type ReferencedBy = {
   type: "ReferencedBy";
   sourceType: string;
   sourceName: string;
-  charIndex: number;
   pwd: string;
   fromWhere: FromWhere;
 };
@@ -223,30 +215,19 @@ function generateReferencedByMessage(mg: ReferencedBy[]): string {
     return "Error";
   }
 
-  const line = (number: number, file: string) => {
-    const doc = vscode.workspace.textDocuments.find((doc) => doc.fileName === file);
-    if (!doc) {
-      return "unknown";
-    }
-    return doc.positionAt(number).line + 1;
-  };
-
   if (mg.length === 1) {
-    const { sourceType, sourceName, charIndex, pwd, fromWhere } = mg[0];
+    const { sourceType, sourceName, pwd, fromWhere } = mg[0];
     return `🔗 Referenced by ${i(sourceType)}: ${c(sourceName)} ${individualRef(
       fromWhere,
       pwd
-    )} on line ${line(charIndex, fromWhere.path)}`;
+    )}`;
   }
 
   const header = `🔗 Referenced by:`;
-  return mg.reduce((acc, { sourceType, sourceName, pwd, fromWhere, charIndex }) => {
+  return mg.reduce((acc, { sourceType, sourceName, pwd, fromWhere }) => {
     return (
       acc +
-      `\n- ${i(sourceType)}: ${c(sourceName)} ${listRef(fromWhere, pwd)} on line ${line(
-        charIndex,
-        fromWhere.path
-      )}`
+      `\n- ${i(sourceType)}: ${c(sourceName)} ${listRef(fromWhere, pwd)}`
     );
   }, header);
 }
