@@ -34,7 +34,7 @@ export function find(
       (r): Highlight => ({
         start: start,
         type: "reference",
-        source: thisResource, // this is wrong?
+        definition: thisResource, // this is wrong?
         message: r.message,
       })
     );

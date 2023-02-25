@@ -47,7 +47,7 @@ export function find(
           ? {
               start: start,
               type: "reference",
-              source: r.resource,
+              definition: r.resource,
               message: {
                 type: "ReferencedBy",
                 sourceName: thisResource.metadata.name,
@@ -60,7 +60,7 @@ export function find(
           : {
               start: start,
               type: "reference",
-              source: r.resource,
+              definition: r.resource,
               message: {
                 type: "ReferenceFound",
                 targetName: r.resource.metadata.name,

@@ -71,7 +71,7 @@ export function find(
           const highlight: Highlight = {
             start: start,
             type: "reference",
-            source: r,
+            definition: r,
             message: {
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
@@ -87,7 +87,7 @@ export function find(
         const nameHighlight: Highlight = {
           start: start,
           type: "reference",
-          source: r,
+          definition: r,
           message: {
             type: "ReferenceFound",
             targetType: refType,
@@ -101,7 +101,7 @@ export function find(
           const keyHighlight: Highlight = {
             ...getPositions(match, key),
             type: "reference",
-            source: r,
+            definition: r,
             message: {
               type: "SubItemFound",
               subType: "key",
@@ -124,7 +124,7 @@ export function find(
               .map((a) => ({
                 ...getPositions(match, key),
                 type: "hint",
-                source: r,
+                definition: r,
                 message: {
                   type: "SubItemNotFound",
                   subType: "key",
@@ -143,7 +143,7 @@ export function find(
         return nameHighlight;
       });
     } else {
-      return enableCorrectionHints ? getSimilarHighlights(thisResource, resourcesScoped, name, start, pwd) : [];
+      return enableCorrectionHints ? getSimilarHighlights(resourcesScoped, name, start, pwd) : [];
     }
   });
 }

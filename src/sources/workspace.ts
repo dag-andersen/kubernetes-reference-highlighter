@@ -29,20 +29,14 @@ export function getLookupIncomingReferences(
 ): LookupIncomingReferences {
   return getAllYamlFilesInVsCodeWorkspace().reduce(
     (acc, { text, fileName }) =>
-      getReferencesFromFile(text, kubeResources, fileName, 0).reduce(
-        (acc, { definition, message }) => {
-          if (acc[definition.where.path]) {
-            acc[definition.where.path].push({
-              definition: definition,
-              message: message,
-            });
-          } else {
-            acc[definition.where.path] = [{ definition: definition, message: message }];
-          }
-          return acc;
-        },
-        acc
-      ),
+      getReferencesFromFile(text, kubeResources, fileName).reduce((acc, i) => {
+        if (acc[i.definition.where.path]) {
+          acc[i.definition.where.path].push(i);
+        } else {
+          acc[i.definition.where.path] = [i];
+        }
+        return acc;
+      }, acc),
     {} as LookupIncomingReferences
   );
 }
@@ -59,9 +53,9 @@ export type IncomingReference = {
 function getReferencesFromFile(
   text: string,
   kubeResources: K8sResource[],
-  fileName: string,
-  currentIndex: number
+  fileName: string
 ): IncomingReference[] {
+  let currentIndex: number = 0;
   const split = "---";
   return text
     .split(split)
@@ -87,7 +81,7 @@ function getReferencesFromFile(
     .flatMap((h) =>
       h.highlights.map((hh) => ({
         ref: h.thisResource,
-        definition: hh.source,
+        definition: hh.definition,
         message: hh.message,
       }))
     );

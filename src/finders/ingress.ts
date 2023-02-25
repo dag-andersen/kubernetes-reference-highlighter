@@ -46,7 +46,7 @@ export function find(
           const highlight: Highlight = {
             start: start,
             type: "reference",
-            source: r,
+            definition: r,
             message: {
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
@@ -61,7 +61,7 @@ export function find(
 
         const nameHighlight: Highlight = {
           start: start,
-          source: r,
+          definition: r,
           type: "reference",
           message: {
             type: "ReferenceFound",
@@ -74,14 +74,13 @@ export function find(
 
         // PORT REFERENCE
         if (
-          (portType === "number" &&
-            r.spec?.ports?.find((p: any) => p?.port === parseInt(portRef))) ||
-          (portType === "name" && r.spec?.ports?.find((p: any) => p?.name === portRef))
+          (portType === "number" && r.spec?.ports?.find((p: any) => p?.port === parseInt(portRef))) ||
+          (portType === "name"   && r.spec?.ports?.find((p: any) => p?.name === portRef))
         ) {
           const portHighlight: Highlight = {
             ...getPositions(match, portRef),
             type: "reference",
-            source: r,
+            definition: r,
             message: {
               type: "SubItemFound",
               subType: "port",
@@ -102,7 +101,7 @@ export function find(
               .map((a) => ({
                 ...getPositions(match, portRef),
                 type: "hint",
-                source: r,
+                definition: r,
                 message: {
                   type: "SubItemNotFound",
                   subType: "port",
@@ -136,7 +135,7 @@ export function find(
         return nameHighlight;
       });
     } else {
-      return enableCorrectionHints ? getSimilarHighlights(thisResource, resourcesScoped, name, start, pwd) : [];
+      return enableCorrectionHints ? getSimilarHighlights(resourcesScoped, name, start, pwd) : [];
     }
   });
 }

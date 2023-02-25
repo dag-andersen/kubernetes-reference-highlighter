@@ -35,10 +35,7 @@ export function find(
             regexName: r.metadata.name,
           };
 
-      const regex = new RegExp(
-        `(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,20}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`,
-        "g"
-      );
+      const regex = new RegExp(`(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,20}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`, "g");
       const matches = text.matchAll(regex);
 
       let resource = r as V1Service;
@@ -51,7 +48,7 @@ export function find(
           const highlight: Highlight = {
             start: start,
             type: "reference",
-            source: r,
+            definition: r,
             message: {
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
@@ -70,7 +67,7 @@ export function find(
         const serviceHighlight: Highlight = {
           start: start,
           type: "reference",
-          source: r,
+          definition: r,
           message: {
             type: "ServiceFreeTextFound",
             targetName: name,
@@ -88,7 +85,7 @@ export function find(
               .map((a) => ({
                 start: start,
                 type: "hint",
-                source: r,
+                definition: r,
                 message: {
                   type: "SubItemNotFound",
                   subType: "Port",

@@ -15,7 +15,11 @@ import { Highlight, K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
-import { IncomingReference, LookupIncomingReferences, getLookupIncomingReferences } from "./sources/workspace";
+import {
+  IncomingReference,
+  LookupIncomingReferences,
+  getLookupIncomingReferences,
+} from "./sources/workspace";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
@@ -129,9 +133,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const updateK8sResourcesFromWorkspace = () => {
-    kubeResourcesWorkspace = prefs.workSpaceScanning
-      ? workspace.getK8sResourcesInWorkspace()
-      : [];
+    kubeResourcesWorkspace = prefs.workSpaceScanning ? workspace.getK8sResourcesInWorkspace() : [];
   };
 
   const updateK8sResourcesFromKustomize = () => {
@@ -143,14 +145,11 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   const updateK8sResourcesFromCluster = async () => {
-    kubeResourcesCluster =
-      clusterClient && prefs.clusterScanning
-        ? await cluster.getClusterResources(clusterClient)
-        : [];
+    kubeResourcesCluster = clusterClient && prefs.clusterScanning ? await cluster.getClusterResources(clusterClient) : [];
   };
 
   const updateIncomingReferences = () => {
-    lookup = getLookupIncomingReferences(k8sResources);
+    lookup = prefs.incomingReferences ? getLookupIncomingReferences(k8sResources) : {};
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   };
 
@@ -201,7 +200,7 @@ export function activate(context: vscode.ExtensionContext) {
     enableIncomingReferencesCommand,
     onTextEditorChange,
     onSave,
-    onChange,
+    onChange
   );
 
   updateLocalResources();
@@ -270,7 +269,7 @@ function updateHighlighting(
   editor: vscode.TextEditor | undefined,
   prefs: Prefs,
   kubeResources: K8sResource[],
-  lookupIncomingReferences: LookupIncomingReferences,
+  lookupIncomingReferences: LookupIncomingReferences
 ) {
   const doc = editor?.document;
 
@@ -308,7 +307,7 @@ function updateHighlighting(
       textSplit,
       prefs,
       currentIndex,
-      false,
+      false
     );
     const decorations = highlightsToDecorations(doc, highlights, currentIndex).sort(
       (a, b) =>
