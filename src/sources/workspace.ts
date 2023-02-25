@@ -3,6 +3,7 @@ import { getHighlights, textToK8sResource } from "../extension";
 import { getAllYamlFilesInVsCodeWorkspace } from "./util";
 import { Prefs } from "../prefs";
 import { Message } from "../decorations/messages";
+import * as vscode from "vscode";
 
 export function getK8sResourcesInWorkspace(): K8sResource[] {
   return getAllYamlFilesInVsCodeWorkspace().flatMap(({ fileName, text }) =>
@@ -23,27 +24,35 @@ export function textToWorkspaceK8sResource(
   return undefined;
 }
 
-export function getLookupIncomingReferences(kubeResources: K8sResource[]): LookupIncomingReferences {
-  let refToSource: LookupIncomingReferences = {};
-  const files = getAllYamlFilesInVsCodeWorkspace();
-  files.forEach(({ text, fileName }) => {
-    getReferencesFromFile(text, kubeResources, fileName, 0).forEach((ref) => {
-      const { thisResource, path, message } = ref;
-      if (refToSource[path]) {
-        refToSource[path].push({ resource: thisResource, message: message });
-      } else {
-        refToSource[path] = [{ resource: thisResource, message: message }];
-      }
-    });
-  });
-
-  return refToSource;
+export function getLookupIncomingReferences(
+  kubeResources: K8sResource[]
+): LookupIncomingReferences {
+  return getAllYamlFilesInVsCodeWorkspace().reduce(
+    (acc, { text, fileName }) =>
+      getReferencesFromFile(text, kubeResources, fileName, 0).reduce(
+        (acc, { definition, message }) => {
+          if (acc[definition.where.path]) {
+            acc[definition.where.path].push({
+              definition: definition,
+              message: message,
+            });
+          } else {
+            acc[definition.where.path] = [{ definition: definition, message: message }];
+          }
+          return acc;
+        },
+        acc
+      ),
+    {} as LookupIncomingReferences
+  );
 }
+
+export const toPath = (path: string) => vscode.workspace.asRelativePath(path || "");
 
 export type LookupIncomingReferences = Record<string, IncomingReference[]>;
 
 export type IncomingReference = {
-  resource: K8sResource;
+  definition: K8sResource;
   message: Message;
 };
 
@@ -52,11 +61,7 @@ function getReferencesFromFile(
   kubeResources: K8sResource[],
   fileName: string,
   currentIndex: number
-): {
-  thisResource: K8sResource;
-  path: string;
-  message: Message;
-}[] {
+): IncomingReference[] {
   const split = "---";
   return text
     .split(split)
@@ -72,7 +77,7 @@ function getReferencesFromFile(
         [],
         fileName,
         textSplit,
-        { } as Prefs,
+        {} as Prefs,
         currentIndex,
         true
       );
@@ -80,10 +85,10 @@ function getReferencesFromFile(
       return { thisResource, highlights };
     })
     .flatMap((h) =>
-      h.highlights.flatMap((hh) =>
-        hh.source.path
-          ? { thisResource: h.thisResource, path: hh.source?.path, message: hh.message }
-          : []
-      )
+      h.highlights.map((hh) => ({
+        ref: h.thisResource,
+        definition: hh.source,
+        message: hh.message,
+      }))
     );
 }

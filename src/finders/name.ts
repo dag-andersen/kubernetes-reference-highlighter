@@ -28,12 +28,14 @@ export function find(
 
   const start = (match.index || 0) + 1;
 
-  return incomingReference.flatMap(
-    (r): Highlight => ({
-      start: start,
-      type: "reference",
-      source: thisResource.where, // this is wrong
-      message: r.message,
-    })
-  );
+  return incomingReference
+    .filter((r) => r.definition.metadata.name === name)
+    .flatMap(
+      (r): Highlight => ({
+        start: start,
+        type: "reference",
+        source: thisResource, // this is wrong?
+        message: r.message,
+      })
+    );
 }
