@@ -15,7 +15,6 @@ import { Highlight, K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
-import { logText } from "./utils";
 import { IncomingReference, LookupIncomingReferences, getLookupIncomingReferences } from "./sources/workspace";
 
 // This method is called when the extension is activated
@@ -116,6 +115,19 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  const enableIncomingReferencesCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.enableIncomingReferences",
+    () => {
+      prefs.incomingReferences = !prefs.incomingReferences;
+      updateConfigurationKey("enableIncomingReferences", prefs.incomingReferences);
+      vscode.window.showInformationMessage(
+        `Incoming reference highlighting: ${prefs.incomingReferences ? "Enabled" : "Disabled"}`
+      );
+      skipIncomingRefresh = true;
+      readyForIncomingRefresh = true;
+    }
+  );
+
   const updateK8sResourcesFromWorkspace = () => {
     kubeResourcesWorkspace = prefs.workSpaceScanning
       ? workspace.getK8sResourcesInWorkspace()
@@ -184,9 +196,10 @@ export function activate(context: vscode.ExtensionContext) {
     enableClusterScanningCommand,
     enableWorkSpaceScanningCommand,
     enableKustomizeScanningCommand,
-    onTextEditorChange,
     enableHelmScanningCommand,
     enableCorrectionHintsCommand,
+    enableIncomingReferencesCommand,
+    onTextEditorChange,
     onSave,
     onChange,
   );
@@ -197,28 +210,27 @@ export function activate(context: vscode.ExtensionContext) {
   // update loop for local resources
   let readyForNewLocalRefresh = true;
   let skipNewLocalRefresh = false;
-  setInterval(() => {
-    if (readyForNewLocalRefresh) {
-      if (skipNewLocalRefresh) {
-        skipNewLocalRefresh = false;
-        return;
-      }
-      updateLocalResources();
-      readyForNewLocalRefresh = false;
-    }
-  }, 1000 * 3);
 
   // Update loop for incoming references
   let readyForIncomingRefresh = true;
   let skipIncomingRefresh = false;
+
   setInterval(() => {
-    if (readyForIncomingRefresh) {
+    if (readyForNewLocalRefresh) {
+      if (skipNewLocalRefresh) {
+        skipNewLocalRefresh = false;
+      } else {
+        updateLocalResources();
+        readyForNewLocalRefresh = false;
+      }
+    }
+    if (readyForIncomingRefresh && prefs.incomingReferences) {
       if (skipIncomingRefresh) {
         skipIncomingRefresh = false;
-        return;
+      } else {
+        updateIncomingReferences();
+        readyForIncomingRefresh = false;
       }
-      updateIncomingReferences();
-      readyForIncomingRefresh = false;
     }
   }, 1000 * 3);
 
