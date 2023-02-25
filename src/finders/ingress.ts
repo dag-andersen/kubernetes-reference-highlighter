@@ -46,7 +46,7 @@ export function find(
           const highlight: Highlight = {
             start: start,
             type: "reference",
-            source: r,
+            definition: r,
             message: {
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
@@ -61,7 +61,7 @@ export function find(
 
         const nameHighlight: Highlight = {
           start: start,
-          source: r,
+          definition: r,
           type: "reference",
           message: {
             type: "ReferenceFound",
@@ -81,7 +81,7 @@ export function find(
           const portHighlight: Highlight = {
             ...getPositions(match, portRef),
             type: "reference",
-            source: r,
+            definition: r,
             message: {
               type: "SubItemFound",
               subType: "port",
@@ -102,7 +102,7 @@ export function find(
               .map((a) => ({
                 ...getPositions(match, portRef),
                 type: "hint",
-                source: r,
+                definition: r,
                 message: {
                   type: "SubItemNotFound",
                   subType: "port",

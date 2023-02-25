@@ -51,7 +51,7 @@ export function find(
           const highlight: Highlight = {
             start: start,
             type: "reference",
-            source: r,
+            definition: r,
             message: {
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
@@ -70,7 +70,7 @@ export function find(
         const serviceHighlight: Highlight = {
           start: start,
           type: "reference",
-          source: r,
+          definition: r,
           message: {
             type: "ServiceFreeTextFound",
             targetName: name,
@@ -88,7 +88,7 @@ export function find(
               .map((a) => ({
                 start: start,
                 type: "hint",
-                source: r,
+                definition: r,
                 message: {
                   type: "SubItemNotFound",
                   subType: "Port",

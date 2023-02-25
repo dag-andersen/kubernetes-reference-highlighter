@@ -66,7 +66,7 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
 
   for (const incomingReference of Object.values(lookup)) {
     string += incomingReference
-      .map(({ definition, ref, message }) => {
+      .map(({ definition, ref }) => {
         return `\n ${ref.metadata.name} --> ${definition.metadata.name};`;
       })
       .join("");

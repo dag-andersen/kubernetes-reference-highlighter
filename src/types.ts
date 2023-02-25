@@ -11,7 +11,7 @@ export type Highlight = {
   start: number;
   message: Message;
   type: HighLightType;
-  source: K8sResource;
+  definition: K8sResource;
 };
 
 // define basic type

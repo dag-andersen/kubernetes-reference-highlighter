@@ -104,7 +104,7 @@ export function verifyHelmBuild(
 
     return {
       start,
-      source: thisResource,
+      definition: thisResource,
       message: {
         type: "PlainText",
         content: success ? "✅ Helm build succeeded" : "❌ Helm build failed - " + output,
