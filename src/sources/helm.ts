@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import { textToK8sResource } from "../extension";
 import { format } from "util";
 import { getAllYamlFileNamesInDirectory } from "./util";
+import { getPositions } from "../finders/utils";
 
 const helmCommand = "helm template";
 
@@ -66,15 +67,17 @@ function helmBuild(file: string): K8sResource[] {
 }
 
 export function verifyHelmBuild(
+  doc: vscode.TextDocument,
   thisResource: K8sResource,
   text: string,
-  filePath: string,
   shift: number
 ): Highlight[] {
   // check if thisResource.kind is null or undefined
   if (thisResource.kind) {
     return [];
   }
+
+  const filePath = thisResource.where.path;
 
   // TODO: check if dirty
 
@@ -83,7 +86,7 @@ export function verifyHelmBuild(
 
   return [...matches].flatMap((match) => {
     const name = match[1];
-    const start = (match.index || 0) + shift + match[0].indexOf(name);
+    const position = getPositions(doc, match, shift, name);
 
     const path = filePath.substring(0, filePath.lastIndexOf("/"));
 
@@ -103,7 +106,7 @@ export function verifyHelmBuild(
     })();
 
     return {
-      start,
+      position: position,
       definition: thisResource,
       message: {
         type: "PlainText",

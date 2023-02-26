@@ -16,9 +16,6 @@ import { Highlight, K8sResource } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
-import { getAllYamlFileNamesInDirectory, getAllYamlFilesInVsCodeWorkspace } from "./sources/util";
-import { logText } from "./utils";
-import { Message } from "./decorations/messages";
 import {
   IncomingReference,
   LookupIncomingReferences,
@@ -319,106 +316,112 @@ function updateHighlighting(
 
   const split = "---";
 
-  let currentIndex = 0;
-
   if (kubeResources.length === 0) {
     decorate(editor, []);
     return;
   }
 
-  const decorations = fileText.split(split).flatMap((textSplit) => {
+  let currentIndex = 0;	
+
+  const highlights = fileText.split(split).flatMap((textSplit) => {
     let thisResource = workspace.textToWorkspaceK8sResource(textSplit, fileName);
     if (!thisResource) {
       currentIndex += textSplit.length + split.length;
       return [];
     }
-    const highlights = getHighlights(
+    const h = getHighlights(
+      doc,
       thisResource,
       kubeResources,
       lookupIncomingReferences[fileName] ?? [],
-      fileName,
       textSplit,
       prefs,
-      currentIndex,
-      false
-    );
-    const decorations = highlightsToDecorations(doc, highlights, currentIndex).sort(
-      (a, b) =>
-        (a.renderOptions?.after?.contentText?.length ?? 0) -
-        (b.renderOptions?.after?.contentText?.length ?? 0)
-    );
+      false,
+      currentIndex
+      );
     currentIndex += textSplit.length + split.length;
-    return decorations;
+    return h;
   });
+
+  const decorations = highlightsToDecorations(highlights).sort(
+    (a, b) =>
+      (a.renderOptions?.after?.contentText?.length ?? 0) -
+      (b.renderOptions?.after?.contentText?.length ?? 0)
+  );
 
   decorate(editor, decorations);
 }
 
 export function getHighlights(
+  doc: vscode.TextDocument | undefined,
   thisResource: K8sResource,
   kubeResources: K8sResource[],
   incomingReferences: IncomingReference[],
-  fileName: string,
   textSplit: string,
   prefs: Prefs,
-  currentIndex: number,
-  onlyReferences: boolean
+  onlyReferences: boolean,
+  shift: number,
 ): Highlight[] {
   const serviceHighlights = serviceFreeText.find(
+    doc,
     kubeResources,
     thisResource,
-    fileName,
     textSplit,
     prefs.hints,
-    onlyReferences
+    onlyReferences,
+    shift
   );
   const serviceSelectorHighlights = serviceSelector.find(
+    doc,
     kubeResources,
     thisResource,
-    fileName,
     textSplit,
-    onlyReferences
+    onlyReferences,
+    shift
   );
   const valueFromHighlights = valueFromKeyRef.find(
+    doc,
     kubeResources,
     thisResource,
-    fileName,
     textSplit,
     prefs.hints,
-    onlyReferences
+    onlyReferences,
+    shift
   );
   const ingressHighlights = ingress.find(
+    doc,
     kubeResources,
     thisResource,
-    fileName,
     textSplit,
     prefs.hints,
-    onlyReferences
+    onlyReferences,
+    shift
   );
-  
+
   const highlights = [
     ...serviceHighlights,
     ...serviceSelectorHighlights,
     ...valueFromHighlights,
     ...ingressHighlights,
   ];
-  
+
   if (!onlyReferences) {
-    const incomingHighlights = name.find(incomingReferences, thisResource, textSplit);
+    const incomingHighlights = name.find(doc, incomingReferences, thisResource, textSplit, shift);
     highlights.push(...incomingHighlights);
   }
 
+  const fileName = thisResource.where.path;
+
   if (
+    doc &&
     prefs.kustomizeScanning &&
     (fileName.endsWith("kustomization.yaml") || fileName.endsWith("kustomization.yml"))
   ) {
-    highlights.push(
-      ...kustomize.verifyKustomizeBuild(thisResource, textSplit, fileName, currentIndex)
-    );
+    highlights.push(...kustomize.verifyKustomizeBuild(doc, thisResource, textSplit, shift));
   }
 
-  if (prefs.helmScanning && fileName.endsWith("Chart.yaml")) {
-    highlights.push(...helm.verifyHelmBuild(thisResource, textSplit, fileName, currentIndex));
+  if (doc && prefs.helmScanning && fileName.endsWith("Chart.yaml")) {
+    highlights.push(...helm.verifyHelmBuild(doc, thisResource, textSplit, shift));
   }
 
   return highlights;

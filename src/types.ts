@@ -1,3 +1,4 @@
+import { Position } from "vscode";
 import { Message } from "./decorations/messages";
 
 export type FromWhere = {
@@ -8,7 +9,7 @@ export type FromWhere = {
 export type HighLightType = "reference" | "hint" | "success" | "error" | "dirty" ;
 
 export type Highlight = {
-  start: number;
+  position?: Position;
   message: Message;
   type: HighLightType;
   definition: K8sResource;

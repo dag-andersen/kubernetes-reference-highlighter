@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import { K8sResource, Highlight } from "../types";
 import { getPositions, getSimilarHighlights, similarity } from "./utils";
 
@@ -8,12 +9,13 @@ import { getPositions, getSimilarHighlights, similarity } from "./utils";
 */
 
 export function find(
+  doc: vscode.TextDocument | undefined,
   resources: K8sResource[],
   thisResource: K8sResource,
-  pwd: string,
   text: string,
   enableCorrectionHints: boolean,
-  onlyReferences: boolean
+  onlyReferences: boolean,
+  shift: number
 ): Highlight[] {
   switch (thisResource.kind) {
     case "Deployment":
@@ -57,7 +59,7 @@ export function find(
       name = match[9];
     }
 
-    const { start, end } = getPositions(match, name);
+    const position = getPositions(doc, match, shift, name);
 
     const resourcesScoped = resources
       .filter((r) => r.kind === refType)
@@ -65,18 +67,18 @@ export function find(
 
     var exactMatches = resourcesScoped.filter((r) => r.metadata.name === name);
     if (exactMatches.length > 0) {
-      
       return exactMatches.flatMap((r) => {
         if (onlyReferences) {
           const highlight: Highlight = {
-            start: start,
+            position: position,
             type: "reference",
             definition: r,
             message: {
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
               sourceType: thisResource.kind,
-              pwd,
+              lineNumber: position?.line,
+              pwd: r.where.path,
               fromWhere: thisResource.where,
             },
           };
@@ -84,21 +86,21 @@ export function find(
         }
 
         const nameHighlight: Highlight = {
-          start: start,
+          position: position,
           type: "reference",
           definition: r,
           message: {
             type: "ReferenceFound",
             targetType: refType,
             targetName: name,
-            pwd,
+            pwd: thisResource.where.path,
             fromWhere: r.where,
           },
         };
 
         if (r.data && r.data[key]) {
           const keyHighlight: Highlight = {
-            ...getPositions(match, key),
+            position: getPositions(doc, match, shift, key),
             type: "reference",
             definition: r,
             message: {
@@ -107,7 +109,7 @@ export function find(
               mainType: refType,
               subName: key,
               mainName: name,
-              pwd,
+              pwd: thisResource.where.path,
               fromWhere: r.where,
             },
           };
@@ -121,7 +123,7 @@ export function find(
             const keySuggestion: Highlight[] = similarity<string>(keys, key, (a) => a)
               .filter((a) => a.rating > 0.8)
               .map((a) => ({
-                ...getPositions(match, key),
+                position: getPositions(doc, match, shift, key),
                 type: "hint",
                 definition: r,
                 message: {
@@ -131,7 +133,7 @@ export function find(
                   subName: key,
                   mainName: name,
                   suggestion: a.content,
-                  pwd,
+                  pwd: thisResource.where.path,
                   fromWhere: r.where,
                 },
               }));
@@ -142,7 +144,9 @@ export function find(
         return nameHighlight;
       });
     } else {
-      return enableCorrectionHints ? getSimilarHighlights(resourcesScoped, name, start, pwd) : [];
+      return enableCorrectionHints
+        ? getSimilarHighlights(resourcesScoped, name, position, thisResource.where.path)
+        : [];
     }
   });
 }
