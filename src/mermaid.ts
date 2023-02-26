@@ -58,22 +58,22 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
       return acc;
     }, {} as Record<string, K8sResource[]>);
 
-  let string = "graph LR;";
-
+  let mermaid = "graph LR;";
+  
   for (const [path, resources] of Object.entries(pathToResource)) {
-    string += `\n subgraph ${toPath(path)};`;
+    mermaid += `\n subgraph ${path}[${toPath(path)}];`;
     for (const resource of resources) {
-      string += `\n ${resource.metadata.name};`;
+      mermaid += `\n ${resource.where.path}${resource.metadata.name}[${resource.metadata.name}];`;
     }
-    string += "\n end;";
+    mermaid += "\n end;";
   }
 
-  for (const incomingReference of Object.values(lookup)) {
-    string += incomingReference
-      .map(({ definition, ref }) => {
-        return `\n ${ref.metadata.name} --> ${definition.metadata.name};`;
-      })
+  const arrow = (a: K8sResource, b: K8sResource) =>
+    `\n ${a.where.path}${a.metadata.name} --> ${b.where.path}${b.metadata.name};`;
+
+  return Object.values(lookup).reduce((acc, incomingReferences) => {
+    return acc + incomingReferences
+      .map(({ definition, ref }) => `\n ${arrow(ref, definition)};`)
       .join("");
-  }
-  return string;
+  }, mermaid);
 }

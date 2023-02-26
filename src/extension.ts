@@ -177,7 +177,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   const updateIncomingReferences = () => {
     lookup = prefs.incomingReferences ? getLookupIncomingReferences(k8sResources) : {};
-    mermaid.updateMermaid(lookup, k8sResources);
+    if (prefs.incomingReferences) {
+      mermaid.updateMermaid(lookup, k8sResources);
+    }
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   };
 
@@ -204,6 +206,7 @@ export function activate(context: vscode.ExtensionContext) {
     readyForNewLocalRefresh = true;
     readyForIncomingRefresh = true;
     skipNewLocalRefresh = true;
+    skipIncomingRefresh = true;
   });
 
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => { // keystrokes
