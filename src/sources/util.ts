@@ -44,10 +44,9 @@ export function getAllYamlFilesInVsCodeWorkspace() {
   );
 
   return files.map((file) => {
-    // check if file exist in open files
     const openFile = openFiles.find((openFile) => openFile.fileName === file);
     return openFile
-      ? { fileName: file, text: openFile.getText() }
-      : { fileName: file, text: readFileSync(file, "utf8") };
+      ? { fileName: file, text: openFile.getText(), doc: openFile }
+      : { fileName: file, text: readFileSync(file, "utf8"), doc: openFile };
   });
 }

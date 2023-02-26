@@ -28,8 +28,8 @@ export function getLookupIncomingReferences(
   kubeResources: K8sResource[]
 ): LookupIncomingReferences {
   return getAllYamlFilesInVsCodeWorkspace().reduce(
-    (acc, { text, fileName }) =>
-      getReferencesFromFile(text, kubeResources, fileName).reduce((acc, i) => {
+    (acc, { text, fileName, doc: doc }) =>
+      getReferencesFromFile(doc, text, kubeResources, fileName).reduce((acc, i) => {
         if (acc[i.definition.where.path]) {
           acc[i.definition.where.path].push(i);
         } else {
@@ -51,11 +51,12 @@ export type IncomingReference = {
 };
 
 function getReferencesFromFile(
+  doc: vscode.TextDocument | undefined,
   text: string,
   kubeResources: K8sResource[],
   fileName: string
 ): IncomingReference[] {
-  let currentIndex: number = 0;
+  let currentIndex = 0;	
   const split = "---";
   return text
     .split(split)
@@ -66,14 +67,15 @@ function getReferencesFromFile(
         return [];
       }
       const highlights = getHighlights(
+        doc,
         thisResource,
         kubeResources,
         [],
         textSplit,
         {} as Prefs,
-        currentIndex,
-        true
-      );
+        true,
+        currentIndex
+        );
       currentIndex += textSplit.length + split.length;
       return { thisResource, highlights };
     })

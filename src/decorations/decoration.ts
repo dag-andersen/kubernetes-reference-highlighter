@@ -1,12 +1,4 @@
-import {
-  window,
-  DecorationOptions,
-  Range,
-  TextEditor,
-  MarkdownString,
-  Position,
-  TextDocument,
-} from "vscode";
+import { window, DecorationOptions, Range, TextEditor, MarkdownString, Position } from "vscode";
 import { ExclusiveArray, generateMessage, Message } from "./messages";
 import { Highlight, HighLightType } from "../types";
 
@@ -21,47 +13,35 @@ export function decorate(editor: TextEditor, decorations: DecorationOptions[]) {
 }
 
 type DecorationGroup = {
-  ln: number;
   highLightType: HighLightType;
   position: Position;
   message: ExclusiveArray<Message>;
 };
 
-export function highlightsToDecorations(
-  doc: TextDocument,
-  highlights: Highlight[],
-  shift: number
-): DecorationOptions[] {
-
+export function highlightsToDecorations(highlights: Highlight[]): DecorationOptions[] {
   if (highlights.length === 0) {
     return [];
   }
 
-  const highlightsWithPosition = highlights.map((highlight) => ({
-    position: doc.lineAt(doc.positionAt(highlight.start + shift)).range.end,
-    highlight: highlight,
-  }));
-
-  const grouped: DecorationGroup[] = highlightsWithPosition
-    .sort((a, b) => a.highlight.type > b.highlight.type ? 1 : -1)
-    .sort((a, b) => b.position.line - a.position.line)
+  const grouped: DecorationGroup[] = highlights
+    .filter((h) => h.position)
+    .sort((a, b) => (a.type > b.type ? 1 : -1))
+    .sort((a, b) => b.position!.line - a.position!.line)
     .reduce((acc, current, index) => {
-      const previous = highlightsWithPosition[index - 1];
-      const message = current.highlight.message;
-      const currentLineNumber = current.position.line;
+      const previous = acc[acc.length - 1];
+      const message = current.message;
       if (
         previous &&
-        previous.highlight.type === current.highlight.type &&
-        previous.position.line === currentLineNumber
+        previous.highLightType === current.type &&
+        previous.position!.line === current.position!.line
       ) {
         // @ts-ignore
         acc[acc.length - 1].message.push(message);
       } else {
         acc.push({
-          ln: current.position.line,
-          position: current.position,
+          position: current.position!,
           message: [message] as ExclusiveArray<Message>,
-          highLightType: current.highlight.type,
+          highLightType: current.type,
         });
       }
       return acc;
@@ -93,11 +73,11 @@ function getDecoration(
 
 function getEmoji(highLightType: HighLightType) {
   const toEmoji: Record<HighLightType, string> = {
-    "success": "✅",
-    "error": "❌",
-    "hint": "🤷‍♂️",
-    "reference": "🔗",
-    "dirty": "🧼",
+    success: "✅",
+    error: "❌",
+    hint: "🤷‍♂️",
+    reference: "🔗",
+    dirty: "🧼",
   };
   return toEmoji[highLightType];
 }

@@ -1,12 +1,15 @@
+import * as vscode from "vscode";
 import { K8sResource, Highlight } from "../types";
 import { getPositions, getSimilarHighlights, similarity } from "./utils";
 
 export function find(
+  doc: vscode.TextDocument | undefined,
   resources: K8sResource[],
   thisResource: K8sResource,
   text: string,
   enableCorrectionHints: boolean,
-  onlyReferences: boolean
+  onlyReferences: boolean,
+  shift: number
 ): Highlight[] {
   if (thisResource.kind !== "Ingress") {
     return [];
@@ -32,7 +35,7 @@ export function find(
       portType = match[4];
     }
 
-    const { start, end } = getPositions(match, name);
+    const position = getPositions(doc, match, shift, name);
 
     const resourcesScoped = resources
       .filter((r) => r.kind === targetType)
@@ -43,14 +46,14 @@ export function find(
       return exactMatches.flatMap((r) => {
         if (onlyReferences) {
           const highlight: Highlight = {
-            start: start,
+            position: position,
             type: "reference",
             definition: r,
             message: {
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
               sourceType: thisResource.kind,
-              charIndex: start,
+              lineNumber: position?.line,
               pwd: r.where.path,
               fromWhere: thisResource.where,
             },
@@ -59,7 +62,7 @@ export function find(
         }
 
         const nameHighlight: Highlight = {
-          start: start,
+          position: position,
           definition: r,
           type: "reference",
           message: {
@@ -77,7 +80,7 @@ export function find(
           (portType === "name"   && r.spec?.ports?.find((p: any) => p?.name === portRef))
         ) {
           const portHighlight: Highlight = {
-            ...getPositions(match, portRef),
+            position: getPositions(doc, match, shift, portRef),
             type: "reference",
             definition: r,
             message: {
@@ -98,7 +101,7 @@ export function find(
             return similarity<string>(ports, portRef, (a) => a)
               .filter((a) => a.rating > rating)
               .map((a) => ({
-                ...getPositions(match, portRef),
+                position: getPositions(doc, match, shift, portRef),
                 type: "hint",
                 definition: r,
                 message: {
@@ -135,7 +138,7 @@ export function find(
       });
     } else {
       return enableCorrectionHints
-        ? getSimilarHighlights(resourcesScoped, name, start, thisResource.where.path)
+        ? getSimilarHighlights(resourcesScoped, name, position, thisResource.where.path)
         : [];
     }
   });

@@ -1,11 +1,17 @@
+import * as vscode from "vscode";
 import { findBestMatch } from "string-similarity";
+import { Position } from "vscode";
 import { Highlight, K8sResource } from "../types";
 
-export function getPositions(match: RegExpMatchArray, name: string) {
-  const shift = match[0].indexOf(name);
-  const start = (match.index || 0) + shift;
-  const end = start + name.length;
-  return { start, end };
+export function getPositions(
+  doc: vscode.TextDocument | undefined,
+  match: RegExpMatchArray,
+  shift: number,
+  name?: string
+): Position | undefined {
+  const nameShift = name ? match[0].indexOf(name) : 0;
+  const start = match.index || 0;
+  return doc?.lineAt(doc?.positionAt(shift + start + nameShift)).range.end;
 }
 
 export function similarity<T>(l: T[], name: string, f: (r: T) => string) {
@@ -20,7 +26,7 @@ export function similarity<T>(l: T[], name: string, f: (r: T) => string) {
 export function getSimilarHighlights(
   resources: K8sResource[],
   name: string,
-  start: number,
+  position: Position | undefined,
   pwd: string
 ): Highlight[] {
   return similarity<K8sResource>(resources, name, (r) => r.metadata.name)
@@ -28,7 +34,7 @@ export function getSimilarHighlights(
     .map((r): Highlight => {
       return {
         definition: r.content,
-        start: start,
+        position: position,
         message: {
           type: "ReferenceNotFound",
           targetName: name,

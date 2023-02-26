@@ -4,11 +4,10 @@ import { textToK8sResource } from "../extension";
 import { format } from "util";
 import { getAllYamlFileNamesInDirectory } from "./util";
 import { execSync } from "child_process";
+import { getPositions } from "../finders/utils";
 
 const kustomizeIsInstalled = isKustomizeInstalled();
-const kustomizeCommand = kustomizeIsInstalled
-  ? "kustomize build"
-  : "kubectl kustomize";
+const kustomizeCommand = kustomizeIsInstalled ? "kustomize build" : "kubectl kustomize";
 
 export function getKustomizeResources(): K8sResource[] {
   const kustomizationFiles = getKustomizationPathsInWorkspace();
@@ -20,8 +19,7 @@ export function getKustomizeResources(): K8sResource[] {
 
 function getKustomizationPathsInWorkspace(): string[] {
   const kustomizationFiles = getAllYamlFileNamesInDirectory().filter(
-    (file) =>
-      file.endsWith("kustomization.yml") || file.endsWith("kustomization.yaml")
+    (file) => file.endsWith("kustomization.yml") || file.endsWith("kustomization.yaml")
   );
 
   return kustomizationFiles;
@@ -70,6 +68,7 @@ function isKustomizeInstalled(): boolean {
 }
 
 export function verifyKustomizeBuild(
+  doc: vscode.TextDocument,
   thisResource: K8sResource,
   text: string,
   shift: number
@@ -80,9 +79,7 @@ export function verifyKustomizeBuild(
 
   const filePath = thisResource.where.path;
 
-  const isDirty = vscode.workspace.textDocuments.find(
-    (doc) => doc.fileName === filePath
-  )?.isDirty;
+  const isDirty = doc.isDirty;
 
   const refType = "Kustomization";
 
@@ -90,7 +87,7 @@ export function verifyKustomizeBuild(
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
-    const start = (match.index || 0) + shift + match[0].indexOf(refType);
+    const position = getPositions(doc, match, shift, refType);
 
     const path = filePath.substring(0, filePath.lastIndexOf("/"));
 
@@ -102,7 +99,7 @@ export function verifyKustomizeBuild(
         },
         definition: thisResource,
         type: "dirty",
-        start: start,
+        position: position,
       };
     }
 
@@ -127,7 +124,7 @@ export function verifyKustomizeBuild(
       },
       definition: thisResource,
       type: success ? "success" : "error",
-      start: start,
+      position: position,
     };
   });
 }
