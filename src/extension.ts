@@ -131,14 +131,32 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(
         `Incoming reference highlighting: ${prefs.incomingReferences ? "Enabled" : "Disabled"}`
       );
-      skipIncomingRefresh = true;
-      readyForIncomingRefresh = true;
+      if (prefs.incomingReferences) {
+        updateIncomingReferences();
+      } else {
+        lookup = {};
+        mermaid.closeMermaid();
+      }
     }
   );
 
     const showDependencyDiagramCommand = vscode.commands.registerCommand(
       "kubernetes-reference-highlighter.showDependencyDiagram",
       () => {
+        if (!prefs.incomingReferences) {
+          vscode.window.showErrorMessage(
+            "Incoming Reference is disabled.",
+            "Enable it!"
+          ).then((selection) => {
+            if (selection === "Enable it!") {
+              vscode.commands.executeCommand(
+                "kubernetes-reference-highlighter.enableIncomingReferences"
+              );
+              mermaid.showMermaid(lookup, k8sResources);
+            }
+          });
+          return;
+        }
         lookup = getLookupIncomingReferences(k8sResources);
         mermaid.showMermaid(lookup, k8sResources);
       }

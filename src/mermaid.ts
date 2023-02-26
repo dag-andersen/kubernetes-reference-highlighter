@@ -19,6 +19,10 @@ export function showMermaid(lookup: LookupIncomingReferences, k8sResources: K8sR
   updateMermaid(lookup, k8sResources);
 }
 
+export function closeMermaid() {
+  webview?.dispose();
+}
+
 export function updateMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[]) {
   if (!webview || !webview?.visible) {
     return;

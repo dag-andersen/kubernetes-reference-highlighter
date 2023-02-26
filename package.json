@@ -45,7 +45,7 @@
       },
       {
         "command": "kubernetes-reference-highlighter.enableIncomingReferences",
-        "title": "Kubernetes Reference Highlighter: Toggle Reference from source to target"
+        "title": "Kubernetes Reference Highlighter: Toggle Incoming References"
       },
       {
         "command": "kubernetes-reference-highlighter.showDependencyDiagram",
