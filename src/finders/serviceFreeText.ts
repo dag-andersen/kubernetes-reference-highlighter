@@ -1,14 +1,16 @@
+import * as vscode from "vscode";
 import { V1Service } from "@kubernetes/client-node";
 import { K8sResource, Highlight } from "../types";
-import { similarity } from "./utils";
+import { getPositions, similarity } from "./utils";
 
 export function find(
+  doc: vscode.TextDocument | undefined,
   resources: K8sResource[],
   thisResource: K8sResource,
-  pwd: string,
   text: string,
   enableCorrectionHints: boolean,
-  onlyReferences: boolean
+  onlyReferences: boolean,
+  shift: number
 ): Highlight[] {
   if (thisResource.kind === "Ingress" || thisResource.kind === "Service") {
     return [];
@@ -42,36 +44,37 @@ export function find(
 
       return [...matches].flatMap((match) => {
         const port = match[1];
-        const start = (match.index || 0) + 1;
+
+        const position = getPositions(doc, match, shift);
 
         if (onlyReferences) {
           const highlight: Highlight = {
-            start: start,
+            position: position,
             type: "reference",
             definition: r,
             message: {
               type: "ReferencedBy",
               sourceName: thisResource.metadata.name,
               sourceType: thisResource.kind,
-              pwd,
+              lineNumber: position?.line,
+              pwd: r.where.path,
               fromWhere: thisResource.where,
             },
           };
           return [highlight];
         }
 
-        const portFound =
-          port && resource.spec?.ports?.find((p) => p?.port === parseInt(port)) ? true : false;
+        const portFound = port && resource.spec?.ports?.find((p) => p?.port === parseInt(port)) ? true : false;
 
         const serviceHighlight: Highlight = {
-          start: start,
+          position: position,
           type: "reference",
           definition: r,
           message: {
             type: "ServiceFreeTextFound",
             targetName: name,
             targetPort: portFound ? port : undefined,
-            pwd,
+            pwd: thisResource.where.path,
             fromWhere: r.where,
           },
         };
@@ -82,7 +85,7 @@ export function find(
             const portSuggestion: Highlight[] = similarity<string>(ports, port, (a) => a)
               .filter((a) => a.rating > 0.2)
               .map((a) => ({
-                start: start,
+                position: position,
                 type: "hint",
                 definition: r,
                 message: {
@@ -92,7 +95,7 @@ export function find(
                   subName: port,
                   mainName: name,
                   suggestion: a.content,
-                  pwd,
+                  pwd: thisResource.where.path,
                   fromWhere: r.where,
                 },
               }));

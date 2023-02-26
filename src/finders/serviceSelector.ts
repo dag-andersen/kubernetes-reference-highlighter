@@ -1,12 +1,15 @@
+import * as vscode from "vscode";
 import { V1Service } from "@kubernetes/client-node";
 import { K8sResource, Highlight } from "../types";
+import { getPositions } from "./utils";
 
 export function find(
+  doc: vscode.TextDocument | undefined,
   resources: K8sResource[],
   thisResource: K8sResource,
-  pwd: string,
   text: string,
-  onlyReferences: boolean
+  onlyReferences: boolean,
+  shift: number
 ): Highlight[] {
   if (thisResource.kind !== "Service") {
     return [];
@@ -22,7 +25,7 @@ export function find(
 
   let match = list[0];
 
-  const start = (match.index || 0) + 1;
+  const position = getPositions(doc, match, shift);
 
   let resource = thisResource as V1Service;
 
@@ -45,26 +48,27 @@ export function find(
       (r): Highlight =>
         onlyReferences
           ? {
-              start: start,
+              position: position,
               type: "reference",
               definition: r.resource,
               message: {
                 type: "ReferencedBy",
                 sourceName: thisResource.metadata.name,
                 sourceType: thisResource.kind,
-                pwd,
+                lineNumber: position?.line,
+                pwd: r.resource.where.path,
                 fromWhere: thisResource.where,
               },
             }
           : {
-              start: start,
+              position: position,
               type: "reference",
               definition: r.resource,
               message: {
                 type: "ReferenceFound",
                 targetName: r.resource.metadata.name,
                 targetType: r.resource.kind,
-                pwd,
+                pwd: thisResource.where.path,
                 fromWhere: r.resource.where,
               },
             }

@@ -206,6 +206,7 @@ type ReferencedBy = {
   type: "ReferencedBy";
   sourceType: string;
   sourceName: string;
+  lineNumber: number | undefined;
   pwd: string;
   fromWhere: FromWhere;
 };
@@ -215,19 +216,18 @@ function generateReferencedByMessage(mg: ReferencedBy[]): string {
     return "Error";
   }
 
+  const line = (number: number | undefined) => typeof number === "number" && number >= 0 ? ` on line: ${number + 1}` : "";
+
   if (mg.length === 1) {
-    const { sourceType, sourceName, pwd, fromWhere } = mg[0];
-    return `🔗 Referenced by ${i(sourceType)}: ${c(sourceName)} ${individualRef(
-      fromWhere,
-      pwd
-    )}`;
+    const { sourceType, sourceName, lineNumber, pwd, fromWhere } = mg[0];
+    return `🔗 Referenced by ${i(sourceType)}: ${c(sourceName)} ${individualRef(fromWhere, pwd, lineNumber)}${line(lineNumber)}`;
   }
 
   const header = `🔗 Referenced by:`;
-  return mg.reduce((acc, { sourceType, sourceName, pwd, fromWhere }) => {
+  return mg.reduce((acc, { sourceType, sourceName, pwd, fromWhere, lineNumber }) => {
     return (
       acc +
-      `\n- ${i(sourceType)}: ${c(sourceName)} ${listRef(fromWhere, pwd)}`
+      `\n- ${i(sourceType)}: ${c(sourceName)} ${listRef(fromWhere, pwd, lineNumber)}${line(lineNumber)}`
     );
   }, header);
 }
@@ -245,7 +245,7 @@ function getRelativePath(path: string, pwd: string): string {
     : "./" + relativePathFromActive;
 }
 
-function individualRef(fromWhere: FromWhere, pwd: string): string {
+function individualRef(fromWhere: FromWhere, pwd: string, ln?: number): string {
   const { place } = fromWhere;
 
   if (place === "cluster") {
@@ -253,15 +253,15 @@ function individualRef(fromWhere: FromWhere, pwd: string): string {
   }
 
   if (place === "workspace") {
-    return `in ${link(fromWhere, pwd)}`;
+    return `in ${link(fromWhere, pwd, ln)}`;
   }
   if (place === "kustomize" || place === "helm") {
-    return `with ${i(capitalize(place))} at ${link(fromWhere, pwd)}`;
+    return `with ${i(capitalize(place))} at ${link(fromWhere, pwd, ln)}`;
   }
   return "Error";
 }
 
-function listRef(fromWhere: FromWhere, pwd: string): string {
+function listRef(fromWhere: FromWhere, pwd: string, ln?: number): string {
   const { place } = fromWhere;
 
   if (place === "cluster") {
@@ -269,23 +269,24 @@ function listRef(fromWhere: FromWhere, pwd: string): string {
   }
 
   if (place === "kustomize" || place === "helm") {
-    return `${link(fromWhere, pwd)} (${i(capitalize(fromWhere.place))})`;
+    return `${link(fromWhere, pwd, ln)} (${i(capitalize(fromWhere.place))})`;
   }
 
-  return link(fromWhere, pwd);
+  return link(fromWhere, pwd, ln);
 }
 
-function link(local: FromWhere, pwd: string): string {
-  const { place, path } = local;
+function link(fromWhere: FromWhere, pwd: string, ln?: number): string {
+  const { place, path } = fromWhere;
+  const lineNumber = typeof ln === "number" && ln >= 0 ? `#L${ln + 1}` : "";
 
   if (place === "kustomize" || place === "helm") {
     const folder = path.substring(0, path.lastIndexOf("/"));
     const relativePath = getRelativePath(folder, pwd);
-    return `[\`${relativePath}\`](${path})`;
+    return `[\`${relativePath}\`](${path}${lineNumber})`;
   }
 
   const relativePath = getRelativePath(path, pwd);
-  return `[\`${relativePath}\`](${path})`;
+  return `[\`${relativePath}\`](${path}${lineNumber})`;
 }
 
 function capitalize(s: string): string {
