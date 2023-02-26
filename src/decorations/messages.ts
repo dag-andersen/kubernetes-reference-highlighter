@@ -216,7 +216,7 @@ function generateReferencedByMessage(mg: ReferencedBy[]): string {
     return "Error";
   }
 
-  const line = (number: number | undefined) => typeof number === "number" && number > 0 ? ` on line: ${number + 1}` : "";
+  const line = (number: number | undefined) => typeof number === "number" && number >= 0 ? ` on line: ${number + 1}` : "";
 
   if (mg.length === 1) {
     const { sourceType, sourceName, lineNumber, pwd, fromWhere } = mg[0];
@@ -277,7 +277,7 @@ function listRef(fromWhere: FromWhere, pwd: string, ln?: number): string {
 
 function link(fromWhere: FromWhere, pwd: string, ln?: number): string {
   const { place, path } = fromWhere;
-  const lineNumber = typeof ln === "number" && ln > 0 ? `#L${ln + 1}` : "";
+  const lineNumber = typeof ln === "number" && ln >= 0 ? `#L${ln + 1}` : "";
 
   if (place === "kustomize" || place === "helm") {
     const folder = path.substring(0, path.lastIndexOf("/"));

@@ -37,10 +37,7 @@ export function find(
             regexName: r.metadata.name,
           };
 
-      const regex = new RegExp(
-        `(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,20}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`,
-        "g"
-      );
+      const regex = new RegExp(`(?:"|".*\\s+)(?:(?:http|https):\\/\\/)?${regexName}(?::(\\d{1,20}))?(?:(?:\\/|\\?)\\w*)*(?:"|\\s+.*")`, "g");
       const matches = text.matchAll(regex);
 
       let resource = r as V1Service;
@@ -67,8 +64,7 @@ export function find(
           return [highlight];
         }
 
-        const portFound =
-          port && resource.spec?.ports?.find((p) => p?.port === parseInt(port)) ? true : false;
+        const portFound = port && resource.spec?.ports?.find((p) => p?.port === parseInt(port)) ? true : false;
 
         const serviceHighlight: Highlight = {
           position: position,
