@@ -20,7 +20,7 @@ export function find(
     return [];
   }
 
-  let regex = new RegExp(`  name:\\s*${thisResource.metadata.name}`, `g`);
+  let regex = new RegExp(`  name:\\s*${name}`, `g`);
   let matches = text.matchAll(regex);
   let list = [...matches];
 

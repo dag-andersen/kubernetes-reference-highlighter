@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 import * as workspace from "./sources/workspace";
+import * as mermaid from "./mermaid";
 import * as cluster from "./sources/cluster";
 import * as kustomize from "./sources/kustomize";
 import * as helm from "./sources/helm";
@@ -127,10 +128,36 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage(
         `Incoming reference highlighting: ${prefs.incomingReferences ? "Enabled" : "Disabled"}`
       );
-      skipIncomingRefresh = true;
-      readyForIncomingRefresh = true;
+      if (prefs.incomingReferences) {
+        updateIncomingReferences();
+      } else {
+        lookup = {};
+        mermaid.closeMermaid();
+      }
     }
   );
+
+    const showDependencyDiagramCommand = vscode.commands.registerCommand(
+      "kubernetes-reference-highlighter.showDependencyDiagram",
+      () => {
+        if (!prefs.incomingReferences) {
+          vscode.window.showErrorMessage(
+            "Incoming Reference is disabled.",
+            "Enable it!"
+          ).then((selection) => {
+            if (selection === "Enable it!") {
+              vscode.commands.executeCommand(
+                "kubernetes-reference-highlighter.enableIncomingReferences"
+              );
+              mermaid.showMermaid(lookup, k8sResources);
+            }
+          });
+          return;
+        }
+        lookup = getLookupIncomingReferences(k8sResources);
+        mermaid.showMermaid(lookup, k8sResources);
+      }
+    );
 
   const updateK8sResourcesFromWorkspace = () => {
     kubeResourcesWorkspace = prefs.workSpaceScanning ? workspace.getK8sResourcesInWorkspace() : [];
@@ -150,6 +177,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   const updateIncomingReferences = () => {
     lookup = prefs.incomingReferences ? getLookupIncomingReferences(k8sResources) : {};
+    if (prefs.incomingReferences) {
+      mermaid.updateMermaid(lookup, k8sResources);
+    }
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   };
 
@@ -176,9 +206,13 @@ export function activate(context: vscode.ExtensionContext) {
     readyForNewLocalRefresh = true;
     readyForIncomingRefresh = true;
     skipNewLocalRefresh = true;
+    skipIncomingRefresh = true;
   });
 
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => { // keystrokes
+    if (!event.document.fileName.endsWith(".yaml") && !event.document.fileName.endsWith(".yml")) {
+      return;
+    }
     readyForNewClusterRefresh = true;
     readyForNewLocalRefresh = true;
     skipNewLocalRefresh = true;
@@ -186,6 +220,9 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => { // active file change
+    if (!editor || !editor.document.fileName.endsWith(".yaml") && !editor.document.fileName.endsWith(".yml")) {
+      return;
+    }
     skipIncomingRefresh = true;
     readyForIncomingRefresh = true;
     updateHighlighting(editor, prefs, k8sResources, lookup);
@@ -195,6 +232,7 @@ export function activate(context: vscode.ExtensionContext) {
     enableClusterScanningCommand,
     enableWorkSpaceScanningCommand,
     enableKustomizeScanningCommand,
+    showDependencyDiagramCommand,
     enableHelmScanningCommand,
     enableCorrectionHintsCommand,
     enableIncomingReferencesCommand,
