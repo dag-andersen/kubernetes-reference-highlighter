@@ -4,9 +4,11 @@ import { K8sResource } from "./types";
 
 let webview: vscode.WebviewPanel | undefined;
 
+const title = "Kubernetes Resource Highlighter: Resource Diagram";
+
 export function showMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[]) {
   if (!webview) {
-    webview = vscode.window.createWebviewPanel("mermaid", "Mermaid", vscode.ViewColumn.Beside, {
+    webview = vscode.window.createWebviewPanel("KRH", title, vscode.ViewColumn.Beside, {
       enableScripts: true,
       retainContextWhenHidden: false,
     });
@@ -59,7 +61,7 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
     }, {} as Record<string, K8sResource[]>);
 
   let mermaid = "graph LR;";
-  
+
   for (const [path, resources] of Object.entries(pathToResource)) {
     mermaid += `\n subgraph ${path}[${toPath(path)}];`;
     for (const resource of resources) {
@@ -69,11 +71,12 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
   }
 
   const arrow = (a: K8sResource, b: K8sResource) =>
-    `\n ${a.where.path}${a.metadata.name} --> ${b.where.path}${b.metadata.name};`;
+    `\n ${a.where.path}${a.metadata.name} ==> ${b.where.path}${b.metadata.name};`;
 
   return Object.values(lookup).reduce((acc, incomingReferences) => {
-    return acc + incomingReferences
-      .map(({ definition, ref }) => `\n ${arrow(ref, definition)};`)
-      .join("");
+    return (
+      acc +
+      incomingReferences.map(({ definition, ref }) => `\n ${arrow(ref, definition)};`).join("")
+    );
   }, mermaid);
 }

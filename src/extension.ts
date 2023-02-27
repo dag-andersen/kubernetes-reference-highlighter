@@ -210,6 +210,9 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   const onChange = vscode.workspace.onDidChangeTextDocument((event) => { // keystrokes
+    if (!event.document.fileName.endsWith(".yaml") && !event.document.fileName.endsWith(".yml")) {
+      return;
+    }
     readyForNewClusterRefresh = true;
     readyForNewLocalRefresh = true;
     skipNewLocalRefresh = true;
@@ -217,6 +220,9 @@ export function activate(context: vscode.ExtensionContext) {
   });
 
   const onTextEditorChange = vscode.window.onDidChangeActiveTextEditor((editor) => { // active file change
+    if (!editor || !editor.document.fileName.endsWith(".yaml") && !editor.document.fileName.endsWith(".yml")) {
+      return;
+    }
     skipIncomingRefresh = true;
     readyForIncomingRefresh = true;
     updateHighlighting(editor, prefs, k8sResources, lookup);
@@ -227,7 +233,6 @@ export function activate(context: vscode.ExtensionContext) {
     enableWorkSpaceScanningCommand,
     enableKustomizeScanningCommand,
     showDependencyDiagramCommand,
-    onTextEditorChange,
     enableHelmScanningCommand,
     enableCorrectionHintsCommand,
     enableIncomingReferencesCommand,

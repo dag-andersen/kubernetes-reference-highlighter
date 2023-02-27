@@ -202,7 +202,7 @@ function generateServiceFreeTextFoundMessage(mg: ServiceFreeTextFound[]): string
   }, header);
 }
 
-export type ReferencedBy = {
+type ReferencedBy = {
   type: "ReferencedBy";
   sourceType: string;
   sourceName: string;

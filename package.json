@@ -3,7 +3,7 @@
   "displayName": "Kubernetes Reference Highlighter",
   "publisher": "dag-andersen",
   "description": "",
-  "version": "0.0.31",
+  "version": "0.0.32",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -83,7 +83,7 @@
         "kubernetesReferenceHighlighter.enableIncomingReferences": {
           "type": "boolean",
           "default": false,
-          "description": "Kubernetes Reference Highlighter: Reference from source to target enabled"
+          "description": "Kubernetes Reference Highlighter: Toggle Incoming References enabled"
         }
       }
     }
