@@ -26,16 +26,14 @@ export function kustomizeBuild(file: string): string {
   const path = file.substring(0, file.lastIndexOf("/"));
 
   const execSync = require("child_process").execSync;
-  let output: string = "";
 
   try {
-    output = execSync(`${kustomizeCommand} ${path}`, {
+    return execSync(`${kustomizeCommand} ${path}`, {
       encoding: "utf-8",
     });
   } catch (e) {
     return "";
   }
-  return output;
 }
 
 // check if kustomize is installed

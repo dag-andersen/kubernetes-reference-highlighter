@@ -44,28 +44,25 @@ export function updateMermaid(
   <!DOCTYPE html>
 <html lang="en">
 
-<body>
-  <pre class="mermaid">
-  ${text}
-  </pre>
-  <script type="module">
-    const callback = function () {
-      alert('A callback was triggered');
-    };
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({
-      logLevel: "error", // [1]
-      securityLevel: "loose", // [2]
-      flowchart: {
-        defaultRenderer: "elk",
-        useMaxWidth: false,
-      },
-      theme: (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ?
-        "dark" :
-        "default" // [3]
-    })
-  </script>
-</body>
+  <body>
+    <pre class="mermaid">
+    ${text}
+    </pre>
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({
+        logLevel: "error",
+        securityLevel: "loose",
+        flowchart: {
+          defaultRenderer: "elk",
+          useMaxWidth: false,
+        },
+        theme: (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ?
+          "dark" :
+          "default"
+      })
+    </script>
+  </body>
 
 </html>
   `;
