@@ -12,13 +12,11 @@ import * as serviceFreeText from "./finders/serviceFreeText";
 import * as serviceSelector from "./finders/serviceSelector";
 import * as name from "./finders/name";
 
-import { Highlight, K8sResource } from "./types";
+import { Highlight, IncomingReference, K8sResource, LookupIncomingReferences } from "./types";
 import { parse } from "yaml";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
 import {
-  IncomingReference,
-  LookupIncomingReferences,
   getLookupIncomingReferences,
 } from "./sources/workspace";
 
@@ -149,13 +147,13 @@ export function activate(context: vscode.ExtensionContext) {
               vscode.commands.executeCommand(
                 "kubernetes-reference-highlighter.enableIncomingReferences"
               );
-              mermaid.showMermaid(lookup, k8sResources);
+              mermaid.showMermaid(lookup, k8sResources, prefs);
             }
           });
           return;
         }
         lookup = getLookupIncomingReferences(k8sResources);
-        mermaid.showMermaid(lookup, k8sResources);
+        mermaid.showMermaid(lookup, k8sResources, prefs);
       }
     );
 
@@ -178,7 +176,7 @@ export function activate(context: vscode.ExtensionContext) {
   const updateIncomingReferences = () => {
     lookup = prefs.incomingReferences ? getLookupIncomingReferences(k8sResources) : {};
     if (prefs.incomingReferences) {
-      mermaid.updateMermaid(lookup, k8sResources);
+      mermaid.updateMermaid(lookup, k8sResources, prefs);
     }
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   };

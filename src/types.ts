@@ -27,3 +27,11 @@ export type K8sResource = {
   data?: any;
   where: FromWhere;
 };
+
+export type LookupIncomingReferences = Record<string, IncomingReference[]>;
+
+export type IncomingReference = {
+  ref: K8sResource;
+  definition: K8sResource;
+  message: Message;
+};

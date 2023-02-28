@@ -1,8 +1,7 @@
-import { K8sResource } from "../types";
+import { IncomingReference, K8sResource, LookupIncomingReferences } from "../types";
 import { getHighlights, textToK8sResource } from "../extension";
 import { getAllYamlFilesInVsCodeWorkspace } from "./util";
 import { Prefs } from "../prefs";
-import { Message } from "../decorations/messages";
 import * as vscode from "vscode";
 
 export function getK8sResourcesInWorkspace(): K8sResource[] {
@@ -40,16 +39,6 @@ export function getLookupIncomingReferences(
     {} as LookupIncomingReferences
   );
 }
-
-export const toPath = (path: string) => vscode.workspace.asRelativePath(path || "");
-
-export type LookupIncomingReferences = Record<string, IncomingReference[]>;
-
-export type IncomingReference = {
-  ref: K8sResource;
-  definition: K8sResource;
-  message: Message;
-};
 
 function getReferencesFromFile(
   doc: vscode.TextDocument | undefined,
