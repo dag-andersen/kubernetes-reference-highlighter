@@ -1,8 +1,6 @@
 import * as vscode from "vscode";
 import { Prefs } from "./prefs";
-import {
-  getLookupIncomingReferencesKustomize,
-} from "./sources/kustomize";
+import { getLookupIncomingReferencesKustomize } from "./sources/kustomize";
 import { K8sResource, LookupIncomingReferences } from "./types";
 
 let webview: vscode.WebviewPanel | undefined;

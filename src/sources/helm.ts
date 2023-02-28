@@ -1,8 +1,7 @@
 import { Highlight, K8sResource } from "../types";
 import * as vscode from "vscode";
-import { textToK8sResource } from "../extension";
 import { format } from "util";
-import { getAllYamlFileNamesInDirectory } from "./util";
+import { getAllYamlFileNamesInDirectory, textToK8sResourced } from "./util";
 import { getPositions } from "../finders/utils";
 
 const helmCommand = "helm template";
@@ -54,16 +53,7 @@ function helmBuild(file: string): K8sResource[] {
     return [];
   }
 
-  const split = output.split("---");
-  return split.flatMap((text) => {
-    try {
-      return {
-        ...textToK8sResource(text),
-        where: { place: "helm", path: file },
-      };
-    } catch (e) {}
-    return [];
-  });
+  return output.split("---").flatMap((text) => textToK8sResourced(text, file, "helm") ?? []);
 }
 
 export function verifyHelmBuild(

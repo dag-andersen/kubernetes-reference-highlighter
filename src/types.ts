@@ -1,8 +1,10 @@
 import { Position } from "vscode";
 import { Message } from "./decorations/messages";
 
+export type Place = "workspace" | "kustomize" | "helm" | "cluster";
+
 export type FromWhere = {
-  place: "workspace" | "kustomize" | "helm" | "cluster";
+  place: Place;
   path: string;
 };
 

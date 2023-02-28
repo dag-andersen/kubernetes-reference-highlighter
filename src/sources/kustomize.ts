@@ -1,11 +1,9 @@
-import { Highlight, IncomingReference, K8sResource, LookupIncomingReferences } from "../types";
+import { Highlight, K8sResource, LookupIncomingReferences } from "../types";
 import * as vscode from "vscode";
-import { getHighlights, textToK8sResource } from "../extension";
 import { format } from "util";
-import { getAllYamlFileNamesInDirectory } from "./util";
+import { getAllYamlFileNamesInDirectory, getReferencesFromFile, textToK8sResourced } from "./util";
 import { execSync } from "child_process";
 import { getPositions } from "../finders/utils";
-import { Prefs } from "../prefs";
 
 const kustomizeIsInstalled = isKustomizeInstalled();
 const kustomizeCommand = kustomizeIsInstalled ? "kustomize build" : "kubectl kustomize";
@@ -14,8 +12,7 @@ export function getKustomizeResources(): K8sResource[] {
   return getKustomizationPathsInWorkspace().flatMap((path) =>
     kustomizeBuild(path)
       .split("---")
-      .flatMap((text) => textToWorkspaceK8sResource(text, path))
-      .flatMap((x) => (x ? [x] : []))
+      .flatMap((text) => textToK8sResourced(text, path, "kustomize") ?? [])
   );
 }
 
@@ -39,19 +36,6 @@ export function kustomizeBuild(file: string): string {
     return "";
   }
   return output;
-}
-
-export function textToWorkspaceK8sResource(
-  text: string,
-  fileName: string
-): K8sResource | undefined {
-  try {
-    return {
-      ...textToK8sResource(text),
-      where: { place: "kustomize", path: fileName },
-    };
-  } catch (e) {}
-  return undefined;
 }
 
 // check if kustomize is installed
@@ -135,60 +119,22 @@ export function verifyKustomizeBuild(
 export function getLookupIncomingReferencesKustomize(
   kubeResources: K8sResource[]
 ): LookupIncomingReferences {
-  const something = getKustomizationPathsInWorkspace().reduce((acc, path) => {
-    return kustomizeBuild(path)
-      .split("---")
-      .flatMap((text) => (textToWorkspaceK8sResource(text, path) ? [{ text }] : []))
-      .reduce((acc, { text }) => {
-        const refs = getReferencesFromFile(undefined, text, kubeResources, path);
-        return refs.reduce((acc, i) => {
-          if (acc[i.definition.where.path]) {
-            acc[i.definition.where.path].push(i);
-          } else {
-            acc[i.definition.where.path] = [i];
-          }
-          return acc;
-        }, acc as LookupIncomingReferences);
-      }, acc as LookupIncomingReferences);
-  }, {} as LookupIncomingReferences);
-
-  return something;
-}
-
-function getReferencesFromFile(
-  doc: vscode.TextDocument | undefined,
-  text: string,
-  kubeResources: K8sResource[],
-  fileName: string
-): IncomingReference[] {
-  let currentIndex = 0;
-  const split = "---";
-  return text
-    .split(split)
-    .flatMap((textSplit) => {
-      const thisResource = textToWorkspaceK8sResource(textSplit, fileName);
-      if (!thisResource) {
-        currentIndex += textSplit.length + split.length;
-        return [];
-      }
-      const highlights = getHighlights(
-        doc,
-        thisResource,
+  return getKustomizationPathsInWorkspace().reduce(
+    (acc, path) =>
+      getReferencesFromFile(
+        undefined,
+        kustomizeBuild(path),
         kubeResources,
-        [],
-        textSplit,
-        {} as Prefs,
-        true,
-        currentIndex
-      );
-      currentIndex += textSplit.length + split.length;
-      return { thisResource, highlights };
-    })
-    .flatMap((h) =>
-      h.highlights.map((hh) => ({
-        ref: h.thisResource,
-        definition: hh.definition,
-        message: hh.message,
-      }))
-    );
+        path,
+        "kustomize"
+      ).reduce((acc, i) => {
+        if (acc[i.definition.where.path]) {
+          acc[i.definition.where.path].push(i);
+        } else {
+          acc[i.definition.where.path] = [i];
+        }
+        return acc;
+      }, acc as LookupIncomingReferences),
+    {} as LookupIncomingReferences
+  );
 }
