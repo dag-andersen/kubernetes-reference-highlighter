@@ -7,7 +7,10 @@ import {
 
 export function getK8sResourcesInWorkspace(): K8sResource[] {
   return getAllYamlFilesInVsCodeWorkspace().flatMap(({ fileName, text }) =>
-    text.split("---").flatMap((text) => textToK8sResourced(text, fileName, "workspace") ?? [])
+    text
+      .split("---")
+      .flatMap((text) => textToK8sResourced(text, fileName, "workspace") ?? [])
+      .filter((i) => i.metadata.name) // Check that it has a name that can be referenced
   );
 }
 
