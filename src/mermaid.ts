@@ -22,7 +22,9 @@ export function showMermaid(
     });
     onlyDependencies = false;
     const { base, onlyUsedString, notOnlyUsedString } = getMermaid(lookup, k8sResources, prefs);
-    webview.webview.html = getHtml( onlyDependencies ? `${base}${onlyUsedString}` : `${base}${notOnlyUsedString}`);
+    webview.webview.html = getHtml(
+      onlyDependencies ? `${base}${onlyUsedString}` : `${base}${notOnlyUsedString}`
+    );
     webview.onDidDispose(() => {
       webview = undefined;
     });
@@ -150,7 +152,7 @@ function getHtml(initialGraph: string) {
 function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[], prefs: Prefs) {
   const toPath = (path: string) => vscode.workspace.asRelativePath(path || "");
 
-  const something = getLookupIncomingReferencesKustomize(k8sResources);
+  const lookupKustomize = getLookupIncomingReferencesKustomize(k8sResources);
 
   const pathToResource = k8sResources
     .sort((a, b) => a.where.path.localeCompare(b.where.path))
@@ -163,8 +165,6 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
       return acc;
     }, {} as Record<string, K8sResource[]>);
 
-  let mermaid = "graph LR;";
-
   const isAllowed = (r: K8sResource) =>
     (prefs.kustomizeScanning && r.where.place === "kustomize") ||
     (prefs.workSpaceScanning && r.where.place === "workspace") ||
@@ -174,49 +174,42 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
   const arrow = (a: K8sResource, b: K8sResource) =>
     ` ${a.where.path}${a.metadata.name} ==> ${b.where.path}${b.metadata.name}`;
 
-  mermaid = Object.values(something).reduce((acc, incomingReferences) => {
-    return (
-      acc +
-      incomingReferences
-        .filter(({ definition, ref }) => isAllowed(definition) && isAllowed(ref))
-        .map(({ definition, ref }) => ` ${arrow(ref, definition)};`)
-        .join("")
+  const getArrows = (lookup: LookupIncomingReferences) =>
+    Object.values(lookup).reduce(
+      (acc, incomingRefs) =>
+        acc +
+        incomingRefs
+          .filter(({ definition, ref }) => isAllowed(definition) && isAllowed(ref))
+          .map(({ definition, ref }) => ` ${arrow(ref, definition)};`)
+          .join(""),
+      ""
     );
-  }, mermaid);
 
-  mermaid = Object.values(lookup).reduce((acc, incomingReferences) => {
-    return (
-      acc +
-      incomingReferences
-        .filter(({ definition, ref }) => isAllowed(definition) && isAllowed(ref))
-        .map(({ definition, ref }) => ` ${arrow(ref, definition)};`)
-        .join("")
-    );
-  }, mermaid);
+  let mermaid = `graph LR;${getArrows(lookupKustomize)}${getArrows(lookup)}`;
 
-  let onlyUsedString = "";
+  const { onlyUsedString, notOnlyUsedString } = Object.entries(pathToResource).reduce(
+    (acc, [path, resources]) => {
+      acc.notOnlyUsedString +=
+        resources.reduce(
+          (acc, r) =>
+            (acc += ` ${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${path}" _self;`),
+          ` subgraph ${path}[${toPath(path)}];`
+        ) + " end;";
 
-  for (const [path, resources] of Object.entries(pathToResource)) {
-    const res = resources.filter((r) => mermaid.includes(`${r.where.path}${r.metadata.name}`));
-    if (!mermaid.includes(path) && res.length === 0) {
-      continue;
-    }
-    onlyUsedString += ` subgraph ${path}[${toPath(path)}];`;
-    for (const r of res) {
-      onlyUsedString += ` ${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${path}" _self;`;
-    }
-    onlyUsedString += " end;";
-  }
+      const res = resources.filter((r) => mermaid.includes(`${r.where.path}${r.metadata.name}`));
+      if (!mermaid.includes(path) && res.length === 0) {
+        return acc;
+      }
+      acc.onlyUsedString +=
+        res.reduce(
+          (acc, r) =>
+            (acc += ` ${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${path}" _self;`),
+          ` subgraph ${path}[${toPath(path)}];`
+        ) + " end;";
+      return acc;
+    },
+    { onlyUsedString: "", notOnlyUsedString: "" }
+  );
 
-  let notOnlyUsedString = "";
-
-  for (const [path, resources] of Object.entries(pathToResource)) {
-    notOnlyUsedString += ` subgraph ${path}[${toPath(path)}];`;
-    for (const r of resources) {
-      notOnlyUsedString += ` ${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${path}" _self;`;
-    }
-    notOnlyUsedString += " end;";
-  }
-
-  return { base: mermaid, onlyUsedString: onlyUsedString, notOnlyUsedString };
+  return { base: mermaid, onlyUsedString, notOnlyUsedString };
 }
