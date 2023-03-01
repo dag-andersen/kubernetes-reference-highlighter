@@ -1,8 +1,7 @@
-import { Highlight, K8sResource } from "../types";
+import { Highlight, K8sResource, LookupIncomingReferences } from "../types";
 import * as vscode from "vscode";
-import { textToK8sResource } from "../extension";
 import { format } from "util";
-import { getAllYamlFileNamesInDirectory } from "./util";
+import { getAllYamlFileNamesInDirectory, getReferencesFromFile, textToK8sResourced } from "./util";
 import { execSync } from "child_process";
 import { getPositions } from "../finders/utils";
 
@@ -10,45 +9,31 @@ const kustomizeIsInstalled = isKustomizeInstalled();
 const kustomizeCommand = kustomizeIsInstalled ? "kustomize build" : "kubectl kustomize";
 
 export function getKustomizeResources(): K8sResource[] {
-  const kustomizationFiles = getKustomizationPathsInWorkspace();
-
-  const resources = kustomizationFiles.flatMap(kustomizeBuild);
-
-  return resources;
+  return getKustomizationPathsInWorkspace().flatMap((path) =>
+    kustomizeBuild(path)
+      .split("---")
+      .flatMap((text) => textToK8sResourced(text, path, "kustomize") ?? [])
+  );
 }
 
-function getKustomizationPathsInWorkspace(): string[] {
-  const kustomizationFiles = getAllYamlFileNamesInDirectory().filter(
+export function getKustomizationPathsInWorkspace(): string[] {
+  return getAllYamlFileNamesInDirectory().filter(
     (file) => file.endsWith("kustomization.yml") || file.endsWith("kustomization.yaml")
   );
-
-  return kustomizationFiles;
 }
 
-function kustomizeBuild(file: string): K8sResource[] {
+export function kustomizeBuild(file: string): string {
   const path = file.substring(0, file.lastIndexOf("/"));
 
   const execSync = require("child_process").execSync;
-  let output: string = "";
 
   try {
-    output = execSync(`${kustomizeCommand} ${path}`, {
+    return execSync(`${kustomizeCommand} ${path}`, {
       encoding: "utf-8",
     });
   } catch (e) {
-    return [];
+    return "";
   }
-
-  const split = output.split("---");
-  return split.flatMap((text) => {
-    try {
-      return {
-        ...textToK8sResource(text),
-        where: { place: "kustomize", path: file },
-      };
-    } catch (e) {}
-    return [];
-  });
 }
 
 // check if kustomize is installed
@@ -127,4 +112,27 @@ export function verifyKustomizeBuild(
       position: position,
     };
   });
+}
+
+export function getLookupIncomingReferencesKustomize(
+  kubeResources: K8sResource[]
+): LookupIncomingReferences {
+  return getKustomizationPathsInWorkspace().reduce(
+    (acc, path) =>
+      getReferencesFromFile(
+        undefined,
+        kustomizeBuild(path),
+        kubeResources,
+        path,
+        "kustomize"
+      ).reduce((acc, i) => {
+        if (acc[i.definition.where.path]) {
+          acc[i.definition.where.path].push(i);
+        } else {
+          acc[i.definition.where.path] = [i];
+        }
+        return acc;
+      }, acc as LookupIncomingReferences),
+    {} as LookupIncomingReferences
+  );
 }

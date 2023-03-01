@@ -1,5 +1,9 @@
-import { readFileSync } from "fs";
 import * as vscode from "vscode";
+import { readFileSync } from "fs";
+import { getHighlights } from "../extension";
+import { parse } from "yaml";
+import { Prefs } from "../prefs";
+import { IncomingReference, K8sResource, Place } from "../types";
 
 export function getAllYamlFileNamesInDirectory(dirPath?: string) {
   dirPath =
@@ -49,4 +53,71 @@ export function getAllYamlFilesInVsCodeWorkspace() {
       ? { fileName: file, text: openFile.getText(), doc: openFile }
       : { fileName: file, text: readFileSync(file, "utf8"), doc: openFile };
   });
+}
+
+function parseYaml(text: string) {
+  const yml = parse(text);
+  return {
+    kind: yml.kind,
+    spec: yml.spec,
+    data: yml.data,
+    metadata: {
+      name: yml.metadata?.name,
+      namespace: yml.metadata?.namespace,
+      labels: yml.metadata?.labels,
+    },
+  };
+}
+
+export function textToK8sResourced(
+  text: string,
+  fileName: string,
+  place: Place
+): K8sResource | undefined {
+  try {
+    return {
+      ...parseYaml(text),
+      where: { place: place, path: fileName },
+    };
+  } catch (e) {}
+  return undefined;
+}
+
+export function getReferencesFromFile(
+  doc: vscode.TextDocument | undefined,
+  text: string,
+  kubeResources: K8sResource[],
+  fileName: string,
+  place: Place
+): IncomingReference[] {
+  let currentIndex = 0;
+  const split = "---";
+  return text
+    .split(split)
+    .flatMap((textSplit) => {
+      const thisResource = textToK8sResourced(textSplit, fileName, place);
+      if (!thisResource) {
+        currentIndex += textSplit.length + split.length;
+        return [];
+      }
+      const highlights = getHighlights(
+        doc,
+        thisResource,
+        kubeResources,
+        [],
+        textSplit,
+        {} as Prefs,
+        true,
+        currentIndex
+      );
+      currentIndex += textSplit.length + split.length;
+      return { thisResource, highlights };
+    })
+    .flatMap((h) =>
+      h.highlights.map((hh) => ({
+        ref: h.thisResource,
+        definition: hh.definition,
+        message: hh.message,
+      }))
+    );
 }

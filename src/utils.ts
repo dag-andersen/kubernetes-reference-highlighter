@@ -1,11 +1,6 @@
 import { format } from "util";
 import * as vscode from "vscode";
-import {
-  DecorationOptions,
-  MarkdownString,
-  Position,
-  window,
-} from "vscode";
+import { DecorationOptions, MarkdownString, Position, window } from "vscode";
 
 const log: string[] = [];
 

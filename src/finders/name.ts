@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
-import { IncomingReference } from "../sources/workspace";
-import { K8sResource, Highlight } from "../types";
+import { K8sResource, Highlight, IncomingReference } from "../types";
 import { getPositions } from "./utils";
 
 export function find(

@@ -12,15 +12,11 @@ import * as serviceFreeText from "./finders/serviceFreeText";
 import * as serviceSelector from "./finders/serviceSelector";
 import * as name from "./finders/name";
 
-import { Highlight, K8sResource } from "./types";
-import { parse } from "yaml";
+import { Highlight, IncomingReference, K8sResource, LookupIncomingReferences } from "./types";
 import { loadPreferences, Prefs, updateConfigurationKey } from "./prefs";
 import { decorate, highlightsToDecorations } from "./decorations/decoration";
-import {
-  IncomingReference,
-  LookupIncomingReferences,
-  getLookupIncomingReferences,
-} from "./sources/workspace";
+import { getLookupIncomingReferences } from "./sources/workspace";
+import { textToK8sResourced } from "./sources/util";
 
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
@@ -137,27 +133,26 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-    const showDependencyDiagramCommand = vscode.commands.registerCommand(
-      "kubernetes-reference-highlighter.showDependencyDiagram",
-      () => {
-        if (!prefs.incomingReferences) {
-          vscode.window.showErrorMessage(
-            "Incoming Reference is disabled.",
-            "Enable it!"
-          ).then((selection) => {
+  const showDependencyDiagramCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.showDependencyDiagram",
+    () => {
+      if (!prefs.incomingReferences) {
+        vscode.window
+          .showErrorMessage("Incoming Reference is disabled.", "Enable it!")
+          .then((selection) => {
             if (selection === "Enable it!") {
               vscode.commands.executeCommand(
                 "kubernetes-reference-highlighter.enableIncomingReferences"
               );
-              mermaid.showMermaid(lookup, k8sResources);
+              mermaid.showMermaid(lookup, k8sResources, prefs);
             }
           });
-          return;
-        }
-        lookup = getLookupIncomingReferences(k8sResources);
-        mermaid.showMermaid(lookup, k8sResources);
+        return;
       }
-    );
+      lookup = getLookupIncomingReferences(k8sResources);
+      mermaid.showMermaid(lookup, k8sResources, prefs);
+    }
+  );
 
   const updateK8sResourcesFromWorkspace = () => {
     kubeResourcesWorkspace = prefs.workSpaceScanning ? workspace.getK8sResourcesInWorkspace() : [];
@@ -178,7 +173,7 @@ export function activate(context: vscode.ExtensionContext) {
   const updateIncomingReferences = () => {
     lookup = prefs.incomingReferences ? getLookupIncomingReferences(k8sResources) : {};
     if (prefs.incomingReferences) {
-      mermaid.updateMermaid(lookup, k8sResources);
+      mermaid.updateMermaid(lookup, k8sResources, prefs);
     }
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   };
@@ -286,20 +281,6 @@ export function activate(context: vscode.ExtensionContext) {
   }, 1000 * 15);
 }
 
-export function textToK8sResource(text: string) {
-  const yml = parse(text);
-  return {
-    kind: yml.kind,
-    spec: yml.spec,
-    data: yml.data,
-    metadata: {
-      name: yml.metadata?.name,
-      namespace: yml.metadata?.namespace,
-      labels: yml.metadata?.labels,
-    },
-  };
-}
-
 // this method is called when your extension is deactivated
 export function deactivate() {}
 
@@ -329,10 +310,10 @@ function updateHighlighting(
     return;
   }
 
-  let currentIndex = 0;	
+  let currentIndex = 0;
 
   const highlights = fileText.split(split).flatMap((textSplit) => {
-    let thisResource = workspace.textToWorkspaceK8sResource(textSplit, fileName);
+    let thisResource = textToK8sResourced(textSplit, fileName, "workspace");
     if (!thisResource) {
       currentIndex += textSplit.length + split.length;
       return [];
@@ -346,7 +327,7 @@ function updateHighlighting(
       prefs,
       false,
       currentIndex
-      );
+    );
     currentIndex += textSplit.length + split.length;
     return h;
   });
@@ -368,7 +349,7 @@ export function getHighlights(
   textSplit: string,
   prefs: Prefs,
   onlyReferences: boolean,
-  shift: number,
+  shift: number
 ): Highlight[] {
   const serviceHighlights = serviceFreeText.find(
     doc,

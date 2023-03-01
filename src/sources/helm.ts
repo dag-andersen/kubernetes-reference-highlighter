@@ -1,21 +1,39 @@
 import { Highlight, K8sResource } from "../types";
 import * as vscode from "vscode";
-import { textToK8sResource } from "../extension";
 import { format } from "util";
-import { getAllYamlFileNamesInDirectory } from "./util";
+import { getAllYamlFileNamesInDirectory, textToK8sResourced } from "./util";
 import { getPositions } from "../finders/utils";
 
+export const helmIsInstalled = isHelmInstalled();
 const helmCommand = "helm template";
 
 export function getHelmResources(): K8sResource[] {
-  const helmChartFiles = getHelmPathsInWorkspace();
-
-  const resources = helmChartFiles.flatMap(helmBuild);
-
-  return resources;
+  return getHelmPathsInWorkspace().flatMap((path) =>
+    helmBuild(path)
+      .split("---")
+      .flatMap((text) => textToK8sResourced(text, path, "helm") ?? [])
+  );
 }
 
-export const helmIsInstalled = isHelmInstalled();
+function getHelmPathsInWorkspace(): string[] {
+  return getAllYamlFileNamesInDirectory().filter(
+    (file) => file.endsWith("Chart.yml") || file.endsWith("Chart.yaml")
+  );
+}
+
+function helmBuild(file: string): string {
+  const path = file.substring(0, file.lastIndexOf("/"));
+
+  const execSync = require("child_process").execSync;
+
+  try {
+    return execSync(`${helmCommand} ${path}`, {
+      encoding: "utf-8",
+    });
+  } catch (e) {
+    return "";
+  }
+}
 
 export function isHelmInstalled(): boolean {
   const execSync = require("child_process").execSync;
@@ -30,40 +48,6 @@ export function isHelmInstalled(): boolean {
   }
 
   return true;
-}
-
-function getHelmPathsInWorkspace(): string[] {
-  const helmChartFiles = getAllYamlFileNamesInDirectory().filter(
-    (file) => file.endsWith("Chart.yml") || file.endsWith("Chart.yaml")
-  );
-
-  return helmChartFiles;
-}
-
-function helmBuild(file: string): K8sResource[] {
-  const path = file.substring(0, file.lastIndexOf("/"));
-
-  const execSync = require("child_process").execSync;
-  let output: string = "";
-
-  try {
-    output = execSync(`${helmCommand} ${path}`, {
-      encoding: "utf-8",
-    });
-  } catch (e) {
-    return [];
-  }
-
-  const split = output.split("---");
-  return split.flatMap((text) => {
-    try {
-      return {
-        ...textToK8sResource(text),
-        where: { place: "helm", path: file },
-      };
-    } catch (e) {}
-    return [];
-  });
 }
 
 export function verifyHelmBuild(

@@ -1,8 +1,10 @@
 import { Position } from "vscode";
 import { Message } from "./decorations/messages";
 
+export type Place = "workspace" | "kustomize" | "helm" | "cluster";
+
 export type FromWhere = {
-  place: "workspace" | "kustomize" | "helm" | "cluster";
+  place: Place;
   path: string;
 };
 
@@ -26,4 +28,12 @@ export type K8sResource = {
   spec?: any;
   data?: any;
   where: FromWhere;
+};
+
+export type LookupIncomingReferences = Record<string, IncomingReference[]>;
+
+export type IncomingReference = {
+  ref: K8sResource;
+  definition: K8sResource;
+  message: Message;
 };
