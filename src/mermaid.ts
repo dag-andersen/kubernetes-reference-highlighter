@@ -2,11 +2,13 @@ import * as vscode from "vscode";
 import { Prefs } from "./prefs";
 import { getLookupIncomingReferencesKustomize } from "./sources/kustomize";
 import { K8sResource, LookupIncomingReferences } from "./types";
-import { logText } from "./utils";
 
 let webview: vscode.WebviewPanel | undefined;
 
 const title = "Kubernetes Resource Highlighter: Resource Diagram";
+let onlyDependencies: boolean;
+let onlyDependenciesGraph = "";
+let allResourcesGraph = "";
 
 export function showMermaid(
   lookup: LookupIncomingReferences,
@@ -18,29 +20,24 @@ export function showMermaid(
       enableScripts: true,
       retainContextWhenHidden: true,
     });
-    webview.webview.html = getHtml(getMermaid(lookup, k8sResources, prefs, true));
+    onlyDependencies = false;
+    const { base, onlyUsedString, notOnlyUsedString } = getMermaid(lookup, k8sResources, prefs);
+    webview.webview.html = getHtml( onlyDependencies ? `${base}${onlyUsedString}` : `${base}${notOnlyUsedString}`);
     webview.onDidDispose(() => {
       webview = undefined;
     });
-    webview.webview.onDidReceiveMessage(({content}) => {
-      logText("checkbox1 checked: " + content);
-      console.log("checkbox1 checked: " + content);
-      const graph = getMermaid(lookup, k8sResources, prefs, content);
-      webview?.webview.postMessage(graph);
+    webview.webview.onDidReceiveMessage(({ content }) => {
+      onlyDependencies = content;
+      reRenderMermaid(onlyDependencies ? onlyDependenciesGraph : allResourcesGraph);
     });
   } else {
     webview.reveal();
   }
-  updateMermaid(lookup, k8sResources, prefs);
 }
 
 export function closeMermaid() {
   webview?.dispose();
 }
-
-let onlyDependencies = false;
-let onlyDependenciesGraph = "";
-let allResourcesGraph = "";
 
 export function updateMermaid(
   lookup: LookupIncomingReferences,
@@ -51,12 +48,27 @@ export function updateMermaid(
     return;
   }
 
+  const { base, onlyUsedString, notOnlyUsedString } = getMermaid(lookup, k8sResources, prefs);
 
+  const OD = `${base}${onlyUsedString}`;
+  const AR = `${base}${notOnlyUsedString}`;
 
-  logText("updateMermaid");
+  if (onlyDependenciesGraph !== OD) {
+    onlyDependenciesGraph = OD;
+    if (onlyDependencies) {
+      reRenderMermaid(onlyDependenciesGraph);
+    }
+  }
+  if (allResourcesGraph !== AR) {
+    allResourcesGraph = AR;
+    if (!onlyDependencies) {
+      reRenderMermaid(allResourcesGraph);
+    }
+  }
+}
 
-  const OD = getMermaid(lookup, k8sResources, prefs, true);
-  webview.webview.postMessage(OD);
+function reRenderMermaid(graph: string) {
+  webview?.webview.postMessage(graph);
 }
 
 function getHtml(initialGraph: string) {
@@ -135,14 +147,7 @@ function getHtml(initialGraph: string) {
   `;
 }
 
-//"graph LR;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-configmap.ymlbackend-config ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-service.ymlbackend;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-deployment.ymlbackend ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-configmap.ymlpostgres-config;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-deployment.ymlbackend ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-configmap.ymlpostgres-config;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-deployment.ymlpostgres ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-configmap.ymlpostgres-config;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-deployment.ymlpostgres ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-configmap.ymlpostgres-config;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-service.ymlbackend ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-deployment.ymlbackend;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-configmap.ymlpostgres-config ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-service.ymlpostgres;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-deployment.ymlpostgres ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-secret.ymlpostgres-secret;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-service.ymlpostgres ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-deployment.ymlpostgres;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-deployment.ymlfrontend ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-configmap.ymlbackend-config;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-deployment.ymlfrontend ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-configmap.ymlbackend-config;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-ingress.ymlingress ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-service.ymlfrontend;  /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-service.ymlfrontend ==> /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-deployment.ymlfrontend; subgraph /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-configmap.yml[backend-configmap.yml]; /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-configmap.ymlbackend-config[backend-config]; end; subgraph /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-deployment.yml[backend-deployment.yml]; /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-deployment.ymlbackend[backend]; end; subgraph /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-service.yml[backend-service.yml]; /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/backend-service.ymlbackend[backend]; end; subgraph /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-configmap.yml[db-configmap.yml]; /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-configmap.ymlpostgres-config[postgres-config]; end; subgraph /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-deployment.yml[db-deployment.yml]; /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-deployment.ymlpostgres[postgres]; end; subgraph /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-secret.yml[db-secret.yml]; /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-secret.ymlpostgres-secret[postgres-secret]; end; subgraph /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-service.yml[db-service.yml]; /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/db-service.ymlpostgres[postgres]; end; subgraph /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-deployment.yml[frontend-deployment.yml]; /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-deployment.ymlfrontend[frontend]; end; subgraph /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-ingress.yml[frontend-ingress.yml]; /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-ingress.ymlingress[ingress]; end; subgraph /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-service.yml[frontend-service.yml]; /Users/dag/CodeProjects/KRH-assignments/assignments/assignment1/frontend-service.ymlfrontend[frontend]; end;"
-
-function getMermaid(
-  lookup: LookupIncomingReferences,
-  k8sResources: K8sResource[],
-  prefs: Prefs,
-  onlyUsed = true
-) {
+function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[], prefs: Prefs) {
   const toPath = (path: string) => vscode.workspace.asRelativePath(path || "");
 
   const something = getLookupIncomingReferencesKustomize(k8sResources);
@@ -189,20 +194,29 @@ function getMermaid(
     );
   }, mermaid);
 
+  let onlyUsedString = "";
+
   for (const [path, resources] of Object.entries(pathToResource)) {
-    const res = resources.filter(
-      (r) => !onlyUsed || mermaid.includes(`${r.where.path}${r.metadata.name}`)
-    );
-    if (onlyUsed && !mermaid.includes(path) && res.length === 0) {
+    const res = resources.filter((r) => mermaid.includes(`${r.where.path}${r.metadata.name}`));
+    if (!mermaid.includes(path) && res.length === 0) {
       continue;
     }
-    mermaid += ` subgraph ${path}[${toPath(path)}];`;
+    onlyUsedString += ` subgraph ${path}[${toPath(path)}];`;
     for (const r of res) {
-      mermaid += ` ${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${path}" _self;`;
+      onlyUsedString += ` ${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${path}" _self;`;
     }
-    mermaid += " end;";
+    onlyUsedString += " end;";
   }
 
-  return mermaid;
-}
+  let notOnlyUsedString = "";
 
+  for (const [path, resources] of Object.entries(pathToResource)) {
+    notOnlyUsedString += ` subgraph ${path}[${toPath(path)}];`;
+    for (const r of resources) {
+      notOnlyUsedString += ` ${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${path}" _self;`;
+    }
+    notOnlyUsedString += " end;";
+  }
+
+  return { base: mermaid, onlyUsedString: onlyUsedString, notOnlyUsedString };
+}
