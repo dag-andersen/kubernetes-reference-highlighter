@@ -174,6 +174,15 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
   const arrow = (a: K8sResource, b: K8sResource) =>
     ` ${a.where.path}${a.metadata.name} ==> ${b.where.path}${b.metadata.name}`;
 
+  const node = (r: K8sResource) =>
+    `${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${r.where.path}" _self;`;
+
+  const fileSubgraph = (filePath: string, resource: K8sResource[]) =>
+    resource.reduce(
+      (acc, r) => acc + node(r),
+      ` subgraph ${filePath}[${toPath(filePath)}];`
+    ) + " end;";
+
   const getArrows = (lookup: LookupIncomingReferences) =>
     Object.values(lookup).reduce(
       (acc, incomingRefs) =>
@@ -189,23 +198,13 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
 
   const { onlyUsedString, notOnlyUsedString } = Object.entries(pathToResource).reduce(
     (acc, [path, resources]) => {
-      acc.notOnlyUsedString +=
-        resources.reduce(
-          (acc, r) =>
-            (acc += ` ${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${path}" _self;`),
-          ` subgraph ${path}[${toPath(path)}];`
-        ) + " end;";
+      acc.notOnlyUsedString += fileSubgraph(path, resources);
 
       const res = resources.filter((r) => mermaid.includes(`${r.where.path}${r.metadata.name}`));
       if (!mermaid.includes(path) && res.length === 0) {
         return acc;
       }
-      acc.onlyUsedString +=
-        res.reduce(
-          (acc, r) =>
-            (acc += ` ${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${path}" _self;`),
-          ` subgraph ${path}[${toPath(path)}];`
-        ) + " end;";
+      acc.onlyUsedString += fileSubgraph(path, res);
       return acc;
     },
     { onlyUsedString: "", notOnlyUsedString: "" }
