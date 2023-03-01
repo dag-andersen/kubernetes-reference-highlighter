@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { Prefs } from "./prefs";
 import { getLookupIncomingReferencesKustomize } from "./sources/kustomize";
 import { K8sResource, LookupIncomingReferences } from "./types";
+import { logText } from "./utils";
 
 let webview: vscode.WebviewPanel | undefined;
 
@@ -17,8 +18,15 @@ export function showMermaid(
       enableScripts: true,
       retainContextWhenHidden: true,
     });
+    webview.webview.html = getHtml(getMermaid(lookup, k8sResources, prefs, true));
     webview.onDidDispose(() => {
       webview = undefined;
+    });
+    webview.webview.onDidReceiveMessage(({content}) => {
+      logText("checkbox1 checked: " + content);
+      console.log("checkbox1 checked: " + content);
+      const graph = getMermaid(lookup, k8sResources, prefs, content);
+      webview?.webview.postMessage(graph);
     });
   } else {
     webview.reveal();
@@ -30,6 +38,10 @@ export function closeMermaid() {
   webview?.dispose();
 }
 
+let onlyDependencies = false;
+let onlyDependenciesGraph = "";
+let allResourcesGraph = "";
+
 export function updateMermaid(
   lookup: LookupIncomingReferences,
   k8sResources: K8sResource[],
@@ -39,22 +51,37 @@ export function updateMermaid(
     return;
   }
 
-  const allResources = getMermaid(lookup, k8sResources, prefs, false);
-  const onlyDependencies = getMermaid(lookup, k8sResources, prefs, true);
-  webview.webview.html = `
-<html lang="en">
-  <body>
-    <label><input id="checkbox1" type="checkbox" /> Only show resources with references </label>
 
-    <pre id="mermaid1" class="mermaid" style="margin: 0; width: 0; height: 0; overflow: hidden">
-       ${allResources}
-    </pre>
-    <pre id="mermaid2" class="mermaid" style="margin: 0; width: 0; height: 0; overflow: hidden">
-       ${onlyDependencies}
-    </pre>
+
+  logText("updateMermaid");
+
+  const OD = getMermaid(lookup, k8sResources, prefs, true);
+  webview.webview.postMessage(OD);
+}
+
+function getHtml(initialGraph: string) {
+  return `
+<html lang="en" style="height: 100%;">
+  <body style="padding: 0; height: 100%;">
+    <div style="width: 100%; height: 100%; display: flex; flex-direction: column;">
+      <label style="text-align: center; display: block"
+        ><input id="checkbox1" type="checkbox" /> Only show resources with references
+      </label>
+      <div style="flex-grow: 1; overflow: auto;">
+        <pre
+          id="mermaid"
+          class="mermaid"
+          style="text-align: center; display: block; margin: 0; width: 0; height: 0; overflow: hidden"
+        >
+          ${initialGraph}
+        </pre>
+      </div>
+    </div>
+
     <script type="module">
-      const mermaidElement1 = document.getElementById("mermaid1");
-      const mermaidElement2 = document.getElementById("mermaid2");
+      const vscode = acquireVsCodeApi();
+
+      const mermaidElement = document.getElementById("mermaid");
       const hide = ({ style }) => {
         style.width = 0;
         style.height = 0;
@@ -68,13 +95,7 @@ export function updateMermaid(
 
       const checkbox = document.getElementById("checkbox1");
       checkbox.addEventListener("change", (e) => {
-        if (e.target.checked) {
-          hide(mermaidElement1);
-          show(mermaidElement2);
-        } else {
-          show(mermaidElement1);
-          hide(mermaidElement2);
-        }
+        vscode.postMessage({ content: e.target.checked });
       });
 
       import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
@@ -93,10 +114,24 @@ export function updateMermaid(
       });
 
       await mermaid.run();
-      show(mermaidElement1);
+      show(mermaidElement);
+
+      window.addEventListener("message", async (event) => {
+        const message = event.data; // The JSON data our extension sent
+        mermaidElement.innerHTML = message;
+        console.log(mermaidElement.innerHTML);
+        console.log(mermaidElement);
+        mermaidElement.removeAttribute("data-processed");
+        hide(mermaidElement);
+        await mermaid.run({
+          querySelector: ".mermaid",
+        });
+        show(mermaidElement);
+      });
     </script>
   </body>
 </html>
+
   `;
 }
 
