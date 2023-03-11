@@ -171,17 +171,37 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
 
   const nodeReference = (r: K8sResource) => `${r.where.path}${r.metadata.name}`;
 
-  const arrow = (a: K8sResource, b: K8sResource) =>
-    `${nodeReference(a)} ==> ${nodeReference(b)}`;
+  const arrow = (a: K8sResource, b: K8sResource) => `${nodeReference(a)} ==> ${nodeReference(b)}`;
 
-  const node = (r: K8sResource) =>
-    `${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${r.where.path}" _self;`;
+  const clickLink = (r: K8sResource) =>
+    `click ${nodeReference(r)} href "vscode://file/${r.where.path}" _self;`;
+
+  const node = (r: K8sResource) => `${nodeReference(r)}${getGraphElement(r)}; ${clickLink(r)}`;
+
+  const getGraphElement = (r: K8sResource) => {
+    switch (r.kind) {
+      case "Ingress":
+        return `{{${r.metadata.name}}}`;
+      case "Service":
+        return `([${r.metadata.name}])`;
+      case "ConfigMap":
+        return `[\\${r.metadata.name}\\]`;
+      case "Secret":
+        return `[/${r.metadata.name}/]`;
+      case "Deployment":
+      case "StatefulSet":
+      case "DaemonSet":
+      case "Job":
+        return `[${r.metadata.name}]`;
+      default:
+        return `[${r.metadata.name}]`;
+    }
+  };
 
   const fileSubgraph = (filePath: string, resource: K8sResource[]) =>
-    resource.reduce(
-      (acc, r) => acc + node(r),
-      ` subgraph ${filePath}[${toPath(filePath)}];`
-    ) + " end;";
+    ` subgraph ${filePath}[${toPath(filePath)}];` +
+    resource.reduce((acc, r) => acc + node(r), "") +
+    " end;";
 
   const getArrows = (lookup: LookupIncomingReferences) =>
     Object.values(lookup).reduce(
