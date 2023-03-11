@@ -3,7 +3,7 @@
   "displayName": "Kubernetes Reference Highlighter",
   "publisher": "dag-andersen",
   "description": "",
-  "version": "0.0.33",
+  "version": "0.0.34",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -80,10 +80,10 @@
           "default": true,
           "description": "Kubernetes Reference Highlighter: Reference Correction Hints enabled"
         },
-        "kubernetesReferenceHighlighter.enableIncomingReferences": {
+        "kubernetesReferenceHighlighter.enabledBiDirectionalReferences": {
           "type": "boolean",
-          "default": false,
-          "description": "Kubernetes Reference Highlighter: Toggle Incoming References enabled"
+          "default": true,
+          "description": "Kubernetes Reference Highlighter: Bi-directional Reference Highlighting enabled"
         }
       }
     }

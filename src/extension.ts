@@ -21,7 +21,6 @@ import { textToK8sResourced } from "./sources/util";
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-
   let clusterClient = cluster.getKubeClient();
 
   let kubeResourcesCluster: K8sResource[] = [];
@@ -115,15 +114,17 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  const enableIncomingReferencesCommand = vscode.commands.registerCommand(
-    "kubernetes-reference-highlighter.enableIncomingReferences",
+  const enabledBiDirectionalReferencesCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.enabledBiDirectionalReferences",
     () => {
-      prefs.incomingReferences = !prefs.incomingReferences;
-      updateConfigurationKey("enableIncomingReferences", prefs.incomingReferences);
+      prefs.biDirectionalReferences = !prefs.biDirectionalReferences;
+      updateConfigurationKey("enabledBiDirectionalReferences", prefs.biDirectionalReferences);
       vscode.window.showInformationMessage(
-        `Incoming reference highlighting: ${prefs.incomingReferences ? "Enabled" : "Disabled"}`
+        `Bi-directional Reference Highlighting: ${
+          prefs.biDirectionalReferences ? "Enabled" : "Disabled"
+        }`
       );
-      if (prefs.incomingReferences) {
+      if (prefs.biDirectionalReferences) {
         updateIncomingReferences();
       } else {
         lookup = {};
@@ -135,7 +136,7 @@ export function activate(context: vscode.ExtensionContext) {
   const showDependencyDiagramCommand = vscode.commands.registerCommand(
     "kubernetes-reference-highlighter.showDependencyDiagram",
     () => {
-      if (!prefs.incomingReferences) {
+      if (!prefs.biDirectionalReferences) {
         vscode.window
           .showErrorMessage("Incoming Reference is disabled.", "Enable it!")
           .then((selection) => {
@@ -170,8 +171,8 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   const updateIncomingReferences = () => {
-    lookup = prefs.incomingReferences ? getLookupIncomingReferences(k8sResources) : {};
-    if (prefs.incomingReferences) {
+    lookup = prefs.biDirectionalReferences ? getLookupIncomingReferences(k8sResources) : {};
+    if (prefs.biDirectionalReferences) {
       mermaid.updateMermaid(lookup, k8sResources, prefs);
     }
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
@@ -229,7 +230,7 @@ export function activate(context: vscode.ExtensionContext) {
     showDependencyDiagramCommand,
     enableHelmScanningCommand,
     enableCorrectionHintsCommand,
-    enableIncomingReferencesCommand,
+    enabledBiDirectionalReferencesCommand,
     onTextEditorChange,
     onSave,
     onChange
@@ -255,7 +256,7 @@ export function activate(context: vscode.ExtensionContext) {
         readyForNewLocalRefresh = false;
       }
     }
-    if (readyForIncomingRefresh && prefs.incomingReferences) {
+    if (readyForIncomingRefresh && prefs.biDirectionalReferences) {
       if (skipIncomingRefresh) {
         skipIncomingRefresh = false;
       } else {
