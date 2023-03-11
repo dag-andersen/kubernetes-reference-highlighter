@@ -18,7 +18,6 @@ export function getKubeClient(): ClusterClient | undefined {
     const context = kc.getCurrentContext();
     return { coreV1Api, appsApi, batchV1Api, context };
   } catch (err) {
-    console.log(err);
   }
   return undefined;
 }

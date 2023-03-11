@@ -21,7 +21,6 @@ import { textToK8sResourced } from "./sources/util";
 // This method is called when the extension is activated
 // The extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Congratulations, extension "Kubernetes Reference Highlighter" is now active!');
 
   let clusterClient = cluster.getKubeClient();
 

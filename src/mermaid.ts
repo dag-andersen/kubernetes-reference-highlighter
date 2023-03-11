@@ -133,8 +133,6 @@ function getHtml(initialGraph: string) {
       window.addEventListener("message", async (event) => {
         const message = event.data; // The JSON data our extension sent
         mermaidElement.innerHTML = message;
-        console.log(mermaidElement.innerHTML);
-        console.log(mermaidElement);
         mermaidElement.removeAttribute("data-processed");
         hide(mermaidElement);
         await mermaid.run({
@@ -171,8 +169,10 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
     (prefs.clusterScanning && r.where.place === "cluster") ||
     (prefs.helmScanning && r.where.place === "helm");
 
+  const nodeReference = (r: K8sResource) => `${r.where.path}${r.metadata.name}`;
+
   const arrow = (a: K8sResource, b: K8sResource) =>
-    ` ${a.where.path}${a.metadata.name} ==> ${b.where.path}${b.metadata.name}`;
+    `${nodeReference(a)} ==> ${nodeReference(b)}`;
 
   const node = (r: K8sResource) =>
     `${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${r.where.path}" _self;`;
