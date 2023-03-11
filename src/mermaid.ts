@@ -81,7 +81,7 @@ function getHtml(initialGraph: string) {
       <label style="text-align: center; display: block"
         ><input id="checkbox1" type="checkbox" /> Only show resources with references
       </label>
-      <div style="flex-grow: 1; overflow: auto;">
+      <div style="zoom: 80%; flex-grow: 1; overflow: auto;">
         <pre
           id="mermaid"
           class="mermaid"
