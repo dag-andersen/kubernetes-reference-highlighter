@@ -41,3 +41,11 @@ export function logText(input: any, line: number = 0) {
 
   editor.setDecorations(deco, [decoration]);
 }
+
+export function hashCode(s: string): string {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) {
+    h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  }
+  return h.toString();
+}

@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { Prefs } from "./prefs";
 import { getLookupIncomingReferencesKustomize } from "./sources/kustomize";
 import { K8sResource, LookupIncomingReferences } from "./types";
+import { hashCode } from "./utils";
 
 let webview: vscode.WebviewPanel | undefined;
 
@@ -21,10 +22,8 @@ export function showMermaid(
       retainContextWhenHidden: true,
     });
     onlyDependencies = false;
-    const { base, onlyUsedString, notOnlyUsedString } = getMermaid(lookup, k8sResources, prefs);
-    webview.webview.html = getHtml(
-      onlyDependencies ? `${base}${onlyUsedString}` : `${base}${notOnlyUsedString}`
-    );
+    const { onlyUsedString, notOnlyUsedString } = getMermaid(lookup, k8sResources, prefs);
+    webview.webview.html = getHtml(onlyDependencies ? onlyUsedString : notOnlyUsedString);
     webview.onDidDispose(() => {
       webview = undefined;
     });
@@ -50,19 +49,16 @@ export function updateMermaid(
     return;
   }
 
-  const { base, onlyUsedString, notOnlyUsedString } = getMermaid(lookup, k8sResources, prefs);
+  const { onlyUsedString, notOnlyUsedString } = getMermaid(lookup, k8sResources, prefs);
 
-  const OD = `${base}${onlyUsedString}`;
-  const AR = `${base}${notOnlyUsedString}`;
-
-  if (onlyDependenciesGraph !== OD) {
-    onlyDependenciesGraph = OD;
+  if (onlyDependenciesGraph !== onlyUsedString) {
+    onlyDependenciesGraph = onlyUsedString;
     if (onlyDependencies) {
       reRenderMermaid(onlyDependenciesGraph);
     }
   }
-  if (allResourcesGraph !== AR) {
-    allResourcesGraph = AR;
+  if (allResourcesGraph !== notOnlyUsedString) {
+    allResourcesGraph = notOnlyUsedString;
     if (!onlyDependencies) {
       reRenderMermaid(allResourcesGraph);
     }
@@ -169,7 +165,7 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
     (prefs.clusterScanning && r.where.place === "cluster") ||
     (prefs.helmScanning && r.where.place === "helm");
 
-  const nodeReference = (r: K8sResource) => `${r.where.path}${r.metadata.name}`;
+  const nodeReference = (r: K8sResource) => hashCode(`${r.where.path}${r.metadata.name}`);
 
   const arrow = (a: K8sResource, b: K8sResource) => `${nodeReference(a)} ==> ${nodeReference(b)}`;
 
@@ -198,37 +194,39 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
     }
   };
 
-  const fileSubgraph = (filePath: string, resource: K8sResource[]) =>
-    ` subgraph ${filePath}[${toPath(filePath)}];` +
-    resource.reduce((acc, r) => acc + node(r), "") +
-    " end;";
+  const fileSubgraph = (filePath: string, resource: K8sResource[]) => {
+    const tp = toPath(filePath);
+    return (
+      ` subgraph ${tp}[${tp}];\n` +
+      resource.reduce((acc, r) => acc + node(r) + "\n", "") +
+      " end;\n"
+    );
+  };
 
   const getArrows = (lookup: LookupIncomingReferences) =>
-    Object.values(lookup).reduce(
-      (acc, incomingRefs) =>
-        acc +
+    Object.values(lookup)
+      .flatMap((incomingRefs) =>
         incomingRefs
           .filter(({ definition, ref }) => isAllowed(definition) && isAllowed(ref))
           .map(({ definition, ref }) => ` ${arrow(ref, definition)};`)
-          .join(""),
-      ""
-    );
+      )
+      .join("\n") + "\n";
 
-  let mermaid = `graph LR;${getArrows(lookupKustomize)}${getArrows(lookup)}`;
+  let mermaid = `graph LR;\n${getArrows(lookupKustomize)}${getArrows(lookup)}`;
 
   const { onlyUsedString, notOnlyUsedString } = Object.entries(pathToResource).reduce(
     (acc, [path, resources]) => {
       acc.notOnlyUsedString += fileSubgraph(path, resources);
 
-      const res = resources.filter((r) => mermaid.includes(`${r.where.path}${r.metadata.name}`));
+      const res = resources.filter((r) => mermaid.includes(nodeReference(r)));
       if (!mermaid.includes(path) && res.length === 0) {
         return acc;
       }
       acc.onlyUsedString += fileSubgraph(path, res);
       return acc;
     },
-    { onlyUsedString: "", notOnlyUsedString: "" }
+    { onlyUsedString: mermaid, notOnlyUsedString: mermaid }
   );
 
-  return { base: mermaid, onlyUsedString, notOnlyUsedString };
+  return { onlyUsedString, notOnlyUsedString };
 }
