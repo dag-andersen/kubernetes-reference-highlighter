@@ -6,6 +6,8 @@
   - [Features](#features)
     - [Suggestions](#suggestions)
     - [Code Navigation](#code-navigation)
+    - [Graph View](#graph-view)
+      - [Example](#example)
     - [Reference Highlighting](#reference-highlighting)
       - [Cluster Scanning](#cluster-scanning)
       - [Workspace Scanning](#workspace-scanning)
@@ -32,6 +34,19 @@ Clicking any filename in one of the hovering boxes will send the user to that fi
 
 <p float="left">
   <img src="/images/deco/code-navigation-deployment.png" width="500" />
+</p>
+
+### Graph View
+
+Running `Kubernetes Reference Highlighter: Show Dependency Diagram` in the command pallet will show a diagram of the references between Kubernetes resources.
+
+<p float="left">
+  <img src="/images/graph-example-command.png" width="500" />
+</p>
+
+#### Example
+<p float="left">
+  <img src="/images/graph-example.png" width="500" />
 </p>
 
 ### Reference Highlighting  

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  labels:
+    app: postgres
+  name: postgres-dpl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - image: postgres:14.3
+          name: postgres
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_TABLE
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-config
+                  key: DB_TABLE
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: DB_PASSWORD
+                  name: postgres-secret
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
