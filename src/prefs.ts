@@ -6,18 +6,18 @@ export type Prefs = {
   helmScanning: boolean;
   clusterScanning: boolean;
   hints: boolean;
-  incomingReferences: boolean;
+  biDirectionalReferences: boolean;
 };
 
 export function loadPreferences(): Prefs {
   // prettier-ignore
   return {
-    workSpaceScanning:  getConfigurationValue("enableWorkSpaceScanning")  ?? true,
-    kustomizeScanning:  getConfigurationValue("enableKustomizeScanning")  ?? true,
-    helmScanning:       getConfigurationValue("enableHelmScanning")       ?? true,
-    clusterScanning:    getConfigurationValue("enableClusterScanning")    ?? true,
-    hints:              getConfigurationValue("enableCorrectionHints")    ?? true,
-    incomingReferences: getConfigurationValue("enableIncomingReferences") ?? false,
+    workSpaceScanning:        getConfigurationValue("enableWorkSpaceScanning")        ?? true,
+    kustomizeScanning:        getConfigurationValue("enableKustomizeScanning")        ?? true,
+    helmScanning:             getConfigurationValue("enableHelmScanning")             ?? true,
+    clusterScanning:          getConfigurationValue("enableClusterScanning")          ?? true,
+    hints:                    getConfigurationValue("enableCorrectionHints")          ?? true,
+    biDirectionalReferences:  getConfigurationValue("enabledBiDirectionalReferences") ?? true,
   };
 }
 

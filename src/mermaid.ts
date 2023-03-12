@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { Prefs } from "./prefs";
 import { getLookupIncomingReferencesKustomize } from "./sources/kustomize";
 import { K8sResource, LookupIncomingReferences } from "./types";
+import { hashCode } from "./utils";
 
 let webview: vscode.WebviewPanel | undefined;
 
@@ -21,10 +22,8 @@ export function showMermaid(
       retainContextWhenHidden: true,
     });
     onlyDependencies = false;
-    const { base, onlyUsedString, notOnlyUsedString } = getMermaid(lookup, k8sResources, prefs);
-    webview.webview.html = getHtml(
-      onlyDependencies ? `${base}${onlyUsedString}` : `${base}${notOnlyUsedString}`
-    );
+    const { onlyUsedString, notOnlyUsedString } = getMermaid(lookup, k8sResources, prefs);
+    webview.webview.html = getHtml(onlyDependencies ? onlyUsedString : notOnlyUsedString);
     webview.onDidDispose(() => {
       webview = undefined;
     });
@@ -50,19 +49,16 @@ export function updateMermaid(
     return;
   }
 
-  const { base, onlyUsedString, notOnlyUsedString } = getMermaid(lookup, k8sResources, prefs);
+  const { onlyUsedString, notOnlyUsedString } = getMermaid(lookup, k8sResources, prefs);
 
-  const OD = `${base}${onlyUsedString}`;
-  const AR = `${base}${notOnlyUsedString}`;
-
-  if (onlyDependenciesGraph !== OD) {
-    onlyDependenciesGraph = OD;
+  if (onlyDependenciesGraph !== onlyUsedString) {
+    onlyDependenciesGraph = onlyUsedString;
     if (onlyDependencies) {
       reRenderMermaid(onlyDependenciesGraph);
     }
   }
-  if (allResourcesGraph !== AR) {
-    allResourcesGraph = AR;
+  if (allResourcesGraph !== notOnlyUsedString) {
+    allResourcesGraph = notOnlyUsedString;
     if (!onlyDependencies) {
       reRenderMermaid(allResourcesGraph);
     }
@@ -81,7 +77,7 @@ function getHtml(initialGraph: string) {
       <label style="text-align: center; display: block"
         ><input id="checkbox1" type="checkbox" /> Only show resources with references
       </label>
-      <div style="flex-grow: 1; overflow: auto;">
+      <div style="zoom: 80%; flex-grow: 1; overflow: auto;">
         <pre
           id="mermaid"
           class="mermaid"
@@ -133,8 +129,6 @@ function getHtml(initialGraph: string) {
       window.addEventListener("message", async (event) => {
         const message = event.data; // The JSON data our extension sent
         mermaidElement.innerHTML = message;
-        console.log(mermaidElement.innerHTML);
-        console.log(mermaidElement);
         mermaidElement.removeAttribute("data-processed");
         hide(mermaidElement);
         await mermaid.run({
@@ -171,44 +165,65 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
     (prefs.clusterScanning && r.where.place === "cluster") ||
     (prefs.helmScanning && r.where.place === "helm");
 
-  const arrow = (a: K8sResource, b: K8sResource) =>
-    ` ${a.where.path}${a.metadata.name} ==> ${b.where.path}${b.metadata.name}`;
+  const nodeReference = (r: K8sResource) => hashCode(`${r.where.path}${r.metadata.name}`);
 
-  const node = (r: K8sResource) =>
-    `${r.where.path}${r.metadata.name}[${r.metadata.name}]; click ${r.where.path}${r.metadata.name} href "vscode://file/${r.where.path}" _self;`;
+  const arrow = (a: K8sResource, b: K8sResource) => `${nodeReference(a)} ==> ${nodeReference(b)}`;
 
-  const fileSubgraph = (filePath: string, resource: K8sResource[]) =>
-    resource.reduce(
-      (acc, r) => acc + node(r),
-      ` subgraph ${filePath}[${toPath(filePath)}];`
-    ) + " end;";
+  const clickLink = (r: K8sResource) =>
+    `click ${nodeReference(r)} href "vscode://file/${r.where.path}" _self;`;
+
+  const node = (r: K8sResource) => `${nodeReference(r)}${getGraphElement(r)}; ${clickLink(r)}`;
+
+  const getGraphElement = (r: K8sResource) => {
+    switch (r.kind) {
+      case "Ingress":
+        return `{{${r.metadata.name}}}`;
+      case "Service":
+        return `([${r.metadata.name}])`;
+      case "ConfigMap":
+        return `[\\${r.metadata.name}\\]`;
+      case "Secret":
+        return `[/${r.metadata.name}/]`;
+      case "Deployment":
+      case "StatefulSet":
+      case "DaemonSet":
+      case "Job":
+        return `[${r.metadata.name}]`;
+      default:
+        return `[${r.metadata.name}]`;
+    }
+  };
+
+  const fileSubgraph = (filePath: string, resource: K8sResource[]) => {
+    const tp = toPath(filePath);
+    const nodes = resource.map((r) => node(r)).join("\n");
+    return ` subgraph ${tp}[${tp}];\n${nodes}\n end;\n`;
+  };
 
   const getArrows = (lookup: LookupIncomingReferences) =>
-    Object.values(lookup).reduce(
-      (acc, incomingRefs) =>
-        acc +
+    Object.values(lookup)
+      .flatMap((incomingRefs) =>
         incomingRefs
           .filter(({ definition, ref }) => isAllowed(definition) && isAllowed(ref))
           .map(({ definition, ref }) => ` ${arrow(ref, definition)};`)
-          .join(""),
-      ""
-    );
+      )
+      .join("\n") + "\n";
 
-  let mermaid = `graph LR;${getArrows(lookupKustomize)}${getArrows(lookup)}`;
+  let mermaid = `graph LR;\n${getArrows(lookupKustomize)}${getArrows(lookup)}`;
 
   const { onlyUsedString, notOnlyUsedString } = Object.entries(pathToResource).reduce(
     (acc, [path, resources]) => {
       acc.notOnlyUsedString += fileSubgraph(path, resources);
 
-      const res = resources.filter((r) => mermaid.includes(`${r.where.path}${r.metadata.name}`));
+      const res = resources.filter((r) => mermaid.includes(nodeReference(r)));
       if (!mermaid.includes(path) && res.length === 0) {
         return acc;
       }
       acc.onlyUsedString += fileSubgraph(path, res);
       return acc;
     },
-    { onlyUsedString: "", notOnlyUsedString: "" }
+    { onlyUsedString: mermaid, notOnlyUsedString: mermaid }
   );
 
-  return { base: mermaid, onlyUsedString, notOnlyUsedString };
+  return { onlyUsedString, notOnlyUsedString };
 }
