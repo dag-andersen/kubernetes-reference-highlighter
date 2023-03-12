@@ -196,11 +196,8 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
 
   const fileSubgraph = (filePath: string, resource: K8sResource[]) => {
     const tp = toPath(filePath);
-    return (
-      ` subgraph ${tp}[${tp}];\n` +
-      resource.reduce((acc, r) => acc + node(r) + "\n", "") +
-      " end;\n"
-    );
+    const nodes = resource.map((r) => node(r)).join("\n");
+    return ` subgraph ${tp}[${tp}];\n${nodes}\n end;\n`;
   };
 
   const getArrows = (lookup: LookupIncomingReferences) =>

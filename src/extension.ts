@@ -142,9 +142,10 @@ export function activate(context: vscode.ExtensionContext) {
           .then((selection) => {
             if (selection === "Enable it!") {
               vscode.commands.executeCommand(
-                "kubernetes-reference-highlighter.enableIncomingReferences"
-              );
-              mermaid.showMermaid(lookup, k8sResources, prefs);
+                "kubernetes-reference-highlighter.enabledBiDirectionalReferences"
+              ).then(() => {
+                mermaid.showMermaid(lookup, k8sResources, prefs);
+              });
             }
           });
         return;

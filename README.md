@@ -38,7 +38,7 @@ Clicking any filename in one of the hovering boxes will send the user to that fi
 
 ### Graph View
 
-Running `Kubernetes Reference Highlighter: Show Dependency Diagram` in the command pallet will show a diagram of the references between Kubernetes resources.
+Running `Kubernetes Reference Highlighter: Show Dependency Diagram` in the Command Palette will show a diagram of the references between Kubernetes resources.
 
 <p float="left">
   <img src="/images/graph-example-command.png" width="500" />
