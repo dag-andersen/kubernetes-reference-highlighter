@@ -170,9 +170,11 @@ function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[
   const arrow = (a: K8sResource, b: K8sResource) => `${nodeReference(a)} ==> ${nodeReference(b)}`;
 
   const clickLink = (r: K8sResource) =>
-    `click ${nodeReference(r)} href "vscode://file/${r.where.path}" _self;`;
+    r.where.place === "cluster"
+      ? ""
+      : ` click ${nodeReference(r)} href "vscode://file/${r.where.path}" _self;`;
 
-  const node = (r: K8sResource) => `${nodeReference(r)}${getGraphElement(r)}; ${clickLink(r)}`;
+  const node = (r: K8sResource) => `${nodeReference(r)}${getGraphElement(r)};${clickLink(r)}`;
 
   const getGraphElement = (r: K8sResource) => {
     switch (r.kind) {
