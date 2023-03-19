@@ -117,7 +117,7 @@ export function find(
         }
 
         if (enableCorrectionHints) {
-          const keys = Object.keys(r.data);
+          const keys = r.data ? Object.keys(r.data) : [];
 
           if (keys.length > 0) {
             const keySuggestion: Highlight[] = similarity<string>(keys, key, (a) => a)
