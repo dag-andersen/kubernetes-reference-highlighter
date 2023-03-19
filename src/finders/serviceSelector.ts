@@ -76,14 +76,14 @@ export function find(
 }
 
 const isSubset = function (
-  a: {
+  potentialSubset: {
     [key: string]: string;
   },
-  b: {
+  set: {
     [key: string]: string;
   }
 ) {
-  return Object.keys(a).every((key) => b.hasOwnProperty(key) && b[key] === a[key]);
+  return Object.keys(potentialSubset).every((key) => set.hasOwnProperty(key) && set[key] === potentialSubset[key]);
 };
 
 function getPodLabels(resource: K8sResource):
