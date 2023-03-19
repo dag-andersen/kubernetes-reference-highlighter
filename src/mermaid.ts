@@ -69,8 +69,10 @@ function reRenderMermaid(graph: string) {
   webview?.webview.postMessage(graph);
 }
 
-function getHtml(initialGraph: string) {
-  return `
+// TODO: change background color to dark
+// TODO: make spinner
+
+const getHtml = (initialGraph: string) => `
 <html lang="en" style="height: 100%;">
   <body style="padding: 0; height: 100%;">
     <div style="width: 100%; height: 100%; display: flex; flex-direction: column;">
@@ -138,10 +140,7 @@ function getHtml(initialGraph: string) {
       });
     </script>
   </body>
-</html>
-
-  `;
-}
+</html>`;
 
 function getMermaid(lookup: LookupIncomingReferences, k8sResources: K8sResource[], prefs: Prefs) {
   const toPath = (path: string) => vscode.workspace.asRelativePath(path || "");
