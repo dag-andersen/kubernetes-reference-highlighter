@@ -8,7 +8,7 @@ export type FromWhere = {
   path: string;
 };
 
-export type HighLightType = "reference" | "hint" | "success" | "error" | "dirty" ;
+export type HighLightType = "reference" | "suggestion" | "success" | "error" | "dirty" ;
 
 export type Highlight = {
   position?: Position;

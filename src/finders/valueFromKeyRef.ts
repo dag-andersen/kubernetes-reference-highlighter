@@ -124,7 +124,7 @@ export function find(
               .filter((a) => a.rating > 0.8)
               .map((a) => ({
                 position: getPositions(doc, match, shift, key),
-                type: "hint",
+                type: "suggestion",
                 definition: r,
                 message: {
                   type: "SubItemNotFound",
