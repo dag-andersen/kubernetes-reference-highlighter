@@ -42,7 +42,7 @@ export function getSimilarHighlights(
           pwd,
           fromWhere: r.content.where,
         },
-        type: "hint",
+        type: "suggestion",
       };
     });
 }

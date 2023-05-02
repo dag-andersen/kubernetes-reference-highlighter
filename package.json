@@ -3,7 +3,7 @@
   "displayName": "Kubernetes Reference Highlighter",
   "publisher": "dag-andersen",
   "description": "",
-  "version": "0.0.35",
+  "version": "0.0.36",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -40,8 +40,8 @@
         "title": "Kubernetes Reference Highlighter: Toggle Helm Scanning"
       },
       {
-        "command": "kubernetes-reference-highlighter.enableCorrectionHints",
-        "title": "Kubernetes Reference Highlighter: Toggle Reference Correction Hints"
+        "command": "kubernetes-reference-highlighter.enableSuggestions",
+        "title": "Kubernetes Reference Highlighter: Toggle Reference Suggestions"
       },
       {
         "command": "kubernetes-reference-highlighter.enabledBiDirectionalReferences",
@@ -75,10 +75,10 @@
           "default": true,
           "description": "Kubernetes Reference Highlighter: Cluster Scanning enabled"
         },
-        "kubernetesReferenceHighlighter.enableCorrectionHints": {
+        "kubernetesReferenceHighlighter.enableSuggestions": {
           "type": "boolean",
           "default": true,
-          "description": "Kubernetes Reference Highlighter: Reference Correction Hints enabled"
+          "description": "Kubernetes Reference Highlighter: Reference Suggestions enabled"
         },
         "kubernetesReferenceHighlighter.enabledBiDirectionalReferences": {
           "type": "boolean",
@@ -103,7 +103,7 @@
   "devDependencies": {
     "@types/glob": "^8.0.0",
     "@types/mocha": "^10.0.0",
-    "@types/node": "18.x",
+    "@types/node": "^18.0.0",
     "@types/vscode": "^1.71.0",
     "@typescript-eslint/eslint-plugin": "^5.31.0",
     "@typescript-eslint/parser": "^5.31.0",

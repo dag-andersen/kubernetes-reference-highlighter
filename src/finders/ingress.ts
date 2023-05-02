@@ -7,7 +7,7 @@ export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
   text: string,
-  enableCorrectionHints: boolean,
+  enableSuggestions: boolean,
   onlyReferences: boolean,
   shift: number
 ): Highlight[] {
@@ -96,13 +96,13 @@ export function find(
           return [nameHighlight, portHighlight];
         }
 
-        if (enableCorrectionHints) {
+        if (enableSuggestions) {
           function getPortSimilarities(ports: string[], rating: number): Highlight[] {
             return similarity<string>(ports, portRef, (a) => a)
               .filter((a) => a.rating > rating)
               .map((a) => ({
                 position: getPositions(doc, match, shift, portRef),
-                type: "hint",
+                type: "suggestion",
                 definition: r,
                 message: {
                   type: "SubItemNotFound",
@@ -137,7 +137,7 @@ export function find(
         return nameHighlight;
       });
     } else {
-      return enableCorrectionHints
+      return enableSuggestions
         ? getSimilarHighlights(resourcesScoped, name, position, thisResource.where.path)
         : [];
     }

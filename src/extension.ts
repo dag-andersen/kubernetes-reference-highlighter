@@ -103,13 +103,13 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  const enableCorrectionHintsCommand = vscode.commands.registerCommand(
-    "kubernetes-reference-highlighter.enableCorrectionHints",
+  const enableSuggestionsCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.enableSuggestions",
     () => {
-      prefs.hints = !prefs.hints;
-      updateConfigurationKey("enableCorrectionHints", prefs.hints);
+      prefs.suggestions = !prefs.suggestions;
+      updateConfigurationKey("enableSuggestions", prefs.suggestions);
       vscode.window.showInformationMessage(
-        `Reference Correction Hints: ${prefs.hints ? "Enabled" : "Disabled"}`
+        `Reference Suggestions: ${prefs.suggestions ? "Enabled" : "Disabled"}`
       );
     }
   );
@@ -230,7 +230,7 @@ export function activate(context: vscode.ExtensionContext) {
     enableKustomizeScanningCommand,
     showDependencyDiagramCommand,
     enableHelmScanningCommand,
-    enableCorrectionHintsCommand,
+    enableSuggestionsCommand,
     enabledBiDirectionalReferencesCommand,
     onTextEditorChange,
     onSave,
@@ -357,7 +357,7 @@ export function getHighlights(
     kubeResources,
     thisResource,
     textSplit,
-    prefs.hints,
+    prefs.suggestions,
     onlyReferences,
     shift
   );
@@ -374,7 +374,7 @@ export function getHighlights(
     kubeResources,
     thisResource,
     textSplit,
-    prefs.hints,
+    prefs.suggestions,
     onlyReferences,
     shift
   );
@@ -383,7 +383,7 @@ export function getHighlights(
     kubeResources,
     thisResource,
     textSplit,
-    prefs.hints,
+    prefs.suggestions,
     onlyReferences,
     shift
   );

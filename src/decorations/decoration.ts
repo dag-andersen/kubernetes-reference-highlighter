@@ -75,7 +75,7 @@ function getEmoji(highLightType: HighLightType) {
   const toEmoji: Record<HighLightType, string> = {
     success: "✅",
     error: "❌",
-    hint: "🤷‍♂️",
+    suggestion: "🤷‍♂️",
     reference: "🔗",
     dirty: "🧼",
   };
