@@ -10,52 +10,19 @@ The extension only focuses on references between resources and validating if the
 - [ Kubernetes Reference Highlighter](#-kubernetes-reference-highlighter)
   - [Overview](#overview)
   - [Features](#features)
-    - [Suggestions](#suggestions)
-    - [Code Navigation](#code-navigation)
-    - [Graph View (Experimental)](#graph-view-experimental)
-      - [Example](#example)
     - [Reference Highlighting](#reference-highlighting)
       - [Cluster Scanning](#cluster-scanning)
       - [Workspace Scanning](#workspace-scanning)
       - [Kustomize Scanning](#kustomize-scanning)
       - [Helm Scanning](#helm-scanning)
+    - [Suggestions](#suggestions)
+    - [Code Navigation](#code-navigation)
+    - [Graph View (Experimental)](#graph-view-experimental)
     - [Kustomize Build](#kustomize-build)
     - [Helm Template](#helm-template)
   - [Commands](#commands)
   - [Settings](#settings)
   - [Issues and feature requests](#issues-and-feature-requests)
-
-### Suggestions
-
-If a reference is not found, but a reference with a similar name exists, the extension will suggest using that instead.
-
-<p float="left">
-  <img src="/images/deco/suggestion-ingress.png" width="500" />
-</p>
-<p float="left">
-  <img src="/images/deco/suggestion-deployment.png" width="500" />
-</p>
-
-### Code Navigation
-
-Clicking any filename in one of the hovering boxes will send the user to that file/folder.
-
-<p float="left">
-  <img src="/images/deco/code-navigation-deployment.png" width="500" />
-</p>
-
-### Graph View (Experimental)
-
-Running `Kubernetes Reference Highlighter: Show Dependency Diagram` in the Command Palette will show a diagram of the references between Kubernetes resources.
-
-<p float="left">
-  <img src="/images/graph-example-command.png" width="500" />
-</p>
-
-#### Example
-<p float="left">
-  <img src="/images/graph-example.png" width="500" />
-</p>
 
 ### Reference Highlighting  
 
@@ -94,6 +61,38 @@ The extension will run `helm template` on all helm charts in the open workspace 
 
 <p float="left">
   <img src="/images/deco/helm-ingress.png" width="500" />
+</p>
+
+### Suggestions
+
+If a reference is not found, but a reference with a similar name exists, the extension will suggest using that instead.
+
+<p float="left">
+  <img src="/images/deco/suggestion-ingress.png" width="500" />
+</p>
+<p float="left">
+  <img src="/images/deco/suggestion-deployment.png" width="500" />
+</p>
+
+### Code Navigation
+
+Clicking any filename in one of the hovering boxes will send the user to that file/folder.
+
+<p float="left">
+  <img src="/images/deco/code-navigation-deployment.png" width="500" />
+</p>
+
+### Graph View (Experimental)
+
+Running `Kubernetes Reference Highlighter: Show Dependency Diagram` in the Command Palette will show a diagram of the references between Kubernetes resources.
+
+<p float="left">
+  <img src="/images/graph-example-command.png" width="500" />
+</p>
+
+**Example:**
+<p float="left">
+  <img src="/images/graph-example.png" width="500" />
 </p>
 
 ### Kustomize Build
