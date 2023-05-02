@@ -13,7 +13,7 @@ export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
   text: string,
-  enableCorrectionHints: boolean,
+  enableSuggestions: boolean,
   onlyReferences: boolean,
   shift: number
 ): Highlight[] {
@@ -116,7 +116,7 @@ export function find(
           return [nameHighlight, keyHighlight];
         }
 
-        if (enableCorrectionHints) {
+        if (enableSuggestions) {
           const keys = r.data ? Object.keys(r.data) : [];
 
           if (keys.length > 0) {
@@ -144,7 +144,7 @@ export function find(
         return nameHighlight;
       });
     } else {
-      return enableCorrectionHints
+      return enableSuggestions
         ? getSimilarHighlights(resourcesScoped, name, position, thisResource.where.path)
         : [];
     }

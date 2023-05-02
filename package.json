@@ -40,8 +40,8 @@
         "title": "Kubernetes Reference Highlighter: Toggle Helm Scanning"
       },
       {
-        "command": "kubernetes-reference-highlighter.enableCorrectionHints",
-        "title": "Kubernetes Reference Highlighter: Toggle Reference Correction Hints"
+        "command": "kubernetes-reference-highlighter.enableSuggestions",
+        "title": "Kubernetes Reference Highlighter: Toggle Reference Suggestions"
       },
       {
         "command": "kubernetes-reference-highlighter.enabledBiDirectionalReferences",
@@ -75,10 +75,10 @@
           "default": true,
           "description": "Kubernetes Reference Highlighter: Cluster Scanning enabled"
         },
-        "kubernetesReferenceHighlighter.enableCorrectionHints": {
+        "kubernetesReferenceHighlighter.enableSuggestions": {
           "type": "boolean",
           "default": true,
-          "description": "Kubernetes Reference Highlighter: Reference Correction Hints enabled"
+          "description": "Kubernetes Reference Highlighter: Reference Suggestions enabled"
         },
         "kubernetesReferenceHighlighter.enabledBiDirectionalReferences": {
           "type": "boolean",

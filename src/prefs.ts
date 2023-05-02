@@ -5,7 +5,7 @@ export type Prefs = {
   kustomizeScanning: boolean;
   helmScanning: boolean;
   clusterScanning: boolean;
-  hints: boolean;
+  suggestions: boolean;
   biDirectionalReferences: boolean;
 };
 
@@ -16,7 +16,7 @@ export function loadPreferences(): Prefs {
     kustomizeScanning:        getConfigurationValue("enableKustomizeScanning")        ?? true,
     helmScanning:             getConfigurationValue("enableHelmScanning")             ?? true,
     clusterScanning:          getConfigurationValue("enableClusterScanning")          ?? true,
-    hints:                    getConfigurationValue("enableCorrectionHints")          ?? true,
+    suggestions:              getConfigurationValue("enableSuggestions")              ?? true,
     biDirectionalReferences:  getConfigurationValue("enabledBiDirectionalReferences") ?? true,
   };
 }
@@ -24,4 +24,5 @@ export function loadPreferences(): Prefs {
 export const updateConfigurationKey = (key: string, value: any) =>
   vscode.workspace.getConfiguration("kubernetesReferenceHighlighter").update(key, value, true);
 
-export const getConfigurationValue = (key: string) => vscode.workspace.getConfiguration("kubernetesReferenceHighlighter").get<boolean>(key);
+export const getConfigurationValue = (key: string) =>
+  vscode.workspace.getConfiguration("kubernetesReferenceHighlighter").get<boolean>(key);

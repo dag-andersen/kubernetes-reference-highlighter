@@ -112,7 +112,7 @@ The extension will inform the user if the helm chart builds or not.
 
 ## Commands
 
-| Command                                                                          | Effect                                                                                |
+| VS Code Command                                                                          | Effect                                                                                |
 | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | `Kubernetes Reference Highlighter: Toggle WorkSpace Scanning`                    | Toggles Workspace Scanning                                                            |
 | `Kubernetes Reference Highlighter: Toggle Cluster Scanning`                      | Toggles Cluster Scanning                                                              |
@@ -136,4 +136,4 @@ The extension will inform the user if the helm chart builds or not.
 
 ## Issues and feature requests 
 
-Please open an issue on GitHub if you experience any issues or have ideas for future features.
+Please open an issue on GitHub if you experience any issues or have ideas for features.

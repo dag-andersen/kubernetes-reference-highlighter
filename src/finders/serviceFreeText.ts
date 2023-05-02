@@ -8,7 +8,7 @@ export function find(
   resources: K8sResource[],
   thisResource: K8sResource,
   text: string,
-  enableCorrectionHints: boolean,
+  enableSuggestions: boolean,
   onlyReferences: boolean,
   shift: number
 ): Highlight[] {
@@ -79,7 +79,7 @@ export function find(
           },
         };
 
-        if (port && !portFound && enableCorrectionHints) {
+        if (port && !portFound && enableSuggestions) {
           const ports = resource.spec?.ports?.map((p) => p?.port.toString());
           if (ports) {
             const portSuggestion: Highlight[] = similarity<string>(ports, port, (a) => a)
