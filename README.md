@@ -15,6 +15,8 @@
       - [Helm Scanning](#helm-scanning)
     - [Kustomize Build](#kustomize-build)
     - [Helm Template](#helm-template)
+  - [Commands](#commands)
+  - [Settings](#settings)
   - [Issues and feature requests](#issues-and-feature-requests)
 
 ### Suggestions
@@ -107,6 +109,30 @@ The extension will inform the user if the helm chart builds or not.
   <img src="/images/deco/helm-build-success.png" width="250" />
   <img src="/images/deco/helm-build-fail.png" width="245" /> 
 </p>
+
+## Commands
+
+| Command                                                                          | Effect                                                                                |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `Kubernetes Reference Highlighter: Toggle WorkSpace Scanning`                    | Toggles Workspace Scanning                                                            |
+| `Kubernetes Reference Highlighter: Toggle Cluster Scanning`                      | Toggles Cluster Scanning                                                              |
+| `Kubernetes Reference Highlighter: Toggle Kustomize Scanning`                    | Toggles Kustomize Scanning                                                            |
+| `Kubernetes Reference Highlighter: Toggle Helm Scanning`                         | Toggles Helm Scanning                                                                 |
+| `Kubernetes Reference Highlighter: Toggle Reference Correction Hints`            | Toggles Suggestions                                                                   |
+| `Kubernetes Reference Highlighter: Toggle Bi-directional Reference Highlighting` | Toggles Bi-directional Reference Highlighting (Disabling it may increase performance) |
+| `Kubernetes Reference Highlighter: Show Dependency Diagram`                      | Shows a dependency diagram of the Kubernetes resources                                |
+
+## Settings
+
+| Setting                                                         | Default | Effect                                                                                |
+| --------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------- |
+| `kubernetesReferenceHighlighter.enableWorkSpaceScanning`        | `true`  | Toggles Workspace Scanning                                                            |
+| `kubernetesReferenceHighlighter.enableKustomizeScanning`        | `true`  | Toggles Kustomize Scanning                                                            |
+| `kubernetesReferenceHighlighter.enableHelmScanning`             | `true`  | Toggles Helm Scanning                                                                 |
+| `kubernetesReferenceHighlighter.enableClusterScanning`          | `true`  | Toggles Cluster Scanning                                                              |
+| `kubernetesReferenceHighlighter.enableCorrectionHints`          | `true`  | Toggles Suggestions                                                                   |
+| `kubernetesReferenceHighlighter.enabledBiDirectionalReferences` | `true`  | Toggles Bi-directional Reference Highlighting (Disabling it may increase performance) |
+
 
 ## Issues and feature requests 
 
