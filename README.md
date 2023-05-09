@@ -26,7 +26,7 @@ The extension only focuses on references between resources and validating if the
 
 ### Reference Highlighting  
 
-Currently, the extension only supports scanning of `Services`, `Pods`, `Deployments`, `StatefulSets`, `Jobs`, `CronJobs`, `Secrets`, and `ConfigMaps`. More resources will be added at a later point. 
+Currently, the extension supports scanning of `Services`, `Pods`, `Deployments`, `StatefulSets`, `StatefulSet`, `Jobs`, `CronJobs`, `Secrets`, and `ConfigMaps`. More resources will be added at a later point. 
 
 All resources are namespace-sensitive. A resource will not be highlighted if the resource exists in another namespace.
 
@@ -37,7 +37,6 @@ The extension calls the Kubernetes API of the user's current context and collect
 <p float="left">
   <img src="/images/deco/cluster-deployment.png" width="500" />
 </p>
-
 
 #### Workspace Scanning
 
