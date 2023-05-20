@@ -6,7 +6,7 @@ import { hashCode } from "./utils";
 
 let webview: vscode.WebviewPanel | undefined;
 
-const title = "Kubernetes Resource Highlighter: Resource Diagram";
+const title = "Kubernetes Resource Highlighter: Dependency Graph";
 let onlyDependencies: boolean;
 let onlyDependenciesGraph = "";
 let allResourcesGraph = "";

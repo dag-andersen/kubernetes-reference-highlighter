@@ -133,8 +133,8 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  const showDependencyDiagramCommand = vscode.commands.registerCommand(
-    "kubernetes-reference-highlighter.showDependencyDiagram",
+  const showDependencyGraphCommand = vscode.commands.registerCommand(
+    "kubernetes-reference-highlighter.showDependencyGraph",
     () => {
       if (!prefs.biDirectionalReferences) {
         vscode.window
@@ -228,7 +228,7 @@ export function activate(context: vscode.ExtensionContext) {
     enableClusterScanningCommand,
     enableWorkSpaceScanningCommand,
     enableKustomizeScanningCommand,
-    showDependencyDiagramCommand,
+    showDependencyGraphCommand,
     enableHelmScanningCommand,
     enableSuggestionsCommand,
     enabledBiDirectionalReferencesCommand,

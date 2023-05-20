@@ -3,7 +3,7 @@
   "displayName": "Kubernetes Reference Highlighter",
   "publisher": "dag-andersen",
   "description": "",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "engines": {
     "vscode": "^1.71.0"
   },
@@ -48,8 +48,8 @@
         "title": "Kubernetes Reference Highlighter: Toggle Bi-directional Reference Highlighting"
       },
       {
-        "command": "kubernetes-reference-highlighter.showDependencyDiagram",
-        "title": "Kubernetes Reference Highlighter: Show Dependency Diagram"
+        "command": "kubernetes-reference-highlighter.showDependencyGraph",
+        "title": "Kubernetes Reference Highlighter: Show Dependency Graph"
       }
     ],
     "configuration": {
