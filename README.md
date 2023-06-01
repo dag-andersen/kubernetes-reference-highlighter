@@ -17,7 +17,7 @@ The extension only focuses on references between resources and validating if the
       - [Helm Scanning](#helm-scanning)
     - [Suggestions](#suggestions)
     - [Code Navigation](#code-navigation)
-    - [Dependency Graph (Experimental)](#dependency-graph-experimental)
+    - [Dependency Graph](#dependency-graph)
     - [Kustomize Build](#kustomize-build)
     - [Helm Template](#helm-template)
   - [Commands](#commands)
@@ -81,7 +81,7 @@ Clicking any filename in one of the hovering boxes will send the user to that fi
   <img src="/images/deco/code-navigation-deployment.png" width="500" />
 </p>
 
-### Dependency Graph (Experimental)
+### Dependency Graph
 
 Running `Kubernetes Reference Highlighter: Show Dependency Graph` in the Command Palette will show a graph of the references between Kubernetes resources.
 
