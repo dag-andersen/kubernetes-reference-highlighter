@@ -1,3 +1,0 @@
-Hi yaml-writers :saluting_face:
-I made a vscode extension that highlights references in your k8s YAML. I created this extension because I was tired of debugging broken/dangling references due to some object accidentally being placed in the wrong namespace :old-man-yells-at-k8s: So, if you write your manifests in vscode, check it out! It may save you some time debugging :pray:
-https://marketplace.visualstudio.com/items?itemName=dag-andersen.kubernetes-reference-highlighter
