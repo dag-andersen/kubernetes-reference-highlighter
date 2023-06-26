@@ -2,7 +2,6 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 import * as workspace from "./sources/workspace";
-import * as mermaid from "./mermaid";
 import * as cluster from "./sources/cluster";
 import * as kustomize from "./sources/kustomize";
 import * as helm from "./sources/helm";
@@ -128,30 +127,7 @@ export function activate(context: vscode.ExtensionContext) {
         updateIncomingReferences();
       } else {
         lookup = {};
-        mermaid.closeMermaid();
       }
-    }
-  );
-
-  const showDependencyGraphCommand = vscode.commands.registerCommand(
-    "kubernetes-reference-highlighter.showDependencyGraph",
-    () => {
-      if (!prefs.biDirectionalReferences) {
-        vscode.window
-          .showErrorMessage("Bi-directional Reference Highlighting is disabled.", "Enable it!")
-          .then((selection) => {
-            if (selection === "Enable it!") {
-              vscode.commands
-                .executeCommand("kubernetes-reference-highlighter.enabledBiDirectionalReferences")
-                .then(() => {
-                  mermaid.showMermaid(lookup, k8sResources, prefs);
-                });
-            }
-          });
-        return;
-      }
-      lookup = getLookupIncomingReferences(k8sResources);
-      mermaid.showMermaid(lookup, k8sResources, prefs);
     }
   );
 
@@ -173,9 +149,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   const updateIncomingReferences = () => {
     lookup = prefs.biDirectionalReferences ? getLookupIncomingReferences(k8sResources) : {};
-    if (prefs.biDirectionalReferences) {
-      mermaid.updateMermaid(lookup, k8sResources, prefs);
-    }
     updateHighlighting(vscode.window.activeTextEditor, prefs, k8sResources, lookup);
   };
 
@@ -228,7 +201,6 @@ export function activate(context: vscode.ExtensionContext) {
     enableClusterScanningCommand,
     enableWorkSpaceScanningCommand,
     enableKustomizeScanningCommand,
-    showDependencyGraphCommand,
     enableHelmScanningCommand,
     enableSuggestionsCommand,
     enabledBiDirectionalReferencesCommand,
