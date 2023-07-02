@@ -37,12 +37,9 @@ export function find(
 
   return resources
     .filter((r) => r.metadata.namespace === thisResource.metadata.namespace)
-    .flatMap((r) => {
+    .filter((r) => {
       let labels = getPodLabels(r);
-      if (labels && isSubset(selector, labels)) {
-        return { resource: r, labels: labels };
-      }
-      return [];
+      return labels && isSubset(selector, labels);
     })
     .flatMap(
       (r): Highlight =>
@@ -50,26 +47,26 @@ export function find(
           ? {
               position: position,
               type: "reference",
-              definition: r.resource,
+              definition: r,
               message: {
                 type: "ReferencedBy",
                 sourceName: thisResource.metadata.name,
                 sourceType: thisResource.kind,
                 lineNumber: position?.line,
-                pwd: r.resource.where.path,
+                pwd: r.where.path,
                 fromWhere: thisResource.where,
               },
             }
           : {
               position: position,
               type: "reference",
-              definition: r.resource,
+              definition: r,
               message: {
                 type: "ReferenceFound",
-                targetName: r.resource.metadata.name,
-                targetType: r.resource.kind,
+                targetName: r.metadata.name,
+                targetType: r.kind,
                 pwd: thisResource.where.path,
-                fromWhere: r.resource.where,
+                fromWhere: r.where,
               },
             }
     );

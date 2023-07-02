@@ -17,7 +17,6 @@ The extension only focuses on references between resources and validating if the
       - [Helm Scanning](#helm-scanning)
     - [Suggestions](#suggestions)
     - [Code Navigation](#code-navigation)
-    - [Dependency Graph](#dependency-graph)
     - [Kustomize Build](#kustomize-build)
     - [Helm Template](#helm-template)
   - [Commands](#commands)
@@ -26,7 +25,7 @@ The extension only focuses on references between resources and validating if the
 
 ### Reference Highlighting  
 
-Currently, the extension supports scanning of `Services`, `Pods`, `Deployments`, `StatefulSets`, `StatefulSet`, `Jobs`, `CronJobs`, `Secrets`, and `ConfigMaps`. More resources will be added at a later point. 
+Currently, the extension supports scanning of `Services`, `Pods`, `Deployments`, `StatefulSet`, `Jobs`, `CronJobs`, `Secrets`, and `ConfigMaps`. More resources will be added at a later point. 
 
 All resources are namespace-sensitive. A resource will not be highlighted if the resource exists in another namespace.
 
@@ -81,19 +80,6 @@ Clicking any filename in one of the hovering boxes will send the user to that fi
   <img src="/images/deco/code-navigation-deployment.png" width="500" />
 </p>
 
-### Dependency Graph
-
-Running `Kubernetes Reference Highlighter: Show Dependency Graph` in the Command Palette will show a graph of the references between Kubernetes resources.
-
-<p float="left">
-  <img src="/images/graph-example-command.png" width="500" />
-</p>
-
-**Example:**
-<p float="left">
-  <img src="/images/graph-example.png" width="500" />
-</p>
-
 ### Kustomize Build
 
 The extension will inform the user if the kustomize-file builds or not.
@@ -124,7 +110,6 @@ The extension will inform the user if the helm chart builds or not.
 | `Kubernetes Reference Highlighter: Toggle Helm Scanning`                         | Toggles Helm Scanning                                                                 |
 | `Kubernetes Reference Highlighter: Toggle Reference Correction Hints`            | Toggles Suggestions                                                                   |
 | `Kubernetes Reference Highlighter: Toggle Bi-directional Reference Highlighting` | Toggles Bi-directional Reference Highlighting (Disabling it may increase performance) |
-| `Kubernetes Reference Highlighter: Show Dependency Graph`                        | Shows a dependency graph of the Kubernetes resources                                  |
 
 ## Settings
 
