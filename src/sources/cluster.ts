@@ -28,6 +28,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
     .then((res) =>
       res.body.items.map(
         (r): K8sResource => ({
+          apiVersion: r.apiVersion || "",
           kind: "Service",
           metadata: {
             name: r.metadata?.name || "",
@@ -46,6 +47,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
     .then((res) =>
       res.body.items.map(
         (r): K8sResource => ({
+          apiVersion: r.apiVersion || "",
           kind: "Secret",
           metadata: {
             name: r.metadata?.name || "",
@@ -64,6 +66,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
     .then((res) =>
       res.body.items.map(
         (r): K8sResource => ({
+          apiVersion: r.apiVersion || "",
           kind: "ConfigMap",
           metadata: {
             name: r.metadata?.name || "",
@@ -82,6 +85,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
     .then((res) =>
       res.body.items.map(
         (r): K8sResource => ({
+          apiVersion: r.apiVersion || "",
           kind: "Deployment",
           metadata: {
             name: r.metadata?.name || "",
@@ -100,6 +104,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
     .then((res) =>
       res.body.items.map(
         (r): K8sResource => ({
+          apiVersion: r.apiVersion || "",
           kind: "StatefulSet",
           metadata: {
             name: r.metadata?.name || "",
@@ -118,6 +123,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
     .then((res) =>
       res.body.items.map(
         (r): K8sResource => ({
+          apiVersion: r.apiVersion || "",
           kind: "DaemonSet",
           metadata: {
             name: r.metadata?.name || "",
@@ -136,6 +142,7 @@ export async function getClusterResources(cc: ClusterClient): Promise<K8sResourc
     .then((res) =>
       res.body.items.map(
         (r): K8sResource => ({
+          apiVersion: r.apiVersion || "",
           kind: "CronJob",
           metadata: {
             name: r.metadata?.name || "",

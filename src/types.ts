@@ -19,6 +19,7 @@ export type Highlight = {
 
 // define basic type
 export type K8sResource = {
+  apiVersion: string;
   kind: string;
   metadata: {
     name: string;
