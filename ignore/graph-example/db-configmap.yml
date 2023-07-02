@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: postgres-config
-  namespace: default
-data:
-  DB_PORT: "5432"
-  DB_USER_KEY: "VEhJUyBJUyBBTiBBQ0NFU1MgS0VZCg"
-  DB_TABLE_NAME: "TABLE_1" 
