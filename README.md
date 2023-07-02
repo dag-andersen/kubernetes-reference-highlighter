@@ -34,7 +34,7 @@ All resources are namespace-sensitive. A resource will not be highlighted if the
 The extension calls the Kubernetes API of the user's current context and collects the names of all the objects the user has access to.
 
 <p float="left">
-  <img src="/images/deco/cluster-deployment.png" width="500" />
+  <img src="/images/cluster-deployment.png" width="500" />
 </p>
 
 #### Workspace Scanning
@@ -42,7 +42,7 @@ The extension calls the Kubernetes API of the user's current context and collect
 The extension will collect the names of all the objects in the manifest files found in the open VSCode workspace.
 
 <p float="left">
-  <img src="/images/deco/workspace-ingress.png" width="500" />
+  <img src="/images/workspace-ingress.png" width="500" />
 </p>
 
 #### Kustomize Scanning
@@ -50,7 +50,7 @@ The extension will collect the names of all the objects in the manifest files fo
 The extension will run `kustomize build` on all `kustomization`-files in the open workspace and collect the names of all the objects found in the generated kustomize-output.
 
 <p float="left">
-  <img src="/images/deco/kustomize-deployment.png" width="500" />
+  <img src="/images/kustomize-deployment.png" width="500" />
 </p>
 
 #### Helm Scanning
@@ -58,7 +58,7 @@ The extension will run `kustomize build` on all `kustomization`-files in the ope
 The extension will run `helm template` on all helm charts in the open workspace and collect the names of all the objects found in the generated helm-output.
 
 <p float="left">
-  <img src="/images/deco/helm-ingress.png" width="500" />
+  <img src="/images/helm-ingress.png" width="500" />
 </p>
 
 ### Suggestions
@@ -66,10 +66,10 @@ The extension will run `helm template` on all helm charts in the open workspace 
 If a reference is not found, but a reference with a similar name exists, the extension will suggest using that instead.
 
 <p float="left">
-  <img src="/images/deco/suggestion-ingress.png" width="500" />
+  <img src="/images/suggestion-ingress.png" width="500" />
 </p>
 <p float="left">
-  <img src="/images/deco/suggestion-deployment.png" width="500" />
+  <img src="/images/suggestion-deployment.png" width="500" />
 </p>
 
 ### Code Navigation
@@ -77,7 +77,7 @@ If a reference is not found, but a reference with a similar name exists, the ext
 Clicking any filename in one of the hovering boxes will send the user to that file/folder.
 
 <p float="left">
-  <img src="/images/deco/code-navigation-deployment.png" width="500" />
+  <img src="/images/code-navigation-deployment.png" width="500" />
 </p>
 
 ### Kustomize Build
@@ -85,8 +85,8 @@ Clicking any filename in one of the hovering boxes will send the user to that fi
 The extension will inform the user if the kustomize-file builds or not.
 
 <p float="left">
-  <img src="/images/deco/kustomize-build-success.png" width="244" />
-  <img src="/images/deco/kustomize-build-failed.png" width="250" /> 
+  <img src="/images/kustomize-build-success.png" width="244" />
+  <img src="/images/kustomize-build-failed.png" width="250" /> 
 </p>
 
 _Note_: If you have [kustomize](https://kustomize.io/) installed as a stand-alone binary in your PATH, the extension will use `kustomize build` instead of `kubectl kustomize`.
@@ -96,8 +96,8 @@ _Note_: If you have [kustomize](https://kustomize.io/) installed as a stand-alon
 The extension will inform the user if the helm chart builds or not.
 
 <p float="left">
-  <img src="/images/deco/helm-build-success.png" width="250" />
-  <img src="/images/deco/helm-build-fail.png" width="245" /> 
+  <img src="/images/helm-build-success.png" width="250" />
+  <img src="/images/helm-build-fail.png" width="245" /> 
 </p>
 
 ## Commands

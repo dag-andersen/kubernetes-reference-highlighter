@@ -58,7 +58,10 @@ export function verifyKustomizeBuild(
   text: string,
   shift: number
 ): Highlight[] {
-  if (thisResource.kind !== "Kustomization") {
+  if (
+    thisResource.kind !== "Kustomization" ||
+    thisResource.apiVersion.includes("fluxcd") // skip if kustomize is from FluxCD
+  ) {
     return [];
   }
 

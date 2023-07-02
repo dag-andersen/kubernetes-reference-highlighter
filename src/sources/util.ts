@@ -58,6 +58,7 @@ export function getAllYamlFilesInVsCodeWorkspace() {
 function parseYaml(text: string) {
   const yml = parse(text);
   return {
+    apiVersion: yml.apiVersion,
     kind: yml.kind,
     spec: yml.spec,
     data: yml.data,
