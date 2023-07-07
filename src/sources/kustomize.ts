@@ -101,6 +101,16 @@ export function verifyKustomizeBuild(
         return true;
       } catch (e: any) {
         output = format(e.stderr);
+
+        if (vscode.window.activeTextEditor) {
+          const folder = vscode.workspace.getWorkspaceFolder(
+            vscode.window.activeTextEditor.document.uri
+          );
+          if (folder) {
+            output = output.split(folder.uri.fsPath).join(".");
+          }
+        }
+
         return false;
       }
     })();
