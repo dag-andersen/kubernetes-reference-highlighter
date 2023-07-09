@@ -107,7 +107,7 @@ export function verifyKustomizeBuild(
             vscode.window.activeTextEditor.document.uri
           );
           if (folder) {
-            output = output.split(folder.uri.fsPath).join(".");
+            output = output.split(folder.uri.fsPath).join("[workspace]");
           }
         }
 
