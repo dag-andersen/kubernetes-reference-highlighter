@@ -132,19 +132,19 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const updateK8sResourcesFromWorkspace = () => {
-    kubeResourcesWorkspace = prefs.workSpaceScanning ? workspace.getK8sResourcesInWorkspace() : [];
+    kubeResourcesWorkspace = prefs.workSpaceScanning ? workspace.getResources() : [];
   };
 
   const updateK8sResourcesFromKustomize = () => {
-    kubeResourcesKustomize = prefs.kustomizeScanning ? kustomize.getKustomizeResources() : [];
+    kubeResourcesKustomize = prefs.kustomizeScanning ? kustomize.getResources() : [];
   };
 
   const updateK8sResourcesFromHelm = () => {
-    kubeResourcesHelm = helm.isHelmInstalled() && prefs.helmScanning ? helm.getHelmResources() : [];
+    kubeResourcesHelm = helm.isHelmInstalled() && prefs.helmScanning ? helm.getResources() : [];
   };
 
   const updateK8sResourcesFromCluster = async () => {
-    kubeResourcesCluster = clusterClient && prefs.clusterScanning ? await cluster.getClusterResources(clusterClient) : [];
+    kubeResourcesCluster = clusterClient && prefs.clusterScanning ? await cluster.getResources(clusterClient) : [];
   };
 
   const updateIncomingReferences = () => {

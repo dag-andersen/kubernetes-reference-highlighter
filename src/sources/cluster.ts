@@ -22,7 +22,7 @@ export function getKubeClient(): ClusterClient | undefined {
   return undefined;
 }
 
-export async function getClusterResources(cc: ClusterClient): Promise<K8sResource[]> {
+export async function getResources(cc: ClusterClient): Promise<K8sResource[]> {
   const service: Promise<K8sResource[]> = cc.coreV1Api
     .listServiceForAllNamespaces()
     .then((res) =>

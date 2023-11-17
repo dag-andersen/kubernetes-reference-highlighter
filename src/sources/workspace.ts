@@ -5,7 +5,7 @@ import {
   textToK8sResourced,
 } from "./util";
 
-export function getK8sResourcesInWorkspace(): K8sResource[] {
+export function getResources(): K8sResource[] {
   return getAllYamlFilesInVsCodeWorkspace().flatMap(({ fileName, text }) =>
     text
       .split("---")

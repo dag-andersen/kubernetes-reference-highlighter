@@ -7,7 +7,7 @@ import { getPositions } from "../finders/utils";
 export const helmIsInstalled = isHelmInstalled();
 const helmCommand = "helm template";
 
-export function getHelmResources(): K8sResource[] {
+export function getResources(): K8sResource[] {
   return getHelmPathsInWorkspace().flatMap((path) =>
     helmBuild(path)
       .split("---")

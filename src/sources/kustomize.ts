@@ -8,7 +8,7 @@ import { getPositions } from "../finders/utils";
 const kustomizeIsInstalled = isKustomizeInstalled();
 const kustomizeCommand = kustomizeIsInstalled ? "kustomize build" : "kubectl kustomize";
 
-export function getKustomizeResources(): K8sResource[] {
+export function getResources(): K8sResource[] {
   return getKustomizationPathsInWorkspace().flatMap((path) =>
     kustomizeBuild(path)
       .split("---")
