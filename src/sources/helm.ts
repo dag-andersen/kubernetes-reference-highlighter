@@ -12,6 +12,7 @@ export function getHelmResources(): K8sResource[] {
     helmBuild(path)
       .split("---")
       .flatMap((text) => textToK8sResourced(text, path, "helm") ?? [])
+      .filter((i) => i.metadata.name)
   );
 }
 

@@ -10,7 +10,7 @@ export function getK8sResourcesInWorkspace(): K8sResource[] {
     text
       .split("---")
       .flatMap((text) => textToK8sResourced(text, fileName, "workspace") ?? [])
-      .filter((i) => i.metadata.name) // Check that it has a name that can be referenced
+      .filter((i) => i.metadata.name)
   );
 }
 

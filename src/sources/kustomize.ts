@@ -13,6 +13,7 @@ export function getKustomizeResources(): K8sResource[] {
     kustomizeBuild(path)
       .split("---")
       .flatMap((text) => textToK8sResourced(text, path, "kustomize") ?? [])
+      .filter((i) => i.metadata.name)
   );
 }
 
