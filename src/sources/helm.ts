@@ -65,7 +65,7 @@ export function verifyHelmBuild(
 
   // TODO: check if dirty
 
-  const regex = /name:\s*([a-zA-Z-]+)/gm;
+  const regex = /^name:\s*([a-zA-Z-]+)/gm;
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
