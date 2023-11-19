@@ -111,10 +111,10 @@
     "typescript": "^4.7.4"
   },
   "dependencies": {
-    "@kubernetes/client-node": "^0.18.1",
-    "@types/string-similarity": "^4.0.0",
-    "kubernetes-types": "^1.26.0",
+    "@kubernetes/client-node": "^0.20.0",
+    "@types/string-similarity": "^4.0.2",
     "string-similarity": "^4.0.4",
-    "yaml": "^2.1.1"
+    "kubernetes-types": "^1.26.0",
+    "yaml": "^2.3.4"
   }
 }
