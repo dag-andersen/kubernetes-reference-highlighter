@@ -19,7 +19,7 @@ export function find(
     return [];
   }
 
-  let regex = new RegExp(`  name:\\s*${name}`, `g`);
+  let regex = new RegExp(`^  name:\\s*${name}`, `gm`);
   let matches = text.matchAll(regex);
   let list = [...matches];
 

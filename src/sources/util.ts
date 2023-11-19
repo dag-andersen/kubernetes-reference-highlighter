@@ -97,7 +97,7 @@ export function getReferencesFromFile(
     .split(split)
     .flatMap((textSplit) => {
       const thisResource = textToK8sResourced(textSplit, fileName, place);
-      if (!thisResource) {
+      if (!thisResource || !thisResource.metadata.name) {
         currentIndex += textSplit.length + split.length;
         return [];
       }

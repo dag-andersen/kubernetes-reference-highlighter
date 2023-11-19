@@ -15,7 +15,7 @@ export function find(
     return [];
   }
 
-  let regex = /  selector:\s/g;
+  let regex = /^  selector:\s/gm;
   let matches = text.matchAll(regex);
   let list = [...matches];
 

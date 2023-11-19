@@ -21,7 +21,7 @@ export function generateMessage(mg: ExclusiveArray<Message>): string {
   }
 
   /* eslint-disable @typescript-eslint/naming-convention */
-  const myMap: Record<Message["type"], () => string> = {
+  const map: Record<Message["type"], () => string> = {
     ReferenceFound: () => generateFoundMessage(mg as ReferenceFound[]),
     SubItemNotFound: () => generateSubItemNotFoundMessage(mg as SubItemNotFound[]),
     ReferenceNotFound: () => generateNotFoundMessage(mg as ReferenceNotFound[]),
@@ -32,7 +32,7 @@ export function generateMessage(mg: ExclusiveArray<Message>): string {
     PlainText: () => (mg as PlainText[]).map((m) => m.content).join("\\\n"),
   };
 
-  return myMap[mg[0].type]();
+  return map[mg[0].type]();
 }
 
 type PlainText = {

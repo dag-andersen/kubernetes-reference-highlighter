@@ -3,7 +3,7 @@
   "displayName": "Kubernetes Reference Highlighter",
   "publisher": "dag-andersen",
   "description": "",
-  "version": "0.0.41",
+  "version": "0.0.42",
   "engines": {
     "vscode": "^1.71.0"
   },

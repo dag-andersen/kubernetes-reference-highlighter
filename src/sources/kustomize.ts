@@ -8,11 +8,12 @@ import { getPositions } from "../finders/utils";
 const kustomizeIsInstalled = isKustomizeInstalled();
 const kustomizeCommand = kustomizeIsInstalled ? "kustomize build" : "kubectl kustomize";
 
-export function getKustomizeResources(): K8sResource[] {
+export function getResources(): K8sResource[] {
   return getKustomizationPathsInWorkspace().flatMap((path) =>
     kustomizeBuild(path)
       .split("---")
       .flatMap((text) => textToK8sResourced(text, path, "kustomize") ?? [])
+      .filter((i) => i.metadata.name)
   );
 }
 
@@ -71,7 +72,7 @@ export function verifyKustomizeBuild(
 
   const refType = "Kustomization";
 
-  const regex = /kind: (Kustomization)/gm;
+  const regex = /^kind: (Kustomization)/gm;
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
@@ -117,25 +118,25 @@ export function verifyKustomizeBuild(
   });
 }
 
-export function getLookupIncomingReferencesKustomize(
-  kubeResources: K8sResource[]
-): LookupIncomingReferences {
-  return getKustomizationPathsInWorkspace().reduce(
-    (acc, path) =>
-      getReferencesFromFile(
-        undefined,
-        kustomizeBuild(path),
-        kubeResources,
-        path,
-        "kustomize"
-      ).reduce((acc, i) => {
-        if (acc[i.definition.where.path]) {
-          acc[i.definition.where.path].push(i);
-        } else {
-          acc[i.definition.where.path] = [i];
-        }
-        return acc;
-      }, acc as LookupIncomingReferences),
-    {} as LookupIncomingReferences
-  );
-}
+// export function getLookupIncomingReferencesKustomize(
+//   kubeResources: K8sResource[]
+// ): LookupIncomingReferences {
+//   return getKustomizationPathsInWorkspace().reduce(
+//     (acc, path) =>
+//       getReferencesFromFile(
+//         undefined,
+//         kustomizeBuild(path),
+//         kubeResources,
+//         path,
+//         "kustomize"
+//       ).reduce((acc, i) => {
+//         if (acc[i.definition.where.path]) {
+//           acc[i.definition.where.path].push(i);
+//         } else {
+//           acc[i.definition.where.path] = [i];
+//         }
+//         return acc;
+//       }, acc as LookupIncomingReferences),
+//     {} as LookupIncomingReferences
+//   );
+// }

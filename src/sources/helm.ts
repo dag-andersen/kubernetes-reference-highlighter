@@ -7,11 +7,12 @@ import { getPositions } from "../finders/utils";
 export const helmIsInstalled = isHelmInstalled();
 const helmCommand = "helm template";
 
-export function getHelmResources(): K8sResource[] {
+export function getResources(): K8sResource[] {
   return getHelmPathsInWorkspace().flatMap((path) =>
     helmBuild(path)
       .split("---")
       .flatMap((text) => textToK8sResourced(text, path, "helm") ?? [])
+      .filter((i) => i.metadata.name)
   );
 }
 
@@ -65,7 +66,7 @@ export function verifyHelmBuild(
 
   // TODO: check if dirty
 
-  const regex = /name:\s*([a-zA-Z-]+)/gm;
+  const regex = /^name:\s*([a-zA-Z-]+)/gm;
   const matches = text.matchAll(regex);
 
   return [...matches].flatMap((match) => {
